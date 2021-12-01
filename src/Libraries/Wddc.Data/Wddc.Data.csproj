@@ -1,0 +1,483 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{A409A5AC-D29E-4282-9667-7A2F6F372F35}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Wddc.Data</RootNamespace>
+    <AssemblyName>Wddc.Data</AssemblyName>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Test|AnyCPU'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\Test\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.ComponentModel.DataAnnotations" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Data.SqlServerCe, Version=4.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91, processorArchitecture=MSIL" />
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.Security" />
+    <Reference Include="System.Transactions" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="ApiCustomerClient.cs" />
+    <Compile Include="AscTrac\AscObjectContext.Context.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>AscObjectContext.Context.tt</DependentUpon>
+    </Compile>
+    <Compile Include="AscTrac\AscObjectContext.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>AscObjectContext.tt</DependentUpon>
+    </Compile>
+    <Compile Include="AscTrac\AscObjectContextPartial.cs" />
+    <Compile Include="AscTrac\AscRepository.cs" />
+    <Compile Include="AscTrac\AscObjectContext.Designer.cs">
+      <DependentUpon>AscObjectContext.edmx</DependentUpon>
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <CustomToolNamespace>Wddc.Data.AscTrac</CustomToolNamespace>
+    </Compile>
+    <Compile Include="AscTrac\CARRIER.cs">
+      <DependentUpon>AscObjectContext.tt</DependentUpon>
+    </Compile>
+    <Compile Include="AscTrac\CARRIERACCT.cs">
+      <DependentUpon>AscObjectContext.tt</DependentUpon>
+    </Compile>
+    <Compile Include="AscTrac\CUSTNOTE.cs">
+      <DependentUpon>AscObjectContext.tt</DependentUpon>
+    </Compile>
+    <Compile Include="AscTrac\IAscRepository.cs" />
+    <Compile Include="AscTrac\Mapper\AscTracMapperConfiguration.cs" />
+    <Compile Include="AscTrac\ROUTE.cs">
+      <DependentUpon>AscObjectContext.tt</DependentUpon>
+    </Compile>
+    <Compile Include="AscTrac\RTCUST.cs">
+      <DependentUpon>AscObjectContext.tt</DependentUpon>
+    </Compile>
+    <Compile Include="AscTrac\SITE.cs">
+      <DependentUpon>AscObjectContext.tt</DependentUpon>
+    </Compile>
+    <Compile Include="DbContextExtensions.cs" />
+    <Compile Include="EdiOrdering\ClinicPromotionsLog.cs">
+      <DependentUpon>EdiModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="EdiOrdering\Close.cs">
+      <DependentUpon>EdiModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="EdiOrdering\CommentLog.cs">
+      <DependentUpon>EdiModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="EdiOrdering\CustomerSetting.cs">
+      <DependentUpon>EdiModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="EdiOrdering\CustomerSettingOption.cs">
+      <DependentUpon>EdiModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="EdiOrdering\DayOfWeek.cs">
+      <DependentUpon>EdiModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="EdiOrdering\Delivery.cs">
+      <DependentUpon>EdiModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="EdiOrdering\DeliveryException.cs">
+      <DependentUpon>EdiModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="EdiOrdering\DeliveryExceptionPartial.cs" />
+    <Compile Include="EdiOrdering\DeliveryPartial.cs" />
+    <Compile Include="EdiOrdering\DiscountItem.cs">
+      <DependentUpon>EdiModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="EdiOrdering\DiscountType.cs">
+      <DependentUpon>EdiModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="EdiOrdering\EdiModel.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>EdiModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="EdiOrdering\EdiObjectContext.Context.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>EdiObjectContext.Context.tt</DependentUpon>
+    </Compile>
+    <Compile Include="EdiOrdering\EdiObjectContextPartial.cs" />
+    <Compile Include="EdiOrdering\EdiRepository.cs" />
+    <Compile Include="EdiOrdering\EdiObjectContext.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>EdiObjectContext.edmx</DependentUpon>
+      <CustomToolNamespace>Wddc.Data.EdiOrdering</CustomToolNamespace>
+    </Compile>
+    <Compile Include="EdiOrdering\GetAscNotes_Result.cs">
+      <DependentUpon>EdiModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="EdiOrdering\GetAscOrders_Result.cs">
+      <DependentUpon>EdiModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="EdiOrdering\GetAscParcels_Result.cs">
+      <DependentUpon>EdiModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="EdiOrdering\GetAscRoutingDataIntegrityErrors_Result.cs">
+      <DependentUpon>EdiModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="EdiOrdering\GetCarrierInformation_Result.cs">
+      <DependentUpon>EdiModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="EdiOrdering\GetCustomerEmails_Result.cs">
+      <DependentUpon>EdiModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="EdiOrdering\GetCustomerInformation_Result.cs">
+      <DependentUpon>EdiModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="EdiOrdering\GetDeliveryWeightBreaks_Result.cs">
+      <DependentUpon>EdiModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="EdiOrdering\GetEmailsForCustomer_Result.cs">
+      <DependentUpon>EdiModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="EdiOrdering\GetLoadPlan_Result.cs">
+      <DependentUpon>EdiModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="EdiOrdering\GetParcelsToPlanLoad_Result.cs">
+      <DependentUpon>EdiModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="EdiOrdering\GetParcelsToReceive_Result.cs">
+      <DependentUpon>EdiModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="EdiOrdering\GetParcelsToTransfer_Result.cs">
+      <DependentUpon>EdiModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="EdiOrdering\GetRouteInformation_Result.cs">
+      <DependentUpon>EdiModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="EdiOrdering\GetRoutesForArea_Result.cs">
+      <DependentUpon>EdiModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="EdiOrdering\IEdiRepository.cs" />
+    <Compile Include="EdiOrdering\LocaleStringResource.cs">
+      <DependentUpon>EdiModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="EdiOrdering\Log.cs">
+      <DependentUpon>EdiModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="EdiOrdering\MapCoordinate.cs">
+      <DependentUpon>EdiModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="EdiOrdering\Mapper\EdiOrderingMapperConfigurations.cs" />
+    <Compile Include="EdiOrdering\OrderType.cs">
+      <DependentUpon>EdiModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="EdiOrdering\PromoQtyType.cs">
+      <DependentUpon>EdiModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="EdiOrdering\Promotion.cs">
+      <DependentUpon>EdiModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="EdiOrdering\PromotionItem.cs">
+      <DependentUpon>EdiModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="EdiOrdering\PromoType.cs">
+      <DependentUpon>EdiModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="EdiOrdering\Route.cs">
+      <DependentUpon>EdiModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="EdiOrdering\Site.cs">
+      <DependentUpon>EdiModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="EdiOrdering\SpecialOrderDetail.cs">
+      <DependentUpon>EdiModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="EdiOrdering\SpecialOrderHeader.cs">
+      <DependentUpon>EdiModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="EdiOrdering\vSpecialOrderDetailsReview.cs">
+      <DependentUpon>EdiModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="EdiOrdering\vSpecialOrderHeaderReview.cs">
+      <DependentUpon>EdiModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="EfDataProviderManager.cs" />
+    <Compile Include="EfRepository.cs" />
+    <Compile Include="GreatPlains\GetOrders_Result.cs">
+      <DependentUpon>GpModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="GreatPlains\GpModel.Context.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>GpModel.Context.tt</DependentUpon>
+    </Compile>
+    <Compile Include="GreatPlains\GpModel.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>GpModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="GreatPlains\GpObjectContextPartial.cs" />
+    <Compile Include="GreatPlains\GpRepository.cs" />
+    <Compile Include="GreatPlains\GpObjectContext1.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>GpObjectContext.edmx</DependentUpon>
+    </Compile>
+    <Compile Include="GreatPlains\IGpRepository.cs" />
+    <Compile Include="GreatPlains\IV00101.cs">
+      <DependentUpon>GpModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="GreatPlains\Mapper\GreatPlainsMapperConfigurations.cs" />
+    <Compile Include="GreatPlains\Mapper\SalesTypeMap.cs" />
+    <Compile Include="GreatPlains\RM00101.cs">
+      <DependentUpon>GpModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="GreatPlains\RM00106.cs">
+      <DependentUpon>GpModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="GreatPlains\SOP10100.cs">
+      <DependentUpon>GpModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="GreatPlains\SOP40200.cs">
+      <DependentUpon>GpModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="GreatPlains\SOP40200_Options.cs">
+      <DependentUpon>GpModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="IDbContext.cs" />
+    <Compile Include="Initializers\CreateTablesIfNotExist.cs" />
+    <Compile Include="GreatPlains\Mapper\CustomerMap.cs" />
+    <Compile Include="Interceptors\StringInterceptor.cs" />
+    <Compile Include="Mapping\Logging\ActivityLogMap.cs" />
+    <Compile Include="Mapping\Logging\ActivityLogTypeMap.cs" />
+    <Compile Include="Mapping\WddcEntityTypeConfiguration.cs" />
+    <Compile Include="MultiTracking\Action.cs">
+      <DependentUpon>MultiTrackingModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="MultiTracking\DataType.cs">
+      <DependentUpon>MultiTrackingModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="MultiTracking\Mappers\MultiTrackingMapperConfigurations.cs" />
+    <Compile Include="MultiTracking\MtObjectContextPartial.cs" />
+    <Compile Include="MultiTracking\MtRepository.cs" />
+    <Compile Include="MultiTracking\IMtRepository.cs" />
+    <Compile Include="MultiTracking\Message.cs">
+      <DependentUpon>MultiTrackingModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="MultiTracking\MessageStatu.cs">
+      <DependentUpon>MultiTrackingModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="MultiTracking\MessageStatusType.cs">
+      <DependentUpon>MultiTrackingModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="MultiTracking\MultiTrackingModel.Context.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>MultiTrackingModel.Context.tt</DependentUpon>
+    </Compile>
+    <Compile Include="MultiTracking\MultiTrackingModel.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>MultiTrackingModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="MultiTracking\MultiTrackingModel.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>MultiTrackingModel.edmx</DependentUpon>
+    </Compile>
+    <Compile Include="MultiTracking\OrderException.cs">
+      <DependentUpon>MultiTrackingModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="MultiTracking\Process.cs">
+      <DependentUpon>MultiTrackingModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="MultiTracking\Queue.cs">
+      <DependentUpon>MultiTrackingModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="MultiTracking\Task.cs">
+      <DependentUpon>MultiTrackingModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="RoutePartial.cs" />
+    <Compile Include="WddcObjectContext.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SqlServerDataProvider.cs" />
+    <Compile Include="WebServer\IWebServerRepository.cs" />
+    <Compile Include="WebServer\MAC001.cs">
+      <DependentUpon>WebOrderingModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="WebServer\MAC002.cs">
+      <DependentUpon>WebOrderingModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="WebServer\MAC003.cs">
+      <DependentUpon>WebOrderingModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="WebServer\WebOrderingModel.Context.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>WebOrderingModel.Context.tt</DependentUpon>
+    </Compile>
+    <Compile Include="WebServer\WebOrderingModel.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>WebOrderingModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="WebServer\WebOrderingModel.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>WebOrderingModel.edmx</DependentUpon>
+    </Compile>
+    <Compile Include="WebServer\WebServerRepository.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config">
+      <SubType>Designer</SubType>
+    </None>
+    <EntityDeploy Include="AscTrac\AscObjectContext.edmx">
+      <Generator>EntityModelCodeGenerator</Generator>
+      <LastGenOutput>AscObjectContext.Designer.cs</LastGenOutput>
+      <CustomToolNamespace>Wddc.Data.AscTrac</CustomToolNamespace>
+    </EntityDeploy>
+    <None Include="AscTrac\AscObjectContext.edmx.diagram">
+      <DependentUpon>AscObjectContext.edmx</DependentUpon>
+      <CustomToolNamespace>Wddc.Data.AscTrac</CustomToolNamespace>
+    </None>
+    <EntityDeploy Include="EdiOrdering\EdiObjectContext.edmx">
+      <Generator>EntityModelCodeGenerator</Generator>
+      <LastGenOutput>EdiObjectContext.Designer.cs</LastGenOutput>
+      <CustomToolNamespace>Wddc.Data.EdiOrdering</CustomToolNamespace>
+    </EntityDeploy>
+    <None Include="EdiOrdering\EdiObjectContext.edmx.diagram">
+      <DependentUpon>EdiObjectContext.edmx</DependentUpon>
+      <CustomToolNamespace>Wddc.Data.EdiOrdering</CustomToolNamespace>
+    </None>
+    <EntityDeploy Include="GreatPlains\GpObjectContext.edmx">
+      <Generator>EntityModelCodeGenerator</Generator>
+      <LastGenOutput>GpObjectContext1.Designer.cs</LastGenOutput>
+      <CustomToolNamespace>Wddc.Data.GreatPlains</CustomToolNamespace>
+    </EntityDeploy>
+    <None Include="GreatPlains\GpObjectContext.edmx.diagram">
+      <DependentUpon>GpObjectContext.edmx</DependentUpon>
+    </None>
+    <EntityDeploy Include="MultiTracking\MultiTrackingModel.edmx">
+      <Generator>EntityModelCodeGenerator</Generator>
+      <LastGenOutput>MultiTrackingModel.Designer.cs</LastGenOutput>
+    </EntityDeploy>
+    <None Include="MultiTracking\MultiTrackingModel.edmx.diagram">
+      <DependentUpon>MultiTrackingModel.edmx</DependentUpon>
+    </None>
+    <EntityDeploy Include="WebServer\WebOrderingModel.edmx">
+      <Generator>EntityModelCodeGenerator</Generator>
+      <LastGenOutput>WebOrderingModel.Designer.cs</LastGenOutput>
+    </EntityDeploy>
+    <None Include="WebServer\WebOrderingModel.edmx.diagram">
+      <DependentUpon>WebOrderingModel.edmx</DependentUpon>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="AscTrac\AscObjectContext.Context.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>AscObjectContext.Context.cs</LastGenOutput>
+      <DependentUpon>AscObjectContext.edmx</DependentUpon>
+    </Content>
+    <Content Include="AscTrac\AscObjectContext.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>AscObjectContext.cs</LastGenOutput>
+      <DependentUpon>AscObjectContext.edmx</DependentUpon>
+    </Content>
+    <Content Include="EdiOrdering\EdiModel.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>EdiModel.cs</LastGenOutput>
+      <DependentUpon>EdiObjectContext.edmx</DependentUpon>
+    </Content>
+    <Content Include="EdiOrdering\EdiObjectContext.Context.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>EdiObjectContext.Context.cs</LastGenOutput>
+      <DependentUpon>EdiObjectContext.edmx</DependentUpon>
+    </Content>
+    <Content Include="GreatPlains\GpModel.Context.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>GpModel.Context.cs</LastGenOutput>
+      <DependentUpon>GpObjectContext.edmx</DependentUpon>
+    </Content>
+    <Content Include="GreatPlains\GpModel.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>GpModel.cs</LastGenOutput>
+      <DependentUpon>GpObjectContext.edmx</DependentUpon>
+    </Content>
+    <Content Include="MultiTracking\MultiTrackingModel.Context.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <DependentUpon>MultiTrackingModel.edmx</DependentUpon>
+      <LastGenOutput>MultiTrackingModel.Context.cs</LastGenOutput>
+    </Content>
+    <Content Include="MultiTracking\MultiTrackingModel.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <DependentUpon>MultiTrackingModel.edmx</DependentUpon>
+      <LastGenOutput>MultiTrackingModel.cs</LastGenOutput>
+    </Content>
+    <Content Include="WebServer\WebOrderingModel.Context.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <DependentUpon>WebOrderingModel.edmx</DependentUpon>
+      <LastGenOutput>WebOrderingModel.Context.cs</LastGenOutput>
+    </Content>
+    <Content Include="WebServer\WebOrderingModel.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <DependentUpon>WebOrderingModel.edmx</DependentUpon>
+      <LastGenOutput>WebOrderingModel.cs</LastGenOutput>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="AutoMapper">
+      <Version>6.2.2</Version>
+    </PackageReference>
+    <PackageReference Include="EntityFramework">
+      <Version>6.2.0</Version>
+    </PackageReference>
+    <PackageReference Include="Newtonsoft.Json">
+      <Version>12.0.2</Version>
+    </PackageReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

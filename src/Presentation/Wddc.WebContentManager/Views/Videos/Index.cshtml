@@ -1,0 +1,828 @@
+﻿@model Wddc.WebContentManager.Models.WebContent.Videos.VideosModel
+
+@{
+    ViewBag.Title = "WDDC Videos";
+}
+
+@section Styles {
+
+    <link href="https://kendo.cdn.telerik.com/2021.2.511/styles/kendo.bootstrap-v4.min.css" rel="stylesheet" type="text/css" />
+
+}
+
+@section Scripts {
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
+    <script src="http://ajax.aspnetcdn.com/ajax/jquery.validate/1.11.0/jquery.validate.min.js"></script>
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script>
+
+    <script src="https://kendo.cdn.telerik.com/2021.2.511/js/kendo.all.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/2.4.0/jszip.js"></script>
+
+    <script src="~/js/pagination/pagination.min.js"></script>
+    <script src="~/js/pagination/pagination.custom.js"></script>
+
+    <script>
+
+        var categoriesDataSource, albumsDataSource, selectedCategoryNumber, selectedCategoryName, selectedAlbumId, selectedAlbumName, selectedAlbumNumber;
+
+        $(document).ready(function () {
+
+            prepareLogList();
+
+            categoriesDataSource = new kendo.data.DataSource({
+                transport: {
+                    read: {
+                        url: '@Url.Action("GetCategories", "Videos")',
+                        dataType: "json"
+                    },
+                    create: {
+                        url: '@Url.Action("CreateWebLiquidation", "LiquidationSale")',
+                        type: "POST",
+                        dataType: "json"
+                    },
+                },
+            });
+
+            $("#categoriesList").kendoListBox({
+                dataSource: categoriesDataSource,
+                dataTextField: "VD01_CTGY_NAME",
+                dataValueField: "VD01_CTGY_NBR",
+                toolbar: {
+                    tools: ["moveUp", "moveDown"]
+                },
+            });
+
+            $.getJSON('@Url.Action("GetFirstCategory", "Videos")', function (json) {
+
+                selectedCategoryNumber = json.VD01_CTGY_NBR;
+                selectedCategoryName = json.VD01_CTGY_NAME;
+
+                albumsDataSource = new kendo.data.DataSource({
+                    transport: {
+                        read: {
+                            url: '@Url.Action("GetAlbumsByCategory", "Videos")?CTGY_NBR=' + json.VD01_CTGY_NBR,
+                             dataType: "json"
+                        }
+                    },
+                });
+
+                $("#albumsList").kendoListBox({
+                    dataSource: albumsDataSource,
+                    dataTextField: "VD02_NAME",
+                    dataValueField: "VD02_ID",
+                    template: "<div style='width: 50%'>#:VD02_NAME#</div><div class='pull-right' style='width: 50%; text-align: right;'>#:EMBD_CODE#</div>",
+                    dataBound: function (e) {
+                        var albumsListBox = e.sender;
+                        albumsListBox.select(albumsListBox.items().first());
+                    },
+                    change: function (e) {
+
+                        var element = e.sender.select();
+                        var dataItem = e.sender.dataItem(element[0]);
+
+                        if (dataItem) {
+                            selectedAlbumId = dataItem.VD02_ID;
+                            selectedAlbumName = dataItem.VD02_NAME;
+                            selectedAlbumNumber = dataItem.EMBD_CODE;
+                        }
+
+                    },
+                });
+
+            });
+
+            var categoriesListBox = $("#categoriesList").data("kendoListBox");
+
+            categoriesListBox.bind("change", function (e) {
+
+                var element = e.sender.select();
+                var dataItem = e.sender.dataItem(element[0]);
+
+                selectedCategoryNumber = dataItem.VD01_CTGY_NBR;
+                selectedCategoryName = dataItem.VD01_CTGY_NAME;
+
+                albumsDataSource = new kendo.data.DataSource({
+                    transport: {
+                        read: {
+                            url: '@Url.Action("GetAlbumsByCategory", "Videos")?CTGY_NBR=' + dataItem.VD01_CTGY_NBR,
+                             dataType: "json"
+                        }
+                    },
+                });
+
+                var albumsListBox = $("#albumsList").data("kendoListBox");
+                if (albumsListBox) {
+                    albumsListBox.setDataSource(albumsDataSource);
+                    albumsListBox.dataSource.read();
+                }
+
+            });
+
+            categoriesListBox.bind("dataBound", function (e) {
+
+                e.sender.select(e.sender.items().first());
+
+                var dataSource = $("#categoriesList").data("kendoListBox").dataSource;
+                for (var i = 0; i < dataSource.data().length; i++) {
+                    if (dataSource.data()[i].VID002s.length == 0) {
+                        e.sender.wrapper.find("[data-uid='" + dataSource.data()[i].uid + "']").addClass("errorRow");
+                    }
+                }
+
+                prepareLogList();
+
+            });
+
+
+            categoriesListBox.bind("reorder", function (e) {
+
+                e.preventDefault();
+                var dataSource = e.sender.dataSource;
+                var dataItem = e.dataItems[0]
+                var index = dataSource.indexOf(dataItem) + e.offset;
+                dataSource.remove(dataItem);
+                dataSource.insert(index, dataItem);
+                e.sender.wrapper.find("[class='" + "k-item k-state-selected" + "']").removeClass("k-state-selected");
+                e.sender.wrapper.find("[data-uid='" + dataItem.uid + "']").addClass("k-state-selected");
+
+                albumsDataSource = new kendo.data.DataSource({
+                    transport: {
+                        read: {
+                            url: '@Url.Action("GetAlbumsByCategory", "Videos")?CTGY_NBR=' + dataItem.VD01_CTGY_NBR,
+                             dataType: "json"
+                        }
+                    },
+                });
+
+                var albumsListBox = $("#albumsList").data("kendoListBox");
+                albumsListBox.setDataSource(albumsDataSource);
+                albumsListBox.dataSource.read();
+
+                setNewOrders();
+
+            });
+
+            function setNewOrders() {
+
+                var categoriesListBox = $("#categoriesList").data("kendoListBox");
+                var dataSource = categoriesListBox.dataSource;
+                var categoriesItems = categoriesListBox.dataItems();
+                for (let i = 0; i < categoriesItems.length; i++) {
+                    var categoriesItem = categoriesItems[i];
+                    categoriesItem.VD01_CTGY_SORT = dataSource.indexOf(categoriesItem);
+                }
+
+                $.post('Videos/ReorderVID001s', {
+                    model: {
+                        VID001s: JSON.parse(JSON.stringify(categoriesItems))
+                    }
+                }, (result) => {
+                    prepareLogList();
+                }).fail((xhr, textStatus, errorThrown) => {
+                    alert("Failure sorting videos: " + `${textStatus} : ${errorThrown}`);
+                    prepareLogList();
+                });
+            }
+
+        })
+
+        $("#addCategoryModal").on('shown.bs.modal', function () {
+            document.getElementById("newCategoryName").focus();
+        });
+
+        $("#editCategoryModal").on('shown.bs.modal', function () {
+            document.getElementById("categoryName").focus();
+            document.forms["editCategoryForm"]["categoryNumber"].value = parseInt(selectedCategoryNumber);
+            document.forms["editCategoryForm"]["categoryName"].value = selectedCategoryName;
+        });
+
+        $("#addAlbumModal").on('shown.bs.modal', function () {
+            document.getElementById("newAlbumName").focus();
+            $.getJSON('@Url.Action("GetCategories", "Videos")', function (options) {
+                   var select = document.getElementById("newAlbumCategoryNumber");
+                   for (var i = 0; i < options.length; i++) {
+                        var el = document.createElement("option");
+                        el.textContent = options[i].VD01_CTGY_NAME;
+                        el.value = options[i].VD01_CTGY_NBR;
+                        if (options[i].VD01_CTGY_NBR == selectedCategoryNumber) {
+                            el.selected = true;
+                        }
+                        select.appendChild(el)
+                   };
+            });
+        });
+
+        $("#addAlbumModal").on('hide.bs.modal', function () {
+            var select = document.getElementById("newAlbumCategoryNumber");
+            while (select.firstChild) {
+                 select.removeChild(select.firstChild);
+            }
+        });
+
+         $("#editAlbumModal").on('shown.bs.modal', function () {
+             document.getElementById("albumName").focus();
+             document.forms["editAlbumForm"]["albumId"].value = parseInt(selectedAlbumId);
+             document.forms["editAlbumForm"]["albumName"].value = selectedAlbumName;
+             document.forms["editAlbumForm"]["albumNumber"].value = selectedAlbumNumber;
+             $.getJSON('@Url.Action("GetCategories", "Videos")', function (options) {
+                   var select = document.getElementById("albumCategoryNumber");
+                   for (var i = 0; i < options.length; i++) {
+                        var el = document.createElement("option");
+                        el.textContent = options[i].VD01_CTGY_NAME;
+                        el.value = options[i].VD01_CTGY_NBR;
+                        if (options[i].VD01_CTGY_NBR == selectedCategoryNumber) {
+                            el.selected = true;
+                        }
+                        select.appendChild(el)
+                   };
+             });
+        });
+
+        $("#editAlbumModal").on('hide.bs.modal', function () {
+            var select = document.getElementById("albumCategoryNumber");
+            while (select.firstChild) {
+                 select.removeChild(select.firstChild);
+            }
+        });
+
+        function validateAddCategoryForm() {
+
+            var newCategoryName = document.forms["addCategoryForm"]["newCategoryName"].value;
+            if (newCategoryName.trim() == "") {
+                alert("Category name must be filled out");
+                document.getElementById("newCategoryName").focus();
+                return false;
+            }
+        }
+
+        function validateEditCategoryForm() {
+
+            var categoryName = document.forms["editCategoryForm"]["categoryName"].value;
+            if (categoryName.trim() == "") {
+                alert("Category name must be filled out");
+                document.getElementById("categoryName").focus();
+                return false;
+            }
+        }
+
+        function validateAddAlbumForm() {
+
+            var newAlbumName = document.forms["addAlbumForm"]["newAlbumName"].value;
+            if (newAlbumName.trim() == "") {
+                alert("Album name must be filled out");
+                document.getElementById("newAlbumName").focus();
+                return false;
+            }
+
+            var newAlbumNumber = document.forms["addAlbumForm"]["newAlbumNumber"].value;
+            if (newAlbumNumber.trim() == "") {
+                alert("Vimeo album number must be filled out");
+                document.getElementById("newAlbumNumber").focus();
+                return false;
+            }
+
+            var numbers = /^[0-9]+$/;
+            if (!newAlbumNumber.match(numbers)) {
+                alert("Album Vimeo number is not valid");
+                document.getElementById("newAlbumNumber").focus();
+                return false;
+            }
+        }
+
+        function validateEditAlbumForm() {
+
+            var albumName = document.forms["editAlbumForm"]["albumName"].value;
+            if (albumName.trim() == "") {
+                alert("Album name must be filled out");
+                document.getElementById("albumName").focus();
+                return false;
+            }
+
+            var albumNumber = document.forms["editAlbumForm"]["albumNumber"].value;
+            if (albumNumber.trim() == "") {
+                alert("Vimeo album number must be filled out");
+                document.getElementById("albumNumber").focus();
+                return false;
+            }
+
+            var numbers = /^[0-9]+$/;
+            if (!albumNumber.match(numbers)) {
+                alert("Album Vimeo number is not valid");
+                document.getElementById("albumNumber").focus();
+                return false;
+            }
+        }
+
+        $("#delete-category").click(function () {
+
+            var confirmDelete = confirm("Are you sure you want to remove category '" + selectedCategoryName + "'?");
+            if (confirmDelete == true) {
+
+                $.getJSON('@Url.Action("GetAlbumsByCategory", "Videos")?CTGY_NBR=' + parseInt(selectedCategoryNumber), function (json) {
+                    if (json.length > 0) {
+                        alert("There are items assigned to category '" + selectedCategoryName + "'. Please remove or move them to a different category before removing this category.")
+                    }
+                    else {
+                         $.post('@Url.Action("DeleteCategory", "Videos")?CTGY_NBR=' + parseInt(selectedCategoryNumber), (result) => {
+                              if (result.success) {
+                                  window.location.href = "@Url.Action("Index", "Videos")";
+                              } else {
+                                  alert("Failure deleting Wddc video category '" + selectedCategoryName + "'!");
+                                  prepareLogList();
+                              }
+
+                        }).fail((xhr, textStatus, errorThrown) => {
+                            alert("Failure deleting Wddc video category '" + selectedCategoryName + "'. " + `${textStatus} : ${errorThrown}`);
+                            prepareLogList();
+                        });
+                    }
+                });
+
+
+            }
+
+        });
+
+        $("#edit-video").click(function () {
+
+            $.getJSON('@Url.Action("GetAlbumsByCategory", "Videos")?CTGY_NBR=' + parseInt(selectedCategoryNumber), function (json) {
+                if (json.length == 0) {
+                    alert("There are no items assigned to category '" + selectedCategoryName + "'.")
+                }
+                else {
+                    $('#editAlbumModal').modal('show');
+                }
+            });
+
+        });
+
+        $("#delete-video").click(function () {
+
+            $.getJSON('@Url.Action("GetAlbumsByCategory", "Videos")?CTGY_NBR=' + parseInt(selectedCategoryNumber), function (json) {
+                if (json.length == 0) {
+                    alert("There are no items assigned to category '" + selectedCategoryName + "'.")
+                }
+                else {
+                    var confirmDelete = confirm("Are you sure you want to remove video '" + selectedAlbumName + "'?");
+                    if (confirmDelete == true) {
+                        $.post('@Url.Action("DeleteAlbum", "Videos")?ID=' + parseInt(selectedAlbumId), (result) => {
+                              if (result.success) {
+                                  window.location.href = "@Url.Action("Index", "Videos")";
+                              } else {
+                                  alert("Failure deleting Wddc video '" + selectedAlbumName + "'!");
+                                  prepareLogList();
+                              }
+
+                        }).fail((xhr, textStatus, errorThrown) => {
+                            alert("Failure deleting Wddc video category '" + selectedAlbumName + "'. " + `${textStatus} : ${errorThrown}`);
+                            prepareLogList();
+                        });
+                    }
+                }
+            });
+
+        });
+
+        $("#test-link").click(function () {
+
+            var newAlbumNumber = document.forms["addAlbumForm"]["newAlbumNumber"].value;
+            if (newAlbumNumber.trim() == "") {
+                alert("Vimeo album number must be filled out");
+                document.getElementById("newAlbumNumber").focus();
+            }
+            else {
+                window.open('https://vimeo.com/showcase/' + newAlbumNumber, '_blank');
+            }
+
+        });
+
+        $("#test-link2").click(function () {
+
+            var albumNumber = document.forms["editAlbumForm"]["albumNumber"].value;
+            if (albumNumber.trim() == "") {
+                alert("Vimeo album number must be filled out");
+                document.getElementById("albumNumber").focus();
+            }
+            else {
+                window.open('https://vimeo.com/showcase/' + albumNumber, '_blank');
+            }
+
+        });
+
+        function prepareLogList() {
+            setupPagination('log', 'log-list', '@Url.Action("Log", "Videos")?referrerUrl=Videos', ['Log', 'Username', 'Created'], 7);
+        }
+
+    </script>
+}
+
+<div class="wrapper wrapper-content animated fadeInRight">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="ibox">
+                <div class="ibox-content main-container">
+                    <div class="row">
+                        <div class="col-lg-12">
+                            <div class="row">
+                                <div class="col-lg-5">
+                                    <div class="row tool-row">
+                                        <div class="col-lg-6">
+                                            <label for="categoriesList" id="categories">Categories</label>
+                                        </div>
+                                        <div class="col-lg-6">
+                                            <div class="ibox-tools">
+                                                <a data-placement="top" title="Add" id="add-category" data-toggle="modal" data-target="#addCategoryModal">
+                                                    <i class="fa fa-plus fa-2x"></i>
+                                                </a>
+                                                <a data-placement="top" title="Edit" id="edit-category" data-toggle="modal" data-target="#editCategoryModal">
+                                                    <i class="fa fa-pencil fa-2x"></i>
+                                                </a>
+                                                <a data-placement="top" title="Delete" id="delete-category">
+                                                    <i class="fa fa-trash fa-2x"></i>
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-lg-12">
+                                            <select id="categoriesList">
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-7">
+                                    <div class="row tool-row">
+                                        <div class="col-lg-6">
+                                            <label for="albumsList" id="albums">Vimeo Albums</label>
+                                        </div>
+                                        <div class="col-lg-6">
+                                            <div class="ibox-tools">
+                                                <a data-placement="top" title="Add" id="add-video" data-toggle="modal" data-target="#addAlbumModal">
+                                                    <i class="fa fa-plus fa-2x"></i>
+                                                </a>
+                                                <a data-placement="top" title="Edit" id="edit-video" @*data-toggle="modal" data-target="#editAlbumModal"*@>
+                                                    <i class="fa fa-pencil fa-2x"></i>
+                                                </a>
+                                                <a data-placement="top" title="Delete" id="delete-video">
+                                                    <i class="fa fa-trash fa-2x"></i>
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-lg-12">
+                                            <select id="albumsList">
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row" style="margin-top: 30px;">
+                        <div class="col-lg-2"></div>
+                        <div class="col-lg-8">
+                            <div id="log" class="content-center">
+                                <div class="bs-ObjectList-rows" id="log-list">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-2"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addCategoryModal" tabindex="-1" role="dialog" aria-labelledby="addCategoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="modal-title">New Category</span>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form name="addCategoryForm" method="post" action="@Url.Action("AddCategory", "Videos")" onsubmit="return validateAddCategoryForm()">
+                <div class="modal-body">
+                    <div class="card" style="margin: 0 auto">
+                        <div class="row form-row">
+                            <div class="col-lg-3 form-label-col">
+                                <label for="newCategoryName" class="control-label control-label-center">Category Name:</label>
+                            </div>
+                            <div class="col-lg-9">
+                                <input id="newCategoryName" name="newCategoryName" class="form-control" type="text">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Add</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editCategoryModal" tabindex="-1" role="dialog" aria-labelledby="editCategoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="modal-title">Edit Category</span>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form name="editCategoryForm" method="post" action="@Url.Action("UpdateCategory", "Videos")" onsubmit="return validateEditCategoryForm()">
+                <input type="hidden" id="categoryNumber" name="categoryNumber">
+                <div class="modal-body">
+                    <div class="card" style="margin: 0 auto">
+                        <div class="row form-row">
+                            <div class="col-lg-3 form-label-col">
+                                <label for="categoryName" class="control-label control-label-center">Category Name:</label>
+                            </div>
+                            <div class="col-lg-9">
+                                <input id="categoryName" name="categoryName" class="form-control" type="text">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Update</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addAlbumModal" tabindex="-1" role="dialog" aria-labelledby="addAlbumModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="modal-title">New Video</span>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form name="addAlbumForm" method="post" action="@Url.Action("AddAlbum", "Videos")" onsubmit="return validateAddAlbumForm()">
+                <div class="modal-body">
+                    <div class="card" style="margin: 0 auto">
+                        <div class="row form-row">
+                            <div class="col-lg-3 form-label-col">
+                                <label for="newAlbumCategoryNumber" class="control-label control-label-center">Main Category:</label>
+                            </div>
+                            <div class="col-lg-9">
+                                <select class="form-control" id="newAlbumCategoryNumber" name="newAlbumCategoryNumber"></select>
+                            </div>
+                        </div>
+                        <div class="row form-row">
+                            <div class="col-lg-3 form-label-col">
+                                <label for="newAlbumName" class="control-label control-label-center">Album Title:</label>
+                            </div>
+                            <div class="col-lg-9">
+                                <input id="newAlbumName" name="newAlbumName" class="form-control" type="text">
+                            </div>
+                        </div>
+                        <div class="row form-row">
+                            <div class="col-lg-3 form-label-col">
+                                <label for="newAlbumNumber" class="control-label control-label-center">Album Number:</label>
+                            </div>
+                            <div class="col-lg-9">
+                                <input id="newAlbumNumber" name="newAlbumNumber" class="form-control">
+                            </div>
+                        </div>
+                        <div class="row form-row">
+                            <div class="col-lg-3 form-label-col">
+                            </div>
+                            <div class="col-lg-9">
+                                <button type="button" class="btn btn-outline-secondary" id="test-link">Test Link in Browser</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Add</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editAlbumModal" tabindex="-1" role="dialog" aria-labelledby="editAlbumModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="modal-title">Edit Video</span>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form name="editAlbumForm" method="post" action="@Url.Action("UpdateAlbum", "Videos")" onsubmit="return validateEditAlbumForm()">
+                <input type="hidden" id="albumId" name="albumId">
+                <div class="modal-body">
+                    <div class="card" style="margin: 0 auto">
+                        <div class="row form-row">
+                            <div class="col-lg-3 form-label-col">
+                                <label for="albumCategoryNumber" class="control-label control-label-center">Main Category:</label>
+                            </div>
+                            <div class="col-lg-9">
+                                <select class="form-control" id="albumCategoryNumber" name="albumCategoryNumber"></select>
+                            </div>
+                        </div>
+                        <div class="row form-row">
+                            <div class="col-lg-3 form-label-col">
+                                <label for="albumName" class="control-label control-label-center">Album Title:</label>
+                            </div>
+                            <div class="col-lg-9">
+                                <input id="albumName" name="albumName" class="form-control" type="text">
+                            </div>
+                        </div>
+                        <div class="row form-row">
+                            <div class="col-lg-3 form-label-col">
+                                <label for="albumNumber" class="control-label control-label-center">Album Number:</label>
+                            </div>
+                            <div class="col-lg-9">
+                                <input id="albumNumber" name="albumNumber" class="form-control">
+                            </div>
+                        </div>
+                        <div class="row form-row">
+                            <div class="col-lg-3 form-label-col">
+                            </div>
+                            <div class="col-lg-9">
+                                <button type="button" class="btn btn-outline-secondary" id="test-link2">Test Link in Browser</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Update</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+
+    .k-listbox {
+        width: 100%;
+        height: 350px;
+        font-size: 13px;
+    }
+
+    .main-container {
+        width: 90%;
+        margin: 0px auto;
+    }
+
+    .content-center {
+        margin: 0px auto;
+        text-align: center;
+    }
+
+    .ibox-content label {
+        margin-bottom: 5px;
+        margin-top: 5px;
+    }
+
+    .ibox-content .k-icon {
+        font-size: 22px;
+    }
+
+    .ibox-tools a {
+        color: #337ab7;
+        margin-right: 5px;
+    }
+
+    .tool-row {
+        margin-bottom: 10px;
+    }
+
+    .k-item {
+        font-size: 14px;
+    }
+
+    .k-list .k-item, .k-list-optionlabel {
+        padding: 5px 1.5rem;
+    }
+
+    .control-label {
+        /*color: #505050;*/
+        font-size: 13px;
+    }
+
+    .wrapper-content {
+        padding: 10px 10px 20px;
+    }
+
+    .modal-lg {
+        max-width: 700px;
+    }
+
+    .modal-title {
+        color: #1565C0;
+        font-size: 14px;
+        font-weight: bold;
+    }
+
+    .modal-dialog {
+        margin: 200px auto;
+    }
+
+    .form-row {
+        margin-top: 7px;
+        vertical-align: central;
+        display: flex;
+    }
+
+    .form-label-col {
+        display: flex;
+        padding-right: 0;
+        justify-content: flex-end;
+    }
+
+    .control-label-center {
+        display: flex;
+        margin-top: auto;
+        margin-bottom: auto;
+    }
+
+    .k-header .k-link {
+        text-align: center;
+        font-weight: bold;
+        font-size: 11px;
+    }
+
+    .errorRow {
+        background-color: #FFC0CB;
+    }
+
+    .form-control[disabled] {
+        color: #6b7c93;
+    }
+
+    .btn-outline-secondary {
+        margin-top: 15px;
+        color: #fff;
+        background-color: #6c757d;
+        border-color: #6c757d;
+        padding: 2px 8px;
+        font-size: 12px;
+    }
+
+        .btn-outline-secondary:hover, .btn-outline-secondary:focus {
+            color: #fff;
+        }
+
+    .bs-ObjectList-row {
+        border-radius: 0.25rem;
+    }
+
+    .bs-ObjectList-row--header {
+        position: relative;
+        background-color: #E8E8E8;
+    }
+
+        .bs-ObjectList-row--header .bs-ObjectList-cell {
+            font-weight: bold;
+        }
+
+    .bs-ObjectList-row .bs-ObjectList-cell {
+        width: 20%;
+        text-align: center;
+    }
+
+        .bs-ObjectList-row .bs-ObjectList-cell:last-child {
+            width: 20%;
+            text-align: center;
+        }
+
+        .bs-ObjectList-row .bs-ObjectList-cell:first-child {
+            width: 60%;
+            text-align: left;
+            white-space: pre-wrap;
+        }
+
+    .bs-ObjectList-child, .bs-ObjectList-parent, .bs-ObjectList-row {
+        display: table-row;
+        transition: background-color .15s ease 0s;
+    }
+
+    .bs-ObjectList-cell {
+        display: table-cell;
+        position: relative;
+        padding: 9px 10px;
+        color: #525f7f;
+        font-weight: 400;
+        line-height: 22px;
+        vertical-align: top;
+        white-space: nowrap;
+    }
+</style>

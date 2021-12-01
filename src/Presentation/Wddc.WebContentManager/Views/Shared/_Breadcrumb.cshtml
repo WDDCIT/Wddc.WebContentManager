@@ -1,0 +1,26 @@
+﻿@using Microsoft.Extensions.Configuration
+@inject IConfiguration Configuration
+@{
+    string NavBarTitle = Configuration["ResourceConfiguration:NavBarTitle"];
+}
+
+
+<div class="row wrapper border-bottom white-bg page-heading">
+    <div class="col-lg-10">
+        <h2 id="page-heading">@ViewBag.Title <span style="color:red; font-weight: bold; font-size: 18px;"> @NavBarTitle</span></h2>
+        <ol class="breadcrumb">
+            <li>
+                <a href="@Url.Action("Index", "Home")">Home</a>
+            </li>
+            <li>
+                <a href="@Url.Action("Index")">@ViewContext.RouteData.Values["controller"]</a>
+            </li>
+            <li class="active">
+                <strong>@ViewBag.Title</strong>
+            </li>
+        </ol>
+    </div>
+    <div class="col-lg-2">
+    </div>
+</div>
+

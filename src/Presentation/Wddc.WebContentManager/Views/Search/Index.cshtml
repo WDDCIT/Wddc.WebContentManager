@@ -1,0 +1,366 @@
+﻿@using Wddc.WebContentManager.Services.WebContent.Search
+
+@{
+    ViewBag.Title = "Search Control";
+}
+
+@section Styles {
+
+    <link href="https://kendo.cdn.telerik.com/2021.2.511/styles/kendo.bootstrap-v4.min.css" rel="stylesheet" type="text/css" />
+
+}
+
+@section Scripts {
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
+    <script src="http://ajax.aspnetcdn.com/ajax/jquery.validate/1.11.0/jquery.validate.min.js"></script>
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script>
+
+    <script src="https://kendo.cdn.telerik.com/2021.2.511/js/kendo.all.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/2.4.0/jszip.js"></script>
+
+    <script src="~/js/pagination/pagination.min.js"></script>
+    <script src="~/js/pagination/pagination.custom.js"></script>
+
+    <script>
+
+        var searchDataSource, searchGrid;
+        var today = new Date(), addressResult;
+        var dd = String(today.getDate()).padStart(2, '0');
+        var mm = String(today.getMonth() + 1).padStart(2, '0');
+        var yyyy = today.getFullYear();
+        today = mm + '/' + dd + '/' + yyyy;
+
+        $(document).ready(function () {
+
+            prepareLogList();
+
+            searchDataSource = new kendo.data.DataSource({
+                transport: {
+                    read: {
+                        url: '@Url.Action("GetAllTblSearch", "Search")',
+                        dataType: "json"
+                    },
+                    update: {
+                        url: '@Url.Action("UpdateTblSearch", "Search")',
+                        dataType: "json"
+                    },
+                    create: {
+                        url: '@Url.Action("CreateTblSearch", "Search")',
+                        type: "POST",
+                        dataType: "json"
+                    },
+                    destroy: {
+                        url: '@Url.Action("DeleteTblSearch", "Search")',
+                        type: "POST",
+                        dataType: "json"
+                    },
+                },
+                schema: {
+                    model: {
+                        id: "ID",
+                        fields: {
+                            ID: { editable: false, type: "number" },
+                            SearchDescr: { type: "string", validation: { required: true } },
+                            SearchDescrModified: { editable: true, type: "string", validation: { required: true } }
+                        }
+                    }
+                }
+            });
+
+            searchGrid = $("#searchGrid").kendoGrid({
+                dataSource: searchDataSource,
+                toolbar: ["Refresh", "excel", "create", "Delete Selected"],
+                excel: {
+                    fileName: "Search Description_" + today + ".xlsx",
+                    proxyURL: "https://demos.telerik.com/kendo-ui/service/export",
+                    allPages: true
+                },
+                sortable: {
+                    mode: "multiple",
+                    allowUnsort: true,
+                    showIndexes: true
+                },
+                filterable: true,
+                resizable: false,
+                edit: function (e) {
+                    if (e.model.isNew()) {
+
+                        var mySearch = document.getElementById('SearchDescr');
+                        var newSpan = document.createElement("span");
+                        newSpan.setAttribute("id", "SearchWarning");
+                        newSpan.style.color = "red";
+                        newSpan.style.display = "none";
+                        mySearch.parentNode.insertBefore(newSpan, mySearch.nextSibling);
+
+                        var addButtons = document.getElementsByClassName("k-grid-update");
+                        addButtons[0].innerHTML = '<span class="k-icon k-i-check"></span>Add';
+                        var windowTitles = document.getElementsByClassName("k-window-title");
+                        windowTitles[0].innerHTML = "Add New Search Description";
+                        document.getElementById("SearchDescr").onchange = function () { checkSearch() };
+
+                    }
+                },
+                //editable: "popup",
+                editable: {
+                    mode: "popup",
+                    confirmation: false
+                },
+                columns: [
+                    { selectable: true, width: "35px" },
+                    {
+                        field: "SearchDescr",
+                        title: "Search Description",
+                        filterable: {
+                            multi: true,
+                            search: true
+                        },
+                        editable: isEditable,
+                        attributes: { class: "grid-cell", style: "text-align: left; color: black; padding-left: 20px;" }
+                    },
+                    {
+                        field: "SearchDescrModified",
+                        title: "Search Description Modified",
+                        filterable: {
+                            multi: true,
+                            search: true
+                        },
+                        attributes: { class: "grid-cell", style: "text-align: left; padding-left: 20px;" }
+                    },
+                    { command: ["edit", "destroy"], title: "&nbsp;", width: "250px" }
+                ]
+            }).data("kendoGrid");
+
+            searchGrid.bind("dataBound", grid_dataBound);
+            searchGrid.bind("save", grid_save);
+
+            var refreshBtn = document.getElementsByClassName('k-grid-Refresh')[0];
+            refreshBtn.innerHTML = "<span class='k-icon k-i-reload'></span> Refresh";
+
+            $("#searchGrid").find(".k-grid-toolbar").on("click", ".k-grid-Refresh", function (e) {
+                e.preventDefault();
+                searchGrid.dataSource.read();
+                prepareLogList();
+            });
+
+            $("#searchGrid").find(".k-grid-toolbar").on("click", ".k-grid-DeleteSelected", function (e) {
+                $("#searchGrid").find("input:checked").each(function () {
+                    searchGrid.removeRow($(this).closest('tr'));
+                })
+                prepareLogList();
+            });
+
+            function grid_dataBound(e) {
+                document.getElementById("searchTotal").innerHTML = "Total: " + searchDataSource.total() + " out of " + searchDataSource.data().length ;
+            }
+
+            function grid_save(e) {
+                e.sender.one("dataBound", function () {
+                    e.sender.dataSource.read();
+                    prepareLogList();
+                });
+            }
+
+            function isEditable(e) {
+                return e.SearchDescr == null || e.SearchDescr.length == 0;
+            }
+
+            function checkSearch() {
+
+                var searchDescr = document.getElementById("SearchDescr").value;
+                var addButtons = document.getElementsByClassName("k-grid-update");
+
+                $.getJSON('@Url.Action("GetTblSearchBySearchDescr", "Search")?SearchDescr=' + searchDescr, function (result) {
+                    if (result != null) {
+                        document.getElementById("SearchWarning").style.display = "block";
+                        document.getElementById("SearchWarning").innerHTML = "Search description already exists!";
+                        addButtons[0].disabled = true;
+                    }
+                    else {
+                        document.getElementById("SearchWarning").style.display = "none";
+                        addButtons[0].disabled = false;
+                    }
+
+                });
+            }
+
+        })
+
+        function prepareLogList() {
+            setupPagination('log', 'log-list', '@Url.Action("Log", "Search")?referrerUrl=Search', ['Log', 'Username', 'Created'], 7);
+        }
+
+    </script>
+}
+
+<div class="wrapper wrapper-content animated fadeInRight">
+    <div class="row">
+        <div class="col-12 col-lg-12 col-sm-12 col-xl-12 content-center">
+            <div class="alert alert-success" id="success-alert" style="display:none"></div>
+            <div class="alert alert-danger" id="danger-alert" style="display:none"></div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="ibox">
+                <div class="ibox-content">
+                    <div class="row">
+                        <div class="col-lg-12">
+                            <div class="row">
+                                <div class="col-lg-12">
+                                    <div id="grid">
+                                        <h5 id="searchTotal"></h5>
+                                        <div id="searchGrid"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row" style="margin-top: 30px;">
+                        <div class="col-lg-2"></div>
+                        <div class="col-lg-8">
+                            <div id="log" class="content-center">
+                                <div class="bs-ObjectList-rows" id="log-list">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-2"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<style>
+
+    #searchTotal {
+        color: #708090;
+    }
+
+    #searchGrid .k-grid-content {
+        min-height: 100px;
+        max-height: 600px;
+    }
+
+    .content-center {
+        margin: 0px auto 0px auto;
+        text-align: center;
+    }
+
+    .wrapper-content {
+        padding: 10px 10px 20px;
+    }
+
+    .ibox-content {
+        padding: 7px 15px 15px 15px;
+    }
+
+    #grid {
+        margin: 0px auto;
+        width: 80%;
+    }
+
+    .grid-cell {
+        font-size: 12px;
+    }
+
+    .k-header .k-link {
+        text-align: center;
+        font-weight: bold;
+        font-size: 11px;
+    }
+
+    .k-grid-excel, .k-grid-edit, .k-grid-add, .k-grid-delete, .k-grid-Refresh, .k-grid-DeleteSelected {
+        font-size: 12px;
+    }
+
+    .k-textbox {
+        font-size: 12px;
+    }
+
+    .k-edit-form-container {
+        width: 600px;
+        min-width: 600px;
+        border-color: inherit;
+        position: relative;
+    }
+
+    .k-grid-edit-row .k-edit-cell input {
+        font-size: 14px;
+    }
+
+    .k-numerictextbox .k-numeric-wrap {
+        font-size: 14px;
+    }
+
+    .k-edit-field.k-no-editor {
+        font-size: 12px;
+    }
+
+    .k-checkbox {
+        width: 15px;
+        height: 15px;
+    }
+
+    .k-datepicker, .k-timepicker {
+        font-size: 1.3rem;
+    }
+
+    .k-calendar {
+        font-size: 1.3rem;
+    }
+
+    #page-heading {
+        font-size: 20px;
+        font-weight: bold;
+        color: #1565C0;
+    }
+
+    .bs-ObjectList-row {
+        border-radius: 0.25rem;
+    }
+
+    .bs-ObjectList-row--header {
+        position: relative;
+        background-color: #E8E8E8;
+    }
+
+        .bs-ObjectList-row--header .bs-ObjectList-cell {
+            font-weight: bold;
+        }
+
+    .bs-ObjectList-row .bs-ObjectList-cell {
+        width: 20%;
+        text-align: center;
+    }
+
+        .bs-ObjectList-row .bs-ObjectList-cell:last-child {
+            width: 20%;
+            text-align: center;
+        }
+
+        .bs-ObjectList-row .bs-ObjectList-cell:first-child {
+            width: 60%;
+            text-align: left;
+            white-space: pre-wrap;
+        }
+
+    .bs-ObjectList-child, .bs-ObjectList-parent, .bs-ObjectList-row {
+        display: table-row;
+        transition: background-color .15s ease 0s;
+    }
+
+    .bs-ObjectList-cell {
+        display: table-cell;
+        position: relative;
+        padding: 9px 10px;
+        color: #525f7f;
+        font-weight: 400;
+        line-height: 22px;
+        vertical-align: top;
+        white-space: nowrap;
+    }
+</style>

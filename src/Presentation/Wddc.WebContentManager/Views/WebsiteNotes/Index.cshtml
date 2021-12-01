@@ -1,0 +1,155 @@
+﻿@using Wddc.WebContentManager.Services.WebContent.Search
+
+@{
+    ViewBag.Title = "Search Control";
+}
+
+@section Styles {
+
+    <link href="https://kendo.cdn.telerik.com/2021.2.511/styles/kendo.bootstrap-v4.min.css" rel="stylesheet" type="text/css" />
+
+}
+
+@section Scripts {
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
+    <script src="http://ajax.aspnetcdn.com/ajax/jquery.validate/1.11.0/jquery.validate.min.js"></script>
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script>
+
+    <script src="https://kendo.cdn.telerik.com/2021.2.511/js/kendo.all.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/2.4.0/jszip.js"></script>
+
+    <script>
+
+        var searchDataSource, searchGrid;
+        var today = new Date(), addressResult;
+        var dd = String(today.getDate()).padStart(2, '0');
+        var mm = String(today.getMonth() + 1).padStart(2, '0');
+        var yyyy = today.getFullYear();
+        today = mm + '/' + dd + '/' + yyyy;
+
+        $(document).ready(function () {
+
+            
+
+        })
+
+
+    </script>
+}
+
+<div class="wrapper wrapper-content animated fadeInRight">
+
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="ibox">
+                <div class="ibox-content">
+                    <div class="row">
+                        <div class="col-lg-12">
+                            <h2>Basic File Upload</h2>
+                            @using (Html.BeginForm("Index",
+                                                   "Home",
+                                                   FormMethod.Post,
+                                                   new { enctype = "multipart/form-data" }))
+                            {
+                                <label for="file">Upload Image:</label>
+                                <input type="file" name="file" id="file" /><br><br>
+                                <input type="submit" value="Upload Image" />
+                                <br><br>
+                                @ViewBag.Message
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<style>
+
+    #searchTotal {
+        color: #708090;
+    }
+
+    #searchGrid .k-grid-content {
+        min-height: 100px;
+        max-height: 600px;
+    }
+
+    .content-center {
+        margin: 0px auto 0px auto;
+        text-align: center;
+    }
+
+    .wrapper-content {
+        padding: 10px 10px 20px;
+    }
+
+    .ibox-content {
+        padding: 7px 15px 15px 15px;
+    }
+
+    #grid {
+        margin: 0px auto;
+        width: 80%;
+    }
+
+    .grid-cell {  
+        font-size: 12px;
+    }
+
+    .k-header .k-link {
+        text-align: center;
+        font-weight: bold;
+        font-size: 11px;
+    }
+
+    .k-grid-excel, .k-grid-edit, .k-grid-add, .k-grid-delete, .k-grid-Refresh, .k-grid-DeleteSelected {
+        font-size: 12px;
+    }
+
+    .k-textbox {
+        font-size: 12px;
+    }
+
+    .k-edit-form-container {
+        width: 600px;
+        min-width: 600px;
+        border-color: inherit;
+        position: relative;
+    }
+
+    .k-grid-edit-row .k-edit-cell input {
+        font-size: 14px;
+    }
+
+    .k-numerictextbox .k-numeric-wrap {
+        font-size: 14px;
+    }
+
+    .k-edit-field.k-no-editor {
+        font-size: 12px;
+    }
+
+    .k-checkbox {
+        width: 15px;
+        height: 15px;
+    }
+
+    .k-datepicker, .k-timepicker {
+        font-size: 1.3rem;
+    }
+
+    .k-calendar {
+        font-size: 1.3rem;
+    }
+
+    #page-heading {
+        font-size: 20px;
+        font-weight: bold;
+        color: #1565C0;
+    }
+</style>

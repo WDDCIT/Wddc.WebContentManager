@@ -1,0 +1,430 @@
+﻿@model Wddc.WebContentManager.Models.WebContent.Sales.RetailClearanceSale.RetailClearanceSaleModel
+
+@{
+    ViewBag.Title = "Clearance Sale - Retail";
+}
+
+@section Styles {
+
+    <link href="https://kendo.cdn.telerik.com/2021.2.511/styles/kendo.bootstrap-v4.min.css" rel="stylesheet" type="text/css" />
+
+}
+
+@section Scripts {
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
+    <script src="http://ajax.aspnetcdn.com/ajax/jquery.validate/1.11.0/jquery.validate.min.js"></script>
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script>
+
+    <script src="https://kendo.cdn.telerik.com/2021.2.511/js/kendo.all.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/2.4.0/jszip.js"></script>
+
+    <script src="~/js/pagination/pagination.min.js"></script>
+    <script src="~/js/pagination/pagination.custom.js"></script>
+
+    <script>
+
+        var clearanceSaleDataSource, salesGrid;
+        var today = new Date(), addressResult;
+        var dd = String(today.getDate()).padStart(2, '0');
+        var mm = String(today.getMonth() + 1).padStart(2, '0');
+        var yyyy = today.getFullYear();
+        today = mm + '/' + dd + '/' + yyyy;
+
+        $(document).ready(function () {
+
+            prepareLogList();
+
+            clearanceSaleDataSource = new kendo.data.DataSource({
+                transport: {
+                    read: {
+                        url: '@Url.Action("GetWebClearanceRetail", "RetailClearanceSale")',
+                        dataType: "json"
+                    },
+                    update: {
+                        url: '@Url.Action("UpdateWebClearanceRetail", "RetailClearanceSale")',
+                        dataType: "json"
+                    },
+                    create: {
+                        url: '@Url.Action("CreateWebClearanceRetail", "RetailClearanceSale")',
+                        type: "POST",
+                        dataType: "json"
+                    },
+                    destroy: {
+                        url: '@Url.Action("DeleteWebClearanceRetail", "RetailClearanceSale")',
+                        type: "POST",
+                        dataType: "json"
+                    },
+                    parameterMap: function (options, operation) {
+                        if (operation === "update" || operation === "create" || operation === "destroy") {
+
+                            if (operation === "create") {
+                                options.description = document.getElementById("description").value;
+                                options.regular_price = document.getElementById("regular_price").value;
+                            }
+
+                            if (options.expiry_date != null) {
+                                var d = new Date(options.expiry_date);
+                                options.expiry_date = kendo.toString(new Date(d), "yyyy-MM-ddTHH:mm:ss");
+                            }
+
+                            return options;
+                        }
+
+                    }
+                },
+                schema: {
+                    model: {
+                        id: "ItemNumber",
+                        fields: {
+                            ItemNumber: { type: "string", validation: { required: true } },
+                            CategoryID: { editable: false, type: "number" },
+                            regular_price: { editable: true, type: "number", validation: { required: true, min: 0 } },
+                            sale_price: { editable: true, type: "number" },
+                            override_qty: { editable: true, type: "number" },
+                            description: { editable: true, type: "string" },
+                            expiry_date: { editable: true, type: "date" }
+                        }
+                    }
+                }
+            });
+
+            salesGrid = $("#salesGrid").kendoGrid({
+                dataSource: clearanceSaleDataSource,
+                toolbar: ["Refresh", "excel", "create", "Delete Selected"],
+                excel: {
+                    fileName: "Clearance Sales - Retail_" + today + ".xlsx",
+                    proxyURL: "https://demos.telerik.com/kendo-ui/service/export",
+                    allPages: true
+                },
+                sortable: {
+                    mode: "multiple",
+                    allowUnsort: true,
+                    showIndexes: true
+                },
+                filterable: true,
+                resizable: false,
+                edit: function (e) {
+                    if (e.model.isNew()) {
+                        var myItem = document.getElementById('ItemNumber');
+                        var newSpan = document.createElement("span");
+                        newSpan.setAttribute("id", "ItemNumberWarning");
+                        newSpan.style.color = "red";
+                        newSpan.style.display = "none";
+                        myItem.parentNode.insertBefore(newSpan, myItem.nextSibling);
+                        var addButtons = document.getElementsByClassName("k-grid-update");
+                        addButtons[0].innerHTML = '<span class="k-icon k-i-check"></span>Add';
+                        var windowTitles = document.getElementsByClassName("k-window-title");
+                        windowTitles[0].innerHTML = "Add New Item";
+                        document.getElementById("ItemNumber").onchange = function () { getItemInfo() };
+                    }
+                },
+                //editable: "popup",
+                editable: {
+                    mode: "popup",
+                    confirmation: false
+                }, 
+                columns: [
+                    { selectable: true, width: "35px" },
+                    {
+                        field: "ItemNumber",
+                        title: "Item Number",
+                        filterable: {
+                            multi: true,
+                            search: true
+                        },
+                        editable: isEditable,
+                        attributes: { class: "grid-cell", style: "text-align: center; ; color: black;" }
+                    },
+                    {
+                        field: "description",
+                        title: "Description",
+                        filterable: false,
+                        attributes: { class: "grid-cell", style: "text-align: left; font-size: 11px;"  }
+                    },
+                    {
+                        field: "expiry_date",
+                        title: "Expiry",
+                        filterable: false,
+                        template: function (dataItem) {
+                            if (dataItem.expiry_date == null)
+                                return "";
+                            return moment(dataItem.Expiry_Date).format('MM/YYYY');
+                        },
+                        attributes: { class: "grid-cell", style: "text-align: center; " }
+                    },
+                    {
+                        field: "override_qty",
+                        title: "Override Qty",
+                        filterable: {
+                            multi: true,
+                            search: true
+                        },
+                        attributes: { class: "grid-cell", style: "text-align: center;" }
+                    },
+                    {
+                        field: "regular_price",
+                        title: "Reg Price",
+                        filterable: {
+                            multi: true,
+                            search: true
+                        },
+                        format: "{0:c2}",
+                        step: 0.01,
+                        attributes: { class: "grid-cell", style: "text-align: center;" }
+                    },
+                    {
+                        field: "sale_price",
+                        title: "Sale Price",
+                        filterable: {
+                            multi: true,
+                            search: true
+                        },
+                        format: "{0:c2}",
+                        step: 0.01,
+                        attributes: { class: "grid-cell", style: "text-align: center;" }
+                    },
+                    { command: ["edit", "destroy"], title: "&nbsp;", width: "250px" }
+                ]
+            }).data("kendoGrid");
+
+            salesGrid.bind("dataBound", grid_dataBound);
+            salesGrid.bind("save", grid_save);
+
+            salesGrid.autoFitColumn("override_qty");
+            salesGrid.autoFitColumn("regular_price");
+            salesGrid.autoFitColumn("sale_price");
+            salesGrid.autoFitColumn("ItemNumber");
+
+            var refreshBtn = document.getElementsByClassName('k-grid-Refresh')[0];
+            refreshBtn.innerHTML = "<span class='k-icon k-i-reload'></span> Refresh";
+
+            $("#salesGrid").find(".k-grid-toolbar").on("click", ".k-grid-Refresh", function (e) {
+                e.preventDefault();
+                salesGrid.dataSource.read();
+                prepareLogList();
+            });
+
+            $("#salesGrid").find(".k-grid-toolbar").on("click", ".k-grid-DeleteSelected", function (e) {
+                $("#salesGrid").find("input:checked").each(function () {
+                    salesGrid.removeRow($(this).closest('tr'));
+                })
+                prepareLogList();
+            });
+
+            function grid_dataBound(e) {
+                document.getElementById("salesGridTotal").innerHTML = "Total: " + clearanceSaleDataSource.total() + " out of " + clearanceSaleDataSource.data().length;
+            }
+
+            function grid_save(e) {
+                e.sender.one("dataBound", function () {
+                    e.sender.dataSource.read();
+                    prepareLogList();
+                });
+            }
+
+            function isEditable(e) {
+                return e.ItemNumber == null || e.ItemNumber.length == 0;
+            }
+
+            function getItemInfo() {
+
+                var itemNo = document.getElementById("ItemNumber").value;
+                var addButtons = document.getElementsByClassName("k-grid-update");
+
+                $.getJSON('@Url.Action("GetWebClearanceRetailByItemNumber", "RetailClearanceSale")?itemNumber=' + itemNo, function (result) {
+                    if (result != null) {
+                        document.getElementById("ItemNumberWarning").style.display = "block";
+                        document.getElementById("ItemNumberWarning").innerHTML = "Item already exists!";
+                        addButtons[0].disabled = true;
+                    }
+                    else {
+                        document.getElementById("ItemNumberWarning").style.display = "none";
+                        addButtons[0].disabled = false;
+                    }
+
+                });
+
+                $.getJSON('@Url.Action("GetItemInfo", "RetailClearanceSale")?itemNumber=' + itemNo, function (json) {
+                    document.getElementById("regular_price").value = json.price;
+                    document.getElementById("description").value = json.description;
+                    var node1 = document.querySelectorAll('[title="Reg Price"]')[0];
+                    var node2 = document.querySelectorAll('[title="Reg Price"]')[1];
+                    node1.value = json.price;
+                    node2.value = json.price;
+                });
+            }
+
+        })
+
+        function prepareLogList() {
+            setupPagination('log', 'log-list', '@Url.Action("Log", "RetailClearanceSale")?referrerUrl=RetailClearanceSale', ['Log', 'Username', 'Created'], 7);
+        }
+
+    </script>
+}
+
+<div class="wrapper wrapper-content animated fadeInRight">
+    <div class="row">
+        <div class="col-12 col-lg-12 col-sm-12 col-xl-12 content-center">
+            <div class="alert alert-success" id="success-alert" style="display:none"></div>
+            <div class="alert alert-danger" id="danger-alert" style="display:none"></div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="ibox">
+                <div class="ibox-content">
+                    <div class="row">
+                        <div class="col-lg-12">
+                            <div class="row">
+                                <div class="col-lg-12">
+                                    <div id="grid">
+                                        <h5 id="salesGridTotal"></h5>
+                                        <div id="salesGrid"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row" style="margin-top: 30px;">
+                        <div class="col-lg-2"></div>
+                        <div class="col-lg-8">
+                            <div id="log" class="content-center">
+                                <div class="bs-ObjectList-rows" id="log-list">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-2"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<style>
+
+    #salesGridTotal {
+        color: #708090;
+    }
+
+    #salesGrid .k-grid-content {
+        min-height: 100px;
+        max-height: 600px;
+    }
+
+    .content-center {
+        margin: 0px auto 0px auto;
+        text-align: center;
+    }
+
+    .wrapper-content {
+        padding: 10px 10px 20px;
+    }
+
+    .ibox-content {
+        padding: 7px 15px 15px 15px;
+    }
+
+    #grid {
+        margin: 0px auto;
+        width: 90%;
+    }
+
+    .grid-cell {
+        font-size: 12px;
+    }
+
+    .k-header .k-link {
+        text-align: center;
+        font-weight: bold;
+        font-size: 11px;
+    }
+
+    .k-grid-excel, .k-grid-edit, .k-grid-add, .k-grid-delete, .k-grid-Refresh, .k-grid-DeleteSelected {
+        font-size: 12px;
+    }
+
+    .k-textbox {
+        font-size: 12px;
+    }
+
+    .k-grid-edit-row .k-edit-cell input {
+        font-size: 14px;
+    }
+
+    .k-numerictextbox .k-numeric-wrap {
+        font-size: 14px;
+    }
+
+    .k-edit-field.k-no-editor {
+        font-size: 12px;
+    }
+
+    .k-checkbox {
+        width: 15px;
+        height: 15px;
+    }
+
+    .k-datepicker, .k-timepicker {
+        font-size: 1.3rem;
+    }
+
+    .k-calendar {
+        font-size: 1.3rem;
+    }
+
+    #page-heading {
+        font-size: 20px;
+        font-weight: bold;
+        color: #1565C0;
+    }
+
+    .bs-ObjectList-row {
+        border-radius: 0.25rem;
+    }
+
+    .bs-ObjectList-row--header {
+        position: relative;
+        background-color: #E8E8E8;
+    }
+
+        .bs-ObjectList-row--header .bs-ObjectList-cell {
+            font-weight: bold;
+        }
+
+    .bs-ObjectList-row .bs-ObjectList-cell {
+        width: 20%;
+        text-align: center;
+    }
+
+        .bs-ObjectList-row .bs-ObjectList-cell:last-child {
+            width: 20%;
+            text-align: center;
+        }
+
+        .bs-ObjectList-row .bs-ObjectList-cell:first-child {
+            width: 60%;
+            text-align: left;
+            white-space: pre-wrap;
+        }
+
+    .bs-ObjectList-child, .bs-ObjectList-parent, .bs-ObjectList-row {
+        display: table-row;
+        transition: background-color .15s ease 0s;
+    }
+
+    .bs-ObjectList-cell {
+        display: table-cell;
+        position: relative;
+        padding: 9px 10px;
+        color: #525f7f;
+        font-weight: 400;
+        line-height: 22px;
+        vertical-align: top;
+        white-space: nowrap;
+    }
+</style>

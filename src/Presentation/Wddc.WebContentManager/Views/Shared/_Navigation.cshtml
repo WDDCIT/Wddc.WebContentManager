@@ -1,0 +1,65 @@
+﻿@using Wddc.WebContentManager.Extensions
+<nav class="navbar-default navbar-static-side" role="navigation">
+    <div class="sidebar-collapse">
+        <ul class="nav" id="side-menu">
+            <li class="nav-header">
+                <div class="dropdown profile-element">
+                    <span>
+                        <i class="fa fa-user-circle fa-3x"></i>
+                    </span>
+                    <a data-toggle="dropdown" class="dropdown-toggle" href="#">
+                        <span class="clear">
+                            <span class="block m-t-xs">
+                                <strong class="font-bold">@User.Identity.Name</strong>
+                            </span>
+                        </span>
+                    </a>
+                    <ul class="dropdown-menu animated fadeInRight m-t-xs">
+                        <li><a href="@Url.Action("LogOff", "Account", new { area = ""})">Logout</a></li>
+                    </ul>
+                </div>
+                <div class="logo-element">
+                    W+
+                </div>
+            </li>
+            <li id="continuingEducation-li">
+                <a href="@Url.Action("Index", "ContinuingEducation", new { area = ""})"><i class="fa fa-laptop"></i> <span class="nav-label">Continuing Education</span></a>
+            </li>
+            <li id="classifiedAd-li">
+                <a href="@Url.Action("Index", "ClassifiedAds", new { area = ""})"><i class="fa fa-laptop"></i> <span class="nav-label">Classified Ads</span></a>
+            </li>
+            <li id="careers-li">
+                <a href="@Url.Action("Index", "Careers", new { area = ""})"><i class="fa fa-laptop"></i> <span class="nav-label">WDDC Careers</span></a>
+            </li>
+            <li class="@Html.IsSelected(controller: "LiquidationSale") @Html.IsSelected(controller: "RetailClearanceSale") @Html.IsSelected(controller: "EquipmentClearanceSale")">
+                <a href="#"><i class="fa fa-laptop"></i> <span class="nav-label">Sales</span><span class="fa arrow"></span></a>
+                <ul class="nav nav-second-level collapse" aria-expanded="true" id="message-ul">
+                    <li id="liquidationSale-li">
+                        <a href="@Url.Action("Index", "LiquidationSale", new { area = ""})">Liquidation (Returns)</a>
+                    </li>
+                    <li id="clearanceRetailSale-li">
+                        <a href="@Url.Action("Index", "RetailClearanceSale", new { area = ""})">Clearance - Retail</a>
+                    </li>
+                    <li id="clearanceEquipmentSale-li">
+                        <a href="@Url.Action("Index", "EquipmentClearanceSale", new { area = ""})">Clearance - Equipment</a>
+                    </li>
+                </ul>
+            </li>
+            <li id="videos-li">
+                <a href="@Url.Action("Index", "Videos", new { area = ""})"><i class="fa fa-laptop"></i> <span class="nav-label">WDDC Videos</span></a>
+            </li>
+            <li id="search-li">
+                <a href="@Url.Action("Index", "Search", new { area = ""})"><i class="fa fa-laptop"></i> <span class="nav-label">Search Control</span></a>
+            </li>
+            @*<li id="websiteNotes-li">
+                <a href="@Url.Action("Index", "WebsiteNotes", new { area = ""})"><i class="fa fa-laptop"></i> <span class="nav-label">Website Notes</span></a>
+            </li>*@
+        </ul>
+    </div>
+</nav>
+
+<style>
+    .label{
+        padding: 2px 2px;
+    }
+</style>

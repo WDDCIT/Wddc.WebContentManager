@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "Wddc.WebContentManager.Services": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}

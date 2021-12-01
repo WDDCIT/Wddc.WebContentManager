@@ -1,0 +1,253 @@
+﻿
+/* Always set the map height explicitly to define the size of the div
+    * element that contains the map. */
+#map {
+    height: 100%;
+}
+/* Optional: Makes the sample page fill the window. */
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+[v-cloak] {
+    display: none;
+}
+.superscript {
+  float:left;
+  max-width:5%;
+  position: relative; 
+  top: 0;
+  left: 20px;
+  font-size: 100%;
+  margin-top:0;
+  padding-top:0;
+}
+
+.route-button-group {
+    padding-top: 10px;
+    padding-right: 10px;
+}
+
+td.exception {
+    background-color: #FFCCBC;
+}
+
+    td.exception > .fa-stack {
+    }
+
+
+/* MODAL VUE */
+.modal-mask {
+    position: fixed;
+    z-index: 9998;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, .5);
+    display: table;
+    transition: opacity .3s ease;
+}
+
+.modal-wrapper {
+    display: table-cell;
+    vertical-align: middle;
+}
+
+.modal-container {
+    width: 300px;
+    margin: 0px auto;
+    padding: 20px 30px;
+    background-color: #fff;
+    border-radius: 2px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, .33);
+    transition: all .3s ease;
+    font-family: Helvetica, Arial, sans-serif;
+}
+
+.modal-header h3 {
+    margin-top: 0;
+    color: #42b983;
+}
+
+.modal-body {
+    margin: 20px 0;
+}
+
+.modal-default-button {
+    float: right;
+}
+
+/*
+ * The following styles are auto-applied to elements with
+ * transition="modal" when their visibility is toggled
+ * by Vue.js.
+ *
+ * You can easily play with the modal transition by editing
+ * these styles.
+ */
+
+.modal-enter {
+    opacity: 0;
+}
+
+.modal-leave-active {
+    opacity: 0;
+}
+
+    .modal-enter .modal-container,
+    .modal-leave-active .modal-container {
+        -webkit-transform: scale(1.1);
+        transform: scale(1.1);
+    }
+/* END MODAL VUE*/
+
+.site-info > table > tbody > tr > td {
+    padding: 5px;
+}
+
+i.fa.fa-circle.fa-stack-2x {
+    color: rgba(0, 0, 0, 0.71);
+}
+
+.p1 {
+    height: 83vh;
+    overflow: auto;
+}
+
+.p2 {
+    height: 55vh;
+    overflow: auto;
+}
+
+.p3 {
+    height: 18vh;
+    overflow: auto;
+}
+
+/* TABLE */
+table {
+    font-family: sans-serif;
+    width: 100%;
+    border-collapse: separate;
+    table-layout: auto;
+}
+
+    table thead tr th {
+        padding: 0.5em;
+        text-align: center;
+        border-bottom: 1px solid #dddddd;
+    }
+
+        table thead tr th:first-child {
+            border-radius: 3px 0 0 0;
+        }
+
+        table thead tr th:last-child {
+            border-radius: 0 3px 0 0;
+        }
+
+        table thead tr th .day {
+            display: block;
+            font-size: 1.2em;
+            border-radius: 50%;
+            width: 30px;
+            margin: 0 auto;
+            padding: 5px;
+        }
+
+            table thead tr th .day.active {
+                background: #d1d5db;
+                color: #626E7E;
+            }
+
+        table thead tr th .short {
+            display: none;
+        }
+
+        table thead tr th i {
+            vertical-align: middle;
+            font-size: 2em;
+        }
+
+    table tbody tr td {
+        border-bottom: 1px solid #dddddd;
+    }
+
+    table tbody tr td {
+        text-align: center;
+        vertical-align: middle;
+        position: relative;
+        padding: 10px;
+    }
+
+        table tbody tr td.site {
+            border-right: 1px solid #dddddd;
+        }
+
+        table tbody tr td.site {
+            font-size: 2em;
+            padding: 0;
+            background: #fff;
+            border-bottom: 1px solid #dddddd;
+            border-collapse: separate;
+            min-width: 100px;
+            cursor: default;
+        }
+
+        table tbody tr td.hour span {
+            display: block;
+        }
+
+@media (max-width: 60em) {
+    table thead tr th .long {
+        display: none;
+    }
+
+    table thead tr th .short {
+        display: block;
+    }
+
+    table tbody tr td.hour span {
+        transform: rotate(270deg);
+        -webkit-transform: rotate(270deg);
+        -moz-transform: rotate(270deg);
+    }
+}
+
+@media (max-width: 27em) {
+    table thead tr th {
+        font-size: 65%;
+    }
+
+        table thead tr th .day {
+            display: block;
+            font-size: 1.2em;
+            border-radius: 50%;
+            width: 20px;
+            margin: 0 auto 5px;
+            padding: 5px;
+        }
+
+            table thead tr th .day.active {
+                background: #d1d5db;
+                color: #626E7E;
+            }
+
+    table tbody tr td.hour {
+        font-size: 1.7em;
+    }
+
+        table tbody tr td.hour span {
+            transform: translateY(16px) rotate(270deg);
+            -webkit-transform: translateY(16px) rotate(270deg);
+            -moz-transform: translateY(16px) rotate(270deg);
+        }
+}
+
+
+.panel.panel-default.carrier-panel {
+    padding: 20px;
+    margin-bottom: 100px;
+}

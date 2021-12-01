@@ -1,0 +1,425 @@
+﻿@model Wddc.WebContentManager.Models.WebContent.Sales.LiquidationSale.LiquidationSaleModel
+
+@{
+    ViewBag.Title = "Liquidation Sale (Returns)";
+}
+
+@section Styles {
+
+    <link href="https://kendo.cdn.telerik.com/2021.2.511/styles/kendo.bootstrap-v4.min.css" rel="stylesheet" type="text/css" />
+
+}
+
+@section Scripts {
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
+    <script src="http://ajax.aspnetcdn.com/ajax/jquery.validate/1.11.0/jquery.validate.min.js"></script>
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script>
+
+    <script src="https://kendo.cdn.telerik.com/2021.2.511/js/kendo.all.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/2.4.0/jszip.js"></script>
+
+    <script src="~/js/pagination/pagination.min.js"></script>
+    <script src="~/js/pagination/pagination.custom.js"></script>
+
+    <script>
+
+        var liquidationSaleDataSource, salesGrid;
+        var today = new Date(), addressResult;
+        var dd = String(today.getDate()).padStart(2, '0');
+        var mm = String(today.getMonth() + 1).padStart(2, '0');
+        var yyyy = today.getFullYear();
+        today = mm + '/' + dd + '/' + yyyy;
+
+        $(document).ready(function () {
+
+            prepareLogList();
+
+            var link = '@Url.Action("GetWebLiquidation", "LiquidationSale")';
+            liquidationSaleDataSource = new kendo.data.DataSource({
+                transport: {
+                    read: {
+                        url: '@Url.Action("GetWebLiquidation", "LiquidationSale")',
+                        dataType: "json"
+                    },
+                    update: {
+                        url: '@Url.Action("UpdateWebLiquidation", "LiquidationSale")',
+                        dataType: "json"
+                    },
+                    create: {
+                        url: '@Url.Action("CreateWebLiquidation", "LiquidationSale")',
+                        type: "POST",
+                        dataType: "json"
+                    },
+                    destroy: {
+                        url: '@Url.Action("DeleteWebLiquidation", "LiquidationSale")',
+                        type: "POST",
+                        dataType: "json"
+                    },
+                    parameterMap: function (options, operation) {
+                        if (operation === "update" || operation === "create" || operation === "destroy") {
+                            if (operation === "create") {
+                                options.Description = document.getElementById("Description").value;
+                                options.Regular_Cost = document.getElementById("Regular_Cost").value;
+                            }
+                            var d = new Date(options.Expiry_Date);
+                            options.Expiry_Date = kendo.toString(new Date(d), "yyyy-MM-ddTHH:mm:ss");
+                            return options;
+                        }
+
+                    }
+                },
+                schema: {
+                    model: {
+                        id: "ID",
+                        fields: {
+                            ID: { editable: false, type: "number" },
+                            RET_Code: { editable: true, type: "string", validation: { required: true } },
+                            REG_Code: { type: "string", validation: { required: true } },
+                            Description: { editable: true, type: "string" },
+                            Reason: { editable: true, type: "string"},
+                            QOH: { editable: true, type: "number", validation: { required: true, min: 0 } },
+                            Expiry_Date: { editable: true, type: "date" },
+                            Regular_Cost: { editable: true, type: "number", validation: { required: true, min: 0 } },
+                            Liquidation_Cost: { editable: true, type: "number", validation: { required: true, min: 0 } }
+                        }
+                    }
+                }
+            });
+
+            salesGrid = $("#salesGrid").kendoGrid({
+                dataSource: liquidationSaleDataSource,
+                toolbar: ["Refresh", "excel", "create", "Delete Selected"],
+                excel: {
+                    fileName: "Liquidation Sales (Returns)_" + today + ".xlsx",
+                    proxyURL: "https://demos.telerik.com/kendo-ui/service/export",
+                    allPages: true
+                },
+                sortable: {
+                    mode: "multiple",
+                    allowUnsort: true,
+                    showIndexes: true
+                },
+                filterable: true,
+                resizable: false,
+                edit: function (e) {
+                    if (e.model.isNew()) {
+                        var addButtons = document.getElementsByClassName("k-grid-update");
+                        addButtons[0].innerHTML = '<span class="k-icon k-i-check"></span>Add';
+                        var windowTitles = document.getElementsByClassName("k-window-title");
+                        windowTitles[0].innerHTML = "Add New Item";
+                        document.getElementById("REG_Code").onchange = function () { getItemInfo() };
+                    }
+                },
+                //editable: "popup",
+                editable: {
+                    mode: "popup",
+                    confirmation: false
+                }, 
+                columns: [
+                    { selectable: true, width: "35px" },
+                    {
+                        field: "RET_Code",
+                        title: "Location",
+                        filterable: {
+                            multi: true,
+                            search: true
+                        },
+                        attributes: { class: "grid-cell", style: "text-align: center; color: black;" }
+                    },
+                    {
+                        field: "REG_Code",
+                        title: "Item Number",
+                        filterable: {
+                            multi: true,
+                            search: true
+                        },
+                        editable: isEditable,
+                        attributes: { class: "grid-cell", style: "text-align: center;" }
+                    },
+                    {
+                        field: "Description",
+                        title: "Description",
+                        filterable: false,
+                        attributes: { class: "grid-cell", style: "text-align: left; font-size: 11px;"  }
+                    },
+                    {
+                        field: "Reason",
+                        title: "Reason",
+                        filterable: {
+                            multi: true,
+                            search: true
+                        },
+                        attributes: { class: "grid-cell", style: "text-align: left;" }
+                    },
+                    {
+                        field: "Expiry_Date",
+                        title: "Expiry",
+                        filterable: false,
+                        template: function (dataItem) {
+                            if (dataItem.Expiry_Date == null)
+                                return "";
+                            return moment(dataItem.Expiry_Date).format('MM/YYYY');
+                        },
+                        attributes: { class: "grid-cell", style: "text-align: center; " }
+                    },
+                    {
+                        field: "QOH",
+                        title: "QOH",
+                        filterable: {
+                            multi: true,
+                            search: true
+                        },
+                        attributes: { class: "grid-cell", style: "text-align: center;" }
+                    },
+                    {
+                        field: "Regular_Cost",
+                        title: "Reg Price",
+                        filterable: {
+                            multi: true,
+                            search: true
+                        },
+                        format: "{0:c2}",
+                        step: 0.1,
+                        attributes: { class: "grid-cell", style: "text-align: center;" }
+                    },
+                    {
+                        field: "Liquidation_Cost",
+                        title: "Sale Price",
+                        filterable: {
+                            multi: true,
+                            search: true
+                        },
+                        format: "{0:c2}",
+                        step: 0.1,
+                        attributes: { class: "grid-cell", style: "text-align: center;" }
+                    },
+                    { command: ["edit", "destroy"], title: "&nbsp;", width: "250px" }
+                ]
+            }).data("kendoGrid");
+
+            salesGrid.bind("dataBound", grid_dataBound);
+            salesGrid.bind("save", grid_save);
+
+            salesGrid.autoFitColumn("QOH");
+            salesGrid.autoFitColumn("Regular_Cost");
+            salesGrid.autoFitColumn("Liquidation_Cost");
+            salesGrid.autoFitColumn("RET_Code");
+            salesGrid.autoFitColumn("REG_Code");
+
+            var refreshBtn = document.getElementsByClassName('k-grid-Refresh')[0];
+            refreshBtn.innerHTML = "<span class='k-icon k-i-reload'></span> Refresh";
+
+            $("#salesGrid").find(".k-grid-toolbar").on("click", ".k-grid-Refresh", function (e) {
+                e.preventDefault();
+                salesGrid.dataSource.read();
+                prepareLogList();
+            });
+
+            $("#salesGrid").find(".k-grid-toolbar").on("click", ".k-grid-DeleteSelected", function (e) {
+                $("#salesGrid").find("input:checked").each(function () {
+                    salesGrid.removeRow($(this).closest('tr'));
+                })
+                prepareLogList();
+            });
+
+            function isEditable(e) {
+                return e.ID == 0;
+            }
+
+            function getItemInfo() {
+                $.getJSON('@Url.Action("GetItemInfo", "LiquidationSale")?itemNumber=' + document.getElementById("REG_Code").value, function (json) {
+                    document.getElementById("Regular_Cost").value = json.price;
+                    document.getElementById("Description").value = json.description;
+                    var node1 = document.querySelectorAll('[title="Reg Price"]')[0];
+                    var node2 = document.querySelectorAll('[title="Reg Price"]')[1];
+                    node1.value = json.price;
+                    node2.value = json.price;
+                });
+            }
+
+            function grid_dataBound(e) {
+                document.getElementById("salesGridTotal").innerHTML = "Total: " + liquidationSaleDataSource.total() + " out of " + liquidationSaleDataSource.data().length ;
+            }
+
+            function grid_save(e) {
+                e.sender.one("dataBound", function () {
+                    e.sender.dataSource.read();
+                    prepareLogList();
+                });
+            }
+
+        })
+
+        function prepareLogList() {
+            setupPagination('log', 'log-list', '@Url.Action("Log", "LiquidationSale")?referrerUrl=LiquidationSale', ['Log', 'Username', 'Created'], 7);
+        }
+
+
+    </script>
+}
+
+<div class="wrapper wrapper-content animated fadeInRight">
+    <div class="row">
+        <div class="col-12 col-lg-12 col-sm-12 col-xl-12 content-center">
+            <div class="alert alert-success" id="success-alert" style="display:none"></div>
+            <div class="alert alert-danger" id="danger-alert" style="display:none"></div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="ibox">
+                <div class="ibox-content">
+                    <div class="row">
+                        <div class="col-lg-12">
+                            <div class="row">
+                                <div class="col-lg-12">
+                                    <div id="grid">
+                                        <h5 id="salesGridTotal"></h5>
+                                        <div id="salesGrid"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row" style="margin-top: 30px;">
+                        <div class="col-lg-2"></div>
+                        <div class="col-lg-8">
+                            <div id="log" class="content-center">
+                                <div class="bs-ObjectList-rows" id="log-list">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-2"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<style>
+
+    #salesGridTotal {
+        color: #708090;
+    }
+
+    #salesGrid .k-grid-content {
+        min-height: 100px;
+        max-height: 600px;
+    }
+
+    .content-center {
+        margin: 0px auto 0px auto;
+        text-align: center;
+    }
+
+    .wrapper-content {
+        padding: 10px 10px 20px;
+    }
+
+    .ibox-content {
+        padding: 7px 15px 15px 15px;
+    }
+
+    #grid {
+        margin: 0px auto;
+        width: 90%;
+    }
+
+    .grid-cell {
+        font-size: 12px;
+    }
+
+    .k-header .k-link {
+        text-align: center;
+        font-weight: bold;
+        font-size: 11px;
+    }
+
+    .k-grid-excel, .k-grid-edit, .k-grid-add, .k-grid-delete, .k-grid-Refresh, .k-grid-DeleteSelected {
+        font-size: 12px;
+    }
+
+    .k-textbox {
+        font-size: 12px;
+    }
+
+    .k-grid-edit-row .k-edit-cell input {
+        font-size: 14px;
+    }
+
+    .k-numerictextbox .k-numeric-wrap {
+        font-size: 14px;
+    }
+
+    .k-edit-field.k-no-editor {
+        font-size: 12px;
+    }
+
+    .k-checkbox {
+        width: 15px;
+        height: 15px;
+    }
+
+    .k-datepicker, .k-timepicker {
+        font-size: 1.3rem;
+    }
+
+    .k-calendar {
+        font-size: 1.3rem;
+    }
+
+    #page-heading {
+        font-size: 20px;
+        font-weight: bold;
+        color: #1565C0;
+    }
+
+    .bs-ObjectList-row {
+        border-radius: 0.25rem;
+    }
+
+    .bs-ObjectList-row--header {
+        position: relative;
+        background-color: #E8E8E8;
+    }
+
+        .bs-ObjectList-row--header .bs-ObjectList-cell {
+            font-weight: bold;
+        }
+
+    .bs-ObjectList-row .bs-ObjectList-cell {
+        width: 20%;
+        text-align: center;
+    }
+
+        .bs-ObjectList-row .bs-ObjectList-cell:last-child {
+            width: 20%;
+            text-align: center;
+        }
+
+        .bs-ObjectList-row .bs-ObjectList-cell:first-child {
+            width: 60%;
+            text-align: left;
+            white-space: pre-wrap;
+        }
+
+    .bs-ObjectList-child, .bs-ObjectList-parent, .bs-ObjectList-row {
+        display: table-row;
+        transition: background-color .15s ease 0s;
+    }
+
+    .bs-ObjectList-cell {
+        display: table-cell;
+        position: relative;
+        padding: 9px 10px;
+        color: #525f7f;
+        font-weight: 400;
+        line-height: 22px;
+        vertical-align: top;
+        white-space: nowrap;
+    }
+</style>
