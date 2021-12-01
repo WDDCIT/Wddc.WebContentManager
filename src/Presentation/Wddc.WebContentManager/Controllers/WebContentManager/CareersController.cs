@@ -97,11 +97,6 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                 }
             }
 
-            //System.Text.RegularExpressions.Regex rxLeft = new System.Text.RegularExpressions.Regex("&lt;");
-            //System.Text.RegularExpressions.Regex rxRight = new System.Text.RegularExpressions.Regex("&gt;");
-            //newLongDescription = rxLeft.Replace(newLongDescription, "<");
-            //newLongDescription = rxRight.Replace(newLongDescription, ">");
-
             StringWriter myWriter = new StringWriter();
             HttpUtility.HtmlDecode(newLongDescription, myWriter);
             newLongDescription = myWriter.ToString();
