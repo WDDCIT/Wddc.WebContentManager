@@ -38,8 +38,8 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             WebCEAdsModel WebCEAdsModel = new WebCEAdsModel
             {
                 WebCEAds = WebCEAds.OrderByDescending(_ => _.Event_Date),
-                WebCEAdsActive = WebCEAds.Where(_ => _.Event_Date >= DateTime.Today).OrderByDescending(_ => _.Event_Date),
-                WebCEAdsExpired = WebCEAds.Where(_ => _.Event_Date < DateTime.Today).OrderByDescending(_ => _.Event_Date)
+                WebCEAdsActive = WebCEAds.Where(_ => _.End_Date >= DateTime.Today).OrderByDescending(_ => _.Event_Date),
+                WebCEAdsExpired = WebCEAds.Where(_ => _.End_Date < DateTime.Today).OrderByDescending(_ => _.Event_Date)
             };
 
             ViewBag.response = response;
@@ -58,7 +58,7 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
         {
             Log.Logger.Information("The system is getting the first active Web Continuing Education ad from table dbo.Web_CE_Ads");
             List<Web_CE_Ads> WebCEAds = await _continuingEducationService.GetAllWebCEAds();
-            Web_CE_Ads result = WebCEAds.Where(_ => _.Event_Date >= DateTime.Today).OrderByDescending(_ => _.Event_Date).First();
+            Web_CE_Ads result = WebCEAds.Where(_ => _.End_Date >= DateTime.Today).OrderByDescending(_ => _.Event_Date).First();
             return Json(result);
         }
 
@@ -66,7 +66,7 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
         {
             Log.Logger.Information("The system is getting the first expired Web Continuing Education ad from table dbo.Web_CE_Ads");
             List<Web_CE_Ads> WebCEAds = await _continuingEducationService.GetAllWebCEAds();
-            Web_CE_Ads result = WebCEAds.Where(_ => _.Event_Date < DateTime.Today).OrderByDescending(_ => _.Event_Date).First();
+            Web_CE_Ads result = WebCEAds.Where(_ => _.End_Date < DateTime.Today).OrderByDescending(_ => _.Event_Date).First();
             return Json(result);
         }
 
