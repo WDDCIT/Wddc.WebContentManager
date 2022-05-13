@@ -1,0 +1,493 @@
+﻿@{
+    ViewBag.Title = "Web User Lookup";
+}
+
+@section Styles {
+
+    <link href="https://kendo.cdn.telerik.com/2021.2.511/styles/kendo.bootstrap-v4.min.css" rel="stylesheet" type="text/css" />
+
+}
+
+@section Scripts {
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
+    <script src="http://ajax.aspnetcdn.com/ajax/jquery.validate/1.11.0/jquery.validate.min.js"></script>
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script>
+
+    <script src="https://kendo.cdn.telerik.com/2021.2.511/js/kendo.all.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/2.4.0/jszip.js"></script>
+
+<script>
+
+        var webAccessDataSource, webAccessGrid;
+
+        var today = new Date(), addressResult;
+        var dd = String(today.getDate()).padStart(2, '0');
+        var mm = String(today.getMonth() + 1).padStart(2, '0');
+        var yyyy = today.getFullYear();
+        today = mm + '/' + dd + '/' + yyyy;
+
+       $(document).ready(function () {
+
+           $("#memberNumber").kendoDropDownList({
+                filter: "contains",
+                template: '<span class="k-state-default"><p>#: data.MemberNbr #</p></span>&nbsp;&nbsp;' +
+                          '<span class="k-state-default"><p>#: data.CUSTNAME #</p></span>',
+                dataTextField: "MemberNbr",
+                dataValueField: "MemberNbr",
+                optionLabel: "Select a member",
+                dataSource: {
+                    transport: {
+                        read: {
+                            url: '@Url.Action("GetWebAccessMembers", "WebUserLookup")',
+                            dataType: "json"
+                        }
+                    }
+                },
+                filtering: function (ev) {
+                    var filterValue = ev.filter != undefined ? ev.filter.value : "";
+                    ev.preventDefault();
+
+                    this.dataSource.filter({
+                        logic: "or",
+                        filters: [
+                            {
+                                field: "MemberNbr",
+                                operator: "contains",
+                                value: filterValue
+                            },
+                            {
+                                field: "CUSTNAME",
+                                operator: "contains",
+                                value: filterValue
+                            }
+                        ]
+                    });
+                }
+
+
+            });
+        })
+
+        $('#memberNumber').keydown(function (event) {
+            if (event.which == 13) {
+                $("#memberNumberSubmit").click();
+                event.preventDefault();
+            }
+        });
+
+        function getMemberInfo() {
+
+            let memberNbr = document.getElementById("memberNumber").value.trim();
+
+            $.getJSON('@Url.Action("GetMemberInfo", "WebUserLookup")?memberNbr=' + memberNbr, function (result) {
+
+                    if (!result) {
+                        $("#search-results").hide();
+                        alert("Clinic is not found!");
+                    }
+                    else {
+                        document.getElementById("member-number").innerHTML = memberNbr;
+                        document.getElementById("member-name").innerHTML = result.CUSTNAME;
+
+                        webAccessDataSource = new kendo.data.DataSource({
+                            transport: {
+                                read: {
+                                    url: '@Url.Action("GetWebAccess", "WebUserLookup")?memberNbr=' + memberNbr,
+                                    dataType: "json"
+                                }
+                            },
+                            schema: {
+                                model: {
+                                    id: "ID",
+                                    fields: {
+                                        UserName: { editable: false, type: "string" },
+                                        AccessName: { editable: false, type: "string" },
+                                        PasswordRecovery: { editable: false, type: "string" },
+                                        LastLogin: { editable: false, type: "date" },
+                                        ResetEmailSent: { editable: false, type: "boolean" },
+                                        PasswordSet: { editable: false, type: "boolean" }
+                                    }
+                                }
+                            }
+                        });
+
+                        webAccessGrid = $("#webAccessGrid").kendoGrid({
+                            dataSource: webAccessDataSource,
+                            sortable: {
+                                mode: "multiple",
+                                allowUnsort: true,
+                                showIndexes: true
+                            },
+                            filterable: true,
+                            resizable: false,
+                            editable: false,
+                            columns: [
+                                {
+                                    field: "UserName",
+                                    title: "User Name",
+                                    filterable: {
+                                        multi: true,
+                                        search: true
+                                    },
+                                    attributes: { class: "grid-cell", style: "text-align: center; color: black;" }
+                                },
+                                {
+                                    field: "AccessName",
+                                    title: "Access Type",
+                                    filterable: {
+                                        multi: true,
+                                        search: true
+                                    },
+                                    attributes: { class: "grid-cell", style: "text-align: center;" }
+                                },
+                                {
+                                    field: "PasswordRecovery",
+                                    title: "Password Recovery Email",
+                                    filterable: {
+                                        multi: true,
+                                        search: true
+                                    },
+                                    attributes: { class: "grid-cell", style: "text-align: left; padding-left: 20px;" }
+                                },
+                                {
+                                    field: "ResetEmailSent",
+                                    title: "Reset Email Sent",
+                                    filterable: {
+                                        multi: true,
+                                        search: true
+                                    },
+                                    template: function (dataItem) {
+                                        if (dataItem.ResetEmailSent)
+                                            return "Yes";
+                                        else
+                                            return "No";
+                                    },
+                                    attributes: { class: "grid-cell", style: "text-align: center;" }
+                                },
+                                {
+                                    field: "PasswordSet",
+                                    title: "Password Set",
+                                    filterable: {
+                                        multi: true,
+                                        search: true
+                                    },
+                                    template: function (dataItem) {
+                                        if (dataItem.PasswordSet)
+                                            return "Yes";
+                                        else
+                                            return "No";
+                                    },
+                                    attributes: { class: "grid-cell", style: "text-align: center;" }
+                                },
+                            ]
+                        }).data("kendoGrid");
+
+                        $('#accountPreferences-section').load('@Url.Action("AccountPreferencesPartial")?memberNbr=' + memberNbr, () => { });
+
+                        $("#search-results").show();
+
+                        var coll = document.getElementsByClassName("collapsible-info");
+                        for (var i = 0; i < coll.length; i++) {
+                            coll[i].classList.add("active");
+                            var content = coll[i].nextElementSibling;
+                            content.style.maxHeight = "100%";
+                        }
+                    }
+            });
+
+        }
+
+        var coll = document.getElementsByClassName("collapsible-info");
+
+        for (var i = 0; i < coll.length; i++) {
+            coll[i].addEventListener("click", function () {
+                this.classList.toggle("active");
+                var content = this.nextElementSibling;
+                if (content.style.maxHeight) {
+                    content.style.maxHeight = null;
+                } else {
+                    content.style.maxHeight = content.scrollHeight + "px";
+                }
+            });
+        }
+
+</script>
+}
+
+<div class="wrapper wrapper-content animated fadeInRight">
+    <div class="row">
+        <div class="col-12 col-lg-12 col-sm-12 col-xl-12">
+            <div class="ibox">
+                <div class="ibox-content">
+                    <div class="row">
+                        <div class="col-4 col-lg-4 col-sm-4 col-xl-4"></div>
+                        <div class="col-4 col-lg-4 col-sm-4 col-xl-4 content-center">
+                            @*<div class="input-group">
+                                <input type="text" class="form-control" id="memberNumber" name="memberNumber" placeholder="Member Number">
+                                <div class="input-group-btn">
+                                    <button class="btn btn-default" type="submit" onclick="getMemberInfo()" id="memberNumberSubmit">
+                                        <i class="glyphicon glyphicon-search"></i>
+                                    </button>
+                                </div>
+                            </div>*@
+                            <div class="demo-section k-content">
+                                <input id="memberNumber" style="width: 100%;" />
+                            </div>
+                            <button class="k-button k-primary submit-btn" onclick="getMemberInfo()">Select</button>
+                        </div>
+                        <div class="col-4 col-lg-4 col-sm-4 col-xl-4"></div>
+                    </div>
+                    <div class="row" id="search-results" style="display: none;">
+                        <div class="col-12 col-lg-12 col-sm-12 col-xl-12">
+                            <div class="row">
+                                <div class="col-2 col-lg-2 col-sm-2 col-xl-2"></div>
+                                <div class="col-8 col-lg-8 col-sm-8 col-xl-8 content-center">
+                                    <div class="alert alert-info" role="alert">
+                                        <div class="row">
+                                            <div class="col-6 col-lg-6 col-sm-6 col-xl-6 content-center" id="member-number"></div>
+                                            <div class="col-6 col-lg-6 col-sm-6 col-xl-6 content-center" id="member-name"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-2 col-lg-2 col-sm-2 col-xl-2"></div>
+                            </div>
+                            <div class="row">
+                                <div class="col-12 col-lg-12 col-sm-12 col-xl-12 collapsible-col">
+                                    <button type="button" class="collapsible-info">Clinic Web Logins</button>
+                                    <div class="content">
+                                        <div id="grid">
+                                            <div id="webAccessGrid"></div>
+                                            <div class="grid-note">Reset Email Sent (Yes): Reset email sent but not clicked yet</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-12 col-lg-12 col-sm-12 col-xl-12 collapsible-col">
+                                    <button type="button" class="collapsible-info">Account Preferences</button>
+                                    <div class="content">
+                                        <div id="accountPreferences-section">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<style>
+
+    #webAccessGrid .k-grid-content {
+        min-height: 100px;
+        max-height: 600px;
+    }
+
+    .content-center {
+        margin: 0px auto 0px auto;
+        text-align: center;
+    }
+
+    .wrapper-content {
+        padding: 10px 10px 20px;
+    }
+
+    .ibox-content {
+        padding: 7px 15px 15px 15px;
+    }
+
+    #grid {
+        margin: 10px auto;
+        width: 80%;
+    }
+
+    .collapsible-section {
+        margin: 5px auto 10px auto;
+        /*width: 95%;*/
+        border: 1px solid #ddd;
+        padding: 5px 2px;
+    }
+
+    .collapsible-section-header {
+        /*width: 95%;*/
+        margin: 10px auto;
+    }
+
+        .collapsible-section-header span {
+            width: max-content;
+            background-color: lightgrey;
+            padding: 5px 10px;
+            border-radius: 25px;
+            font-weight: bold;
+        }
+
+    .collapsible-section-subheader {
+        padding: 5px 15px;
+    }
+
+    .collapsible-section-subheader span {
+        font-weight: bold;
+        color: #0c5460;
+        border-color: #bee5eb;
+        margin: 5px 15px;
+        border-radius: 10px;
+    }
+
+    .collapsible-col {
+        padding-left: 50px;
+        padding-right: 50px;
+    }
+
+    .grid-cell {
+        font-size: 14px;
+    }
+
+    .k-header .k-link {
+        text-align: center;
+        font-weight: bold;
+        font-size: 13px;
+    }
+
+    label {
+        margin-bottom: 0px;
+    }
+
+    .form-row {
+        margin: 10px 0px 10px 0px;
+        vertical-align: central;
+        display: flex;
+    }
+
+    .form-label-col {
+        display: flex;
+        padding-right: 0;
+        justify-content: flex-end;
+    }
+
+    .control-label {
+        color: #556375;
+        font-size: 1.3rem;
+    }
+
+    .control-label-center {
+        display: flex;
+        margin-top: auto;
+        margin-bottom: auto;
+    }
+
+    .control-label-top {
+        display: flex;
+    }
+
+    .form-control {
+        border-color: #ddd;
+    }
+
+    .k-datepicker, .k-timepicker {
+        font-size: 14px;
+    }
+
+        .k-datepicker .k-picker-wrap {
+            color: black;
+        }
+
+        .btn-default, .btn-default:hover, .btn-default:focus, .btn-default:active, .btn-default.active {
+            color: inherit;
+            color: #fff;
+            background-color: #1266f1;
+        }
+
+    .alert-info {
+        color: #0c5460;
+        background-color: #d1ecf1;
+        border-color: #bee5eb;
+    }
+
+    .alert {
+        position: relative;
+        padding: 0.75rem 1.25rem;
+        border: 1px solid transparent;
+        border-radius: 0.25rem;
+        font-weight: bold;
+        margin: 20px 0px 20px 0px;
+    }
+
+    .collapsible-info {
+        background-color: #2e6da4;
+        color: white;
+        cursor: pointer;
+        padding: 8px 20px 8px 20px;
+        width: 100%;
+        border: none;
+        text-align: left;
+        outline: none;
+        font-size: 15px;
+    }
+
+        #search-results .active, .collapsible-info:hover {
+            background-color: #337ab7;
+        }
+
+    .collapsible-info:after {
+        content: '\002B';
+        color: white;
+        font-weight: bold;
+        float: right;
+        margin-left: 5px;
+    }
+
+    #search-results .active:after {
+        content: "\2212";
+    }
+
+    .content {
+        padding: 5px 18px;
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.2s ease-out;
+        background-color: #f1f1f1;
+    }
+
+    .k-disabled, .k-state-disabled, .k-widget[disabled] {
+        cursor: default;
+        opacity: 1;
+        box-shadow: none;
+    }
+
+    .form-control[disabled], fieldset[disabled] .form-control {
+        cursor: default;
+    }
+
+    .k-dropdown, .k-textbox {
+        font-size: 14px;
+    }
+
+    .submit-btn {
+        margin-top: 15px;
+        font-size: 13px;
+    }
+
+    .k-input {
+        padding: 15px;
+    }
+
+    .k-datepicker .k-select {
+        border-color: #e4e7eb;
+        color: #ced4da;
+        background-color: #e4e7eb;
+    }
+
+    .grid-note {
+        margin-top: 8px;
+        font-size: 12px;
+        color: #696969;
+    }
+
+</style>

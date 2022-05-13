@@ -23,16 +23,16 @@
                 </div>
             </li>
             <li id="continuingEducation-li">
-                <a href="@Url.Action("Index", "ContinuingEducation", new { area = ""})"><i class="fa fa-laptop"></i> <span class="nav-label">Continuing Education</span></a>
+                <a href="@Url.Action("Index", "ContinuingEducation", new { area = ""})"><i class="fa fa-book"></i> <span class="nav-label">Continuing Education</span></a>
             </li>
             <li id="classifiedAd-li">
-                <a href="@Url.Action("Index", "ClassifiedAds", new { area = ""})"><i class="fa fa-laptop"></i> <span class="nav-label">Classified Ads</span></a>
+                <a href="@Url.Action("Index", "ClassifiedAds", new { area = ""})"><i class="fa fa-newspaper-o"></i> <span class="nav-label">Classified Ads</span></a>
             </li>
             <li id="careers-li">
-                <a href="@Url.Action("Index", "Careers", new { area = ""})"><i class="fa fa-laptop"></i> <span class="nav-label">WDDC Careers</span></a>
+                <a href="@Url.Action("Index", "Careers", new { area = ""})"><i class="fa fa-suitcase"></i> <span class="nav-label">WDDC Careers</span></a>
             </li>
             <li class="@Html.IsSelected(controller: "LiquidationSale") @Html.IsSelected(controller: "RetailClearanceSale") @Html.IsSelected(controller: "EquipmentClearanceSale")">
-                <a href="#"><i class="fa fa-laptop"></i> <span class="nav-label">Sales</span><span class="fa arrow"></span></a>
+                <a href="#"><i class="fa fa-money"></i> <span class="nav-label">Sales</span><span class="fa arrow"></span></a>
                 <ul class="nav nav-second-level collapse" aria-expanded="true" id="message-ul">
                     <li id="liquidationSale-li">
                         <a href="@Url.Action("Index", "LiquidationSale", new { area = ""})">Liquidation (Returns)</a>
@@ -46,14 +46,17 @@
                 </ul>
             </li>
             <li id="videos-li">
-                <a href="@Url.Action("Index", "Videos", new { area = ""})"><i class="fa fa-laptop"></i> <span class="nav-label">WDDC Videos</span></a>
+                <a href="@Url.Action("Index", "Videos", new { area = ""})"><i class="fa fa-video-camera"></i> <span class="nav-label">WDDC Videos</span></a>
             </li>
             <li id="search-li">
-                <a href="@Url.Action("Index", "Search", new { area = ""})"><i class="fa fa-laptop"></i> <span class="nav-label">Search Control</span></a>
+                <a href="@Url.Action("Index", "Search", new { area = ""})"><i class="fa fa-search"></i> <span class="nav-label">Search Control</span></a>
             </li>
             @*<li id="websiteNotes-li">
                 <a href="@Url.Action("Index", "WebsiteNotes", new { area = ""})"><i class="fa fa-laptop"></i> <span class="nav-label">Website Notes</span></a>
             </li>*@
+            <li id="search-li">
+                <a href="@Url.Action("Index", "WebUserLookup", new { area = ""})"><i class="fa fa-user"></i> <span class="nav-label">Web User Lookup</span></a>
+            </li>
         </ul>
     </div>
 </nav>

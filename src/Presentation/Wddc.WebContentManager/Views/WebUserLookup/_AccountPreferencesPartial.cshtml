@@ -1,0 +1,298 @@
+﻿
+@model Wddc.Core.Domain.Webserver.Customers.GetContactInfo_Result
+
+@if (Model.MemberNbr == null)
+{
+    <div class="row">
+        <div class="col-12 col-lg-12 col-sm-12 col-xl-12">
+            <div class="collapsible-section-header">
+                <span>No contact info is found</span>
+            </div>
+        </div>
+    </div>
+}
+else 
+{
+    <div class="row">
+        <div class="col-12 col-lg-12 col-sm-12 col-xl-12">
+            <div class="collapsible-section-header">
+                <span>Primary Clinic Info</span>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12 col-lg-12 col-sm-12 col-xl-12">
+            <div class="collapsible-section">
+                <div class="row form-row">
+                    <div class="col-lg-1 form-label-col">
+                        <label for="lastUpdated" class="control-label control-label-center">Last Updated:</label>
+                    </div>
+                    <div class="col-lg-3">
+                        <input id="lastUpdated" name="lastUpdated" type="text" style="width: 100%" disabled>
+                    </div>
+                    <div class="col-lg-8">
+                    </div>
+                </div>
+                <div class="row form-row">
+                    <div class="col-lg-1 form-label-col">
+                        <label for="clinicPhone" class="control-label control-label-center">Phone:</label>
+                    </div>
+                    <div class="col-lg-3">
+                        <input id="clinicPhone" name="clinicPhone" class="form-control" type="text" disabled>
+                    </div>
+                    <div class="col-lg-1 form-label-col">
+                        <label for="clinicEmail" class="control-label control-label-center">Primary Email:</label>
+                    </div>
+                    <div class="col-lg-3">
+                        <input id="clinicEmail" name="clinicEmail" class="form-control" type="text" value="@Model.Clinic_Email" disabled>
+                    </div>
+                    <div class="col-lg-1 form-label-col">
+                        <label for="clinicFax" class="control-label control-label-center">Fax:</label>
+                    </div>
+                    <div class="col-lg-3">
+                        <input id="clinicFax" name="clinicFax" class="form-control" type="text" disabled>
+                    </div>
+                </div>
+                <div class="row form-row">
+                    <div class="col-lg-1 form-label-col">
+                        <label for="cartSorting" class="control-label control-label-center">Cart Sorting:</label>
+                    </div>
+                    <div class="col-lg-3">
+                        <input id="cartSorting" name="cartSorting" class="form-control" type="text" value="@Model.CartSortingDescription" disabled>
+                    </div>
+                    <div class="col-lg-1 form-label-col">
+                        <label for="wddcSupport" class="control-label control-label-center">WDDC Support:</label>
+                    </div>
+                    <div class="col-lg-3">
+                        <input id="wddcSupport" name="wddcSupport" class="form-control" type="text" value="@Model.WDDCSupport" disabled>
+                    </div>
+                    <div class="col-lg-1 form-label-col">
+                        <label for="invoiceType" class="control-label control-label-center">Invoice Type:</label>
+                    </div>
+                    <div class="col-lg-3">
+                        <input id="invoiceType" name="invoiceType" class="form-control" type="text" value="@Model.InvoiceType" disabled>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12 col-lg-12 col-sm-12 col-xl-12">
+            <div class="collapsible-section-header">
+                <span>Email Designations</span>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12 col-lg-12 col-sm-12 col-xl-12">
+            <div class="collapsible-section">
+                <div class="row form-row">
+                    <div class="col-lg-1 form-label-col">
+                        <label for="emailOrders" class="control-label control-label-center">Orders:</label>
+                    </div>
+                    <div class="col-lg-7">
+                        <input id="emailOrders" name="emailOrders" class="form-control" type="text" value="@Model.Email_Orders" disabled>
+                    </div>
+                    <div class="col-lg-4">
+                    </div>
+                </div>
+                <div class="row form-row">
+                    <div class="col-lg-1 form-label-col">
+                        <label for="emailInvoices" class="control-label control-label-center">Invoices:</label>
+                    </div>
+                    <div class="col-lg-7">
+                        <input id="emailInvoices" name="emailInvoices" class="form-control" type="text" value="@Model.Email_Invoices" disabled>
+                    </div>
+                    <div class="col-lg-4">
+                    </div>
+                </div>
+                <div class="row form-row">
+                    <div class="col-lg-1 form-label-col">
+                        <label for="emailStatements" class="control-label control-label-center">Statements:</label>
+                    </div>
+                    <div class="col-lg-7">
+                        <input id="emailStatements" name="emailStatements" class="form-control" type="text" value="@Model.Email_Statements" disabled>
+                    </div>
+                    <div class="col-lg-4">
+                    </div>
+                </div>
+                <div class="row form-row">
+                    <div class="col-lg-1 form-label-col">
+                        <label for="emailReturns" class="control-label control-label-center">Returns:</label>
+                    </div>
+                    <div class="col-lg-7">
+                        <input id="emailReturns" name="emailReturns" class="form-control" type="text" value="@Model.Email_Returns" disabled>
+                    </div>
+                    <div class="col-lg-4">
+                    </div>
+                </div>
+                <div class="row form-row">
+                    <div class="col-lg-1 form-label-col">
+                        <label for="emailNews" class="control-label control-label-center">Newsletter:</label>
+                    </div>
+                    <div class="col-lg-7">
+                        <input id="emailNews" name="emailNews" class="form-control" type="text" value="@Model.Email_News" disabled>
+                    </div>
+                    <div class="col-lg-4">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12 col-lg-12 col-sm-12 col-xl-12">
+            <div class="collapsible-section-header">
+                <span>Contact Information</span>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12 col-lg-12 col-sm-12 col-xl-12">
+            <div class="collapsible-section">
+                <div class="row">
+                    <div class="col-12 col-lg-12 col-sm-12 col-xl-12 collapsible-section-subheader">
+                        <span>Accounts payable / Payment inquiry contact</span>
+                    </div>
+                </div>
+                <div class="row form-row">
+                    <div class="col-lg-1 form-label-col">
+                        <label for="NameAcctng" class="control-label control-label-center">Name:</label>
+                    </div>
+                    <div class="col-lg-3">
+                        <input id="NameAcctng" name="NameAcctng" class="form-control" type="text" value="@Model.Contact_NameAcctng" disabled>
+                    </div>
+                    <div class="col-lg-1 form-label-col">
+                        <label for="PhoneAcctng" class="control-label control-label-center">Phone:</label>
+                    </div>
+                    <div class="col-lg-2">
+                        <input id="PhoneAcctng" name="PhoneAcctng" class="form-control" type="text" disabled>
+                    </div>
+                    <div class="col-lg-1 form-label-col">
+                        <label for="EmailAcctng" class="control-label control-label-center">Email:</label>
+                    </div>
+                    <div class="col-lg-4">
+                        <input id="EmailAcctng" name="EmailAcctng" class="form-control" type="text" value="@Model.Contact_EmailAcctng" disabled>
+                    </div>
+                </div>
+            </div>
+            <div class="collapsible-section">
+                <div class="row">
+                    <div class="col-12 col-lg-12 col-sm-12 col-xl-12 collapsible-section-subheader">
+                        <span>Inventory /Ordering</span>
+                    </div>
+                </div>
+                <div class="row form-row">
+                    <div class="col-lg-1 form-label-col">
+                        <label for="NameOrdering" class="control-label control-label-center">Name:</label>
+                    </div>
+                    <div class="col-lg-3">
+                        <input id="NameOrdering" name="NameOrdering" class="form-control" type="text" value="@Model.Contact_NameOrdering" disabled>
+                    </div>
+                    <div class="col-lg-1 form-label-col">
+                        <label for="PhoneOrdering" class="control-label control-label-center">Phone:</label>
+                    </div>
+                    <div class="col-lg-2">
+                        <input id="PhoneOrdering" name="PhoneOrdering" class="form-control" type="text" disabled>
+                    </div>
+                    <div class="col-lg-1 form-label-col">
+                        <label for="EmailOrdering" class="control-label control-label-center">Email:</label>
+                    </div>
+                    <div class="col-lg-4">
+                        <input id="EmailOrdering" name="EmailOrdering" class="form-control" type="text" value="@Model.Contact_EmailOrdering" disabled>
+                    </div>
+                </div>
+            </div>
+            <div class="collapsible-section">
+                <div class="row">
+                    <div class="col-12 col-lg-12 col-sm-12 col-xl-12 collapsible-section-subheader">
+                        <span>Inventory Control</span>
+                    </div>
+                </div>
+                <div class="row form-row">
+                    <div class="col-lg-1 form-label-col">
+                        <label for="NameReception" class="control-label control-label-center">Name:</label>
+                    </div>
+                    <div class="col-lg-3">
+                        <input id="NameReception" name="NameReception" class="form-control" type="text" value="@Model.Reception_Name" disabled>
+                    </div>
+                    <div class="col-lg-1 form-label-col">
+                        <label for="PhoneReception" class="control-label control-label-center">Phone:</label>
+                    </div>
+                    <div class="col-lg-2">
+                        <input id="PhoneReception" name="PhoneReception" class="form-control" type="text" disabled>
+                    </div>
+                    <div class="col-lg-1 form-label-col">
+                        <label for="EmailReception" class="control-label control-label-center">Email:</label>
+                    </div>
+                    <div class="col-lg-4">
+                        <input id="EmailReception" name="EmailReception" class="form-control" type="text" value="@Model.Reception_Email" disabled>
+                    </div>
+                </div>
+            </div>
+            <div class="collapsible-section">
+                <div class="row">
+                    <div class="col-12 col-lg-12 col-sm-12 col-xl-12 collapsible-section-subheader">
+                        <span>Office Manager</span>
+                    </div>
+                </div>
+                <div class="row form-row">
+                    <div class="col-lg-1 form-label-col">
+                        <label for="NameManager" class="control-label control-label-center">Name:</label>
+                    </div>
+                    <div class="col-lg-3">
+                        <input id="NameManager" name="NameManager" class="form-control" type="text" value="@Model.Manager_Name" disabled>
+                    </div>
+                    <div class="col-lg-1 form-label-col">
+                        <label for="PhoneManager" class="control-label control-label-center">Phone:</label>
+                    </div>
+                    <div class="col-lg-2">
+                        <input id="PhoneManager" name="PhoneManager" class="form-control" type="text" disabled>
+                    </div>
+                    <div class="col-lg-1 form-label-col">
+                        <label for="EmailManager" class="control-label control-label-center">Email:</label>
+                    </div>
+                    <div class="col-lg-4">
+                        <input id="EmailManager" name="EmailManager" class="form-control" type="text" value="@Model.Manager_Email" disabled>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+
+
+<script>
+
+    function formatPhoneNumber(phoneNumberString) {
+        var cleaned = ('' + phoneNumberString).replace(/\D/g, '');
+        var match = cleaned.match(/^(1|)?(\d{3})(\d{3})(\d{4})$/);
+        if (match) {
+            var intlCode = (match[1] ? '+1 ' : '');
+            return [intlCode, '(', match[2], ') ', match[3], '-', match[4]].join('');
+        }
+        return null;
+    }
+
+    $(document).ready(function () {
+
+        if (@Model.MemberNbr != null) {
+            $("#lastUpdated").kendoDatePicker({
+                format: "MMMM dd, yyyy",
+                value: new Date('@Model.LastUpdated')
+            });
+
+            document.getElementById("clinicPhone").value = formatPhoneNumber(@Model.Clinic_Phone);
+            document.getElementById("clinicFax").value = formatPhoneNumber(@Model.Clinic_Fax);
+            document.getElementById("PhoneAcctng").value = formatPhoneNumber(@Model.Contact_PhoneAcctng);
+            document.getElementById("PhoneOrdering").value = formatPhoneNumber(@Model.Contact_PhoneOrdering);
+            document.getElementById("PhoneReception").value = formatPhoneNumber(@Model.Reception_Phone);
+            document.getElementById("PhoneManager").value = formatPhoneNumber(@Model.Manager_Phone);
+        }
+
+
+    });
+
+</script>
+
+

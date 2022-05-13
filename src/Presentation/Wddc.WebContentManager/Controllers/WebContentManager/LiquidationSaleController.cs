@@ -93,6 +93,18 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             if (model.Expiry_DateString == "1969-12-31")
                 model.Expiry_Date = null;
 
+            if (String.IsNullOrEmpty(model.REG_Code))
+            {
+                Log.Logger.Error($"Error adding Web Liquidation Sale by {User.Identity.Name.Substring(7).ToLower()}: REG Code is required");
+                _logger.Error($"Error adding Web Liquidation Sale. RET Code: {model.RET_Code}, REG Code is required", null, User, "WebOrdering");
+                return Json(model);
+            }
+
+            if (String.IsNullOrEmpty(model.Reason))
+            {
+                model.Reason = "";
+            }
+
             Web_Liquidation_RET newWeb_Liquidation_RET = new Web_Liquidation_RET();
             newWeb_Liquidation_RET.RET_Code = model.RET_Code;
             newWeb_Liquidation_RET.REG_Code = model.REG_Code;
