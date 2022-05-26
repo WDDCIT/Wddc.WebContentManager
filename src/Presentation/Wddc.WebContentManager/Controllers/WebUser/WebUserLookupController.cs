@@ -1,15 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Wddc.PurchasingOrderApp.Services;
 using Kendo.Mvc.Extensions;
-using Kendo.Mvc.UI;
-using Wddc.WebContentManager.Services.WebContent.Search;
-using Wddc.Core.Domain.Webserver.TICatalog;
 using Serilog;
-using Wddc.WebContentManager.Services.Logging;
 using Wddc.Core.Domain.Webserver.WebOrdering.Logging;
 using Wddc.WebContentManager.Models;
 using PagedList;

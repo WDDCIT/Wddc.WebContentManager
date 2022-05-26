@@ -1,0 +1,711 @@
+﻿@model Wddc.WebContentManager.Models.WebContent.AffinityPrograms.WebAffinityProgramsModel
+
+@{
+    ViewBag.Title = "Affinity Programs";
+}
+
+@section Styles {
+
+    <link href="https://kendo.cdn.telerik.com/2021.2.511/styles/kendo.default.min.css" rel="stylesheet" />
+    <link href="https://kendo.cdn.telerik.com/2021.2.511/styles/kendo.bootstrap-v4.min.css" rel="stylesheet" type="text/css" />
+
+}
+
+@section Scripts {
+
+    <script src="http://ajax.aspnetcdn.com/ajax/jquery.validate/1.11.0/jquery.validate.min.js"></script>
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script>
+
+    <script src="https://kendo.cdn.telerik.com/2021.2.511/js/kendo.all.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script src="~/js/pagination/pagination.min.js"></script>
+    <script src="~/js/pagination/pagination.custom.js"></script>
+
+    <script>
+
+        var clickedActiveProgramId = 0;
+        var startUpdateProgram = false, properImageSize = false;
+
+        $(document).ready(function () {
+
+            prepareLogList();
+
+            if('@ViewBag.response') {
+                if ('@ViewBag.response' == "Success") {
+                    document.getElementById("danger-alert").style.display = "none";
+                    document.getElementById("success-alert").style.display = "inline-block";
+                    var alertText = '<strong>Success! </strong>';
+                    alertText += '@ViewBag.Message';
+                    $("#success-alert").html(alertText);
+                    $("#success-alert").fadeTo(8000, 500).slideUp(500, function() {
+                        $("#success-alert").slideUp(500);
+                    });
+                }
+                else {
+                    document.getElementById("success-alert").style.display = "none";
+                    document.getElementById("danger-alert").style.display = "inline-block";
+                    var alertText = '<strong>Failure! </strong>';
+                    alertText += '@ViewBag.Message';
+                    $("#danger-alert").html(alertText);
+                    $("#danger-alert").fadeTo(8000, 500).slideUp(500, function() {
+                        $("#danger-alert").slideUp(500);
+                    });
+                }
+            } else {
+                document.getElementById("success-alert").style.display = "none";
+                document.getElementById("danger-alert").style.display = "none";
+            }
+
+            if (@Model.AffinityPrograms.Count() > 0) {
+                    $.get('@Url.Action("GetFirstAffinityProgram", "AffinityPrograms")', (data) => {
+                        clickedActiveProgramId = data.ProgramID;
+                        liLoad(data.ProgramID);
+                    });
+            } else {
+                emptyTab();
+            }   
+
+            $("#newInfoFileUrl").on("change", function () {
+                var fileName = $(this).val().split("\\").pop();
+                document.getElementById("newInfoFileUrlText").value = "Affinity Programs/" + fileName;
+                document.getElementById("newInfoFileName").value = fileName;
+                document.getElementById("newInfoFileDisplayName").value = fileName.replace(/\.[^/.]+$/, "");
+            });
+
+            $("#newInfoFileUrl2").on("change", function () {
+                var fileName = $(this).val().split("\\").pop();
+                document.getElementById("newInfoFileUrlText2").value = "Affinity Programs/" + fileName;
+                document.getElementById("newInfoFileName2").value = fileName;
+                document.getElementById("newInfoFileDisplayName2").value = fileName.replace(/\.[^/.]+$/, "");
+            });
+
+            $("#newLogoUrl").on("change", function () {
+                var fileName = $(this).val().split("\\").pop();
+                document.getElementById("newLogoURLText").value = "Affinity Programs/Logos/" + fileName;
+                document.getElementById("newLogoName").value = fileName;
+            });
+
+        })
+
+
+        function emptyTab() {
+            document.getElementById("details-section").style.display = 'none';
+            document.getElementById("delete-program-btn").disabled = true;
+        }
+
+        function liActivate(liElement) {
+
+            var activeLi = liElement.parentElement.querySelector('.active');
+            activeLi.classList.remove('active');
+            liElement.classList.add('active');
+        }
+
+        function liLoad(program_id) {
+
+            document.getElementById("details-section").style.display = 'block';
+            document.getElementById("new-program-btn").disabled = false;
+            document.getElementById("save-program-btn").disabled = true;
+            document.getElementById("delete-program-btn").disabled = false;
+
+            $('#details-section').load('@Url.Action("AffinityProgramsEditorPartial")?programId=' + program_id, () => {});
+        }
+
+        function displayActiveListItem(liElement, program_id) {
+
+            if (startUpdateProgram) {
+                Swal.fire({
+                    title: 'Would you like to save changes to this form?',
+                    showDenyButton: true,
+                    showCancelButton: true,
+                    confirmButtonText: `Yes`,
+                    denyButtonText: `No`,
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        document.getElementById("save-program-btn").click();
+                    } else if (result.isDenied) {
+                        startUpdateProgram = false;
+                        Swal.fire('Changes are not saved', '', 'info');
+                        liActivate(liElement);
+                        liLoad(program_id);
+                        clickedActiveProgramId = program_id;
+                    }
+                })
+            }
+            else {
+                liActivate(liElement);
+                liLoad(program_id);
+                clickedActiveProgramId = program_id;
+            }
+        }
+
+        function performBrowse1() {
+            document.getElementById("newLogoUrl").click();
+        }
+
+        function performBrowse2() {
+            document.getElementById("newInfoFileUrl").click();
+        }
+
+        function performBrowse3() {
+            document.getElementById("newInfoFileUrl2").click();
+        }
+
+        var displayFile = function(event) {
+	        var image = document.getElementById('imgOutput');
+	        image.src = URL.createObjectURL(event.target.files[0]);
+
+            image.onload = function() {
+                var w = this.width;
+                var h = this.height;
+                alert(w + "   " + h)
+            }
+
+        };
+
+        function validateAddForm() {
+
+            var programName = document.forms["addNewProgramForm"]["newProgramName"].value;
+            if (programName.trim() == "") {
+                alert("Program Name must be filled out");
+                return false;
+            }
+
+            if (!properImageSize) {
+                alert("The uploaded logo image is big. The dimensions should be less than or equal 300px x 100px ");
+                return false;
+            }  
+
+            return true;
+        }
+
+
+        $('#save-program-btn').click(function (e) {
+            var form = document.getElementById("updatedProgramForm");
+            if(validateUpdateForm())
+                form.submit();
+        });
+
+
+        $('#delete-program-btn').click(function (e) {
+
+            var deletedProgramName = document.getElementById("programName").value;
+
+            var confirmDelete = confirm("Confirm deleting affinity program (" + deletedProgramName + ")?");
+            if (confirmDelete == true) {
+                $.post('@Url.Action("DeleteAffinityProgram", "AffinityPrograms")?programId=' + parseInt(clickedActiveProgramId), (result) => {
+                      if (result.success) {
+                          alert("Affinity Program: " + deletedProgramName + " was deleted successfully! ");
+                          window.location.href = "@Url.Action("Index", "AffinityPrograms")";
+                      } else {
+                          alert("Failure deleting affinity program: " + deletedProgramName);
+                          prepareLogList();
+                      }
+
+                }).fail((xhr, textStatus, errorThrown) => {
+                    alert("Failure deleting affinity program: " + deletedProgramName + ". " + `${textStatus} : ${errorThrown}`);
+                    prepareLogList();
+                });
+            }
+        });
+
+        function prepareLogList() {
+            setupPagination('log', 'log-list', '@Url.Action("Log", "AffinityPrograms")?referrerUrl=AffinityPrograms', ['Log', 'Username', 'Created'], 7);
+        }
+
+
+    </script>
+}
+
+<div class="wrapper wrapper-content animated fadeInRight">
+    <div class="row">
+        <div class="col-12 col-lg-12 col-sm-12 col-xl-12 content-center">
+            <div class="alert alert-success" id="success-alert" style="display:none"></div>
+            <div class="alert alert-danger" id="danger-alert" style="display:none"></div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="ibox">
+                <div class="ibox-content">
+                    <div class="row">
+                        <div class="col-lg-4">
+                            <div class="row">
+                                <div class="col-lg-12">
+                                    <div class="data-container">
+                                        <div class="panel panel-default">
+                                            <div>
+                                                <ul id="active-ads" class="list-group">
+                                                    @foreach (var webAffinityProgram in Model.AffinityPrograms)
+                                                    {
+                                                        @if (Model.AffinityPrograms.First() == webAffinityProgram)
+                                                        {
+                                                            <li class="list-group-item active" onclick="displayActiveListItem(this, '@webAffinityProgram.ProgramID')">@webAffinityProgram.ProgramName</li>
+                                                        }
+                                                        else
+                                                        {
+                                                            <li class="list-group-item" onclick="displayActiveListItem(this, '@webAffinityProgram.ProgramID')">@webAffinityProgram.ProgramName</li>
+                                                        }
+                                                    }
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-8" style="padding-left: 0px;">
+                            <div class="row">
+                                <div class="col-lg-12">
+                                    <div class="data-container">
+                                        <div class="row tools-row">
+                                            <div class="col-lg-12 content-center">
+                                                <button type="button" id="new-program-btn" class="btn btn-primary" data-toggle="modal" data-target="#addNewProgramModal"><span class="glyphicon glyphicon-file"></span><span class="icon-description">New</span></button>
+                                                <button type="button" id="save-program-btn" class="btn btn-primary" disabled><span class="glyphicon glyphicon-floppy-disk"></span><span class="icon-description">Save</span></button>
+                                                <button type="button" id="delete-program-btn" class="btn btn-primary"><span class="glyphicon glyphicon-trash"></span><span class="icon-description">Delete</span></button>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div>
+                                                <div id="details-section">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row" style="margin-top: 30px;">
+                        <div class="col-lg-2"></div>
+                        <div class="col-lg-8">
+                            <div id="log" class="content-center">
+                                <div class="bs-ObjectList-rows" id="log-list">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-2"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addNewProgramModal" tabindex="-1" role="dialog" aria-labelledby="addNewProgramModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="modal-title">Add New Affinity Program</span>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="addNewProgramForm" name="addNewProgramForm" method="post" action="@Url.Action("AddAffinityProgram", "AffinityPrograms")" enctype="multipart/form-data" onsubmit="return validateAddForm()">
+                <div class="modal-body">
+                    <div class="row ">
+                        <div class="col-12 col-lg-12 col-sm-12 col-xl-12 ">
+                            <div class="card" style="  margin: 0 auto">
+                                <div id="new-ad-section">
+                                    <div class="demo-section k-content wide">
+                                        <div class="row form-row">
+                                            <div class="col-lg-2 form-label-col">
+                                                <label for="newProgramName" class="control-label control-label-center">Program Name:</label>
+                                            </div>
+                                            <div class="col-lg-10">
+                                                <input id="newProgramName" name="newProgramName" class="form-control" type="text" maxlength="255">
+                                            </div>
+                                        </div>
+                                        <div class="row form-row">
+                                            <div class="col-lg-2 form-label-col">
+                                                <label for="newLogoURLText" class="control-label control-label-center">Logo:</label>
+                                            </div>
+                                            <div class="col-lg-10">
+                                                <div class="row" style="display: flex;">
+                                                    <div class="col-lg-11">
+                                                        <input id="newLogoURLText" name="newLogoURLText" class="form-control" type="text" maxlength="100">
+                                                        <input id="newLogoName" name="newLogoName" class="form-control" type="text" style="display:none">
+                                                    </div>
+                                                    <div class="col-lg-1 control-label-center" style="justify-content: flex-end;">
+                                                        <input id="newLogoUrl" name="newLogoUrl" class="form-control" type="file" accept="image/*" style="display:none" onchange="displayFile(event)">
+                                                        <button type="button" class="btn btn-light" onclick="performBrowse1();" style="margin-right: 0px;">Browse</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row form-row">
+                                            <div class="col-lg-2 form-label-col">
+                                            </div>
+                                            <div class="col-lg-10" style="padding-top: 5px; padding-bottom: 5px;">
+                                                <img id="imgOutput" />	
+                                                @*<small class="warning">The logo dimesnions must be less than or equal 300px x 100px </small>*@
+                                            </div>
+                                        </div>
+                                        <div class="row form-row">
+                                            <div class="col-lg-2 form-label-col">
+                                                <label for="newProgramDescription" class="control-label control-label-top">Description:</label>
+                                            </div>
+                                            <div class="col-lg-10">
+                                                <textarea id="newProgramDescription" name="newProgramDescription" class="form-control" rows="5"></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="row form-row" style="margin-top: 30px;">
+                                            <div class="col-lg-2 form-label-col">
+                                                <label for="newInfoFileUrlText" class="control-label control-label-center">Info File:</label>
+                                            </div>
+                                            <div class="col-lg-10">
+                                                <div class="row" style="display: flex;">
+                                                    <div class="col-lg-11">
+                                                        <input id="newInfoFileUrlText" name="newInfoFileUrlText" class="form-control" type="text" maxlength="100">
+                                                        <input id="newInfoFileName" name="newInfoFileName" class="form-control" type="text" style="display:none">
+                                                    </div>
+                                                    <div class="col-lg-1 control-label-center" style="justify-content: flex-end;">
+                                                        <input id="newInfoFileUrl" name="newInfoFileUrl" class="form-control" type="file" style="display:none">
+                                                        <button type="button" class="btn btn-light" onclick="performBrowse2();" style="margin-right: 0px;">Browse</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row form-row">
+                                            <div class="col-lg-2 form-label-col">
+                                                <label for="newInfoFileDisplayName" class="control-label control-label-center">Info File Display Name:</label>
+                                            </div>
+                                            <div class="col-lg-10">
+                                                <input id="newInfoFileDisplayName" name="newInfoFileDisplayName" class="form-control" type="text" maxlength="50">
+                                            </div>
+                                        </div>
+                                        <div class="row form-row">
+                                            <div class="col-lg-2 form-label-col">
+                                                <label for="newInfoFileUrlText2" class="control-label control-label-center">Info File:</label>
+                                            </div>
+                                            <div class="col-lg-10">
+                                                <div class="row" style="display: flex;">
+                                                    <div class="col-lg-11">
+                                                        <input id="newInfoFileUrlText2" name="newInfoFileUrlText2" class="form-control" type="text" maxlength="100">
+                                                        <input id="newInfoFileName2" name="newInfoFileName2" class="form-control" type="text" style="display:none">
+                                                    </div>
+                                                    <div class="col-lg-1 control-label-center" style="justify-content: flex-end;">
+                                                        <input id="newInfoFileUrl2" name="newInfoFileUrl2" class="form-control" type="file" style="display:none">
+                                                        <button type="button" class="btn btn-light" onclick="performBrowse3();" style="margin-right: 0px;">Browse</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row form-row">
+                                            <div class="col-lg-2 form-label-col">
+                                                <label for="newInfoFileDisplayName2" class="control-label control-label-center">Info File Display Name:</label>
+                                            </div>
+                                            <div class="col-lg-10">
+                                                <input id="newInfoFileDisplayName2" name="newInfoFileDisplayName2" class="form-control" type="text" maxlength="50">
+                                            </div>
+                                        </div>
+                                        <div class="row form-row" style="margin-top: 30px;">
+                                            <div class="col-lg-2 form-label-col">
+                                                <label for="newBillingThrough" class="control-label control-label-top">Billing Through:</label>
+                                            </div>
+                                            <div class="col-lg-10">
+                                                <textarea id="newBillingThrough" name="newBillingThrough" class="form-control" rows="2"></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="row form-row">
+                                            <div class="col-lg-2 form-label-col">
+                                                <label for="newDiscount" class="control-label control-label-center">Discount:</label>
+                                            </div>
+                                            <div class="col-lg-10">
+                                                <input id="newDiscount" name="newDiscount" class="form-control" type="text" maxlength="255">
+                                            </div>
+                                        </div>
+                                        <div class="row form-row">
+                                            <div class="col-lg-2 form-label-col">
+                                                <label for="newWebAddress" class="control-label control-label-center">Website:</label>
+                                            </div>
+                                            <div class="col-lg-10">
+                                                <input id="newWebAddress" name="newWebAddress" class="form-control" type="text" maxlength="50">
+                                            </div>
+                                        </div>
+                                        <div class="row form-row">
+                                            <div class="col-lg-2 form-label-col">
+                                                <label for="newComments" class="control-label control-label-top">Comments:</label>
+                                            </div>
+                                            <div class="col-lg-10">
+                                                <textarea id="newComments" name="newComments" class="form-control" rows="3"></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="row form-row">
+                                            <div class="col-lg-2 form-label-col">
+                                                <label for="newContact" class="control-label control-label-top">Contact:</label>
+                                            </div>
+                                            <div class="col-lg-10">
+                                                <textarea id="newContact" name="newContact" class="form-control" rows="3"></textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Add</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+            </form>
+
+        </div>
+    </div>
+</div>
+
+<style>
+
+    .content-center {
+        margin: 0px auto 0px auto;
+        text-align: center;
+    }
+
+    .wrapper-content {
+        padding: 10px 10px 20px;
+    }
+
+    .ibox-title {
+        padding: 15px 0px 15px;
+        color: #1565C0;
+        border: none;
+    }
+
+    .ibox-content {
+        padding: 7px 15px 15px 15px;
+    }
+
+    .data-container {
+        padding: 0px 0px 15px 0px;
+    }
+
+    .list-group {
+        min-height: 850px;
+        max-height: 850px;
+    }
+
+    .list-group {
+        overflow-y: scroll;
+        overflow-x: hidden;
+    }
+
+    .list-group-item {
+        white-space: nowrap;
+    }
+
+    .tools-row {
+        padding: 0px 0px 20px 0px;
+    }
+
+    /*input[type="radio"] {
+        margin: 2px 0 0;
+    }*/
+
+    .k-button {
+        font-size: 1.5rem;
+    }
+
+    /*.k-combobox {
+        font-size: 1.2rem;
+    }
+
+    .k-dropdown, .k-dropdowntree {
+        font-size: 1.2rem;
+    }
+
+    .k-colorpicker {
+        font-size: 1.2rem;
+    }
+
+    .k-datepicker, .k-timepicker {
+        font-size: 1.3rem;
+    }*/
+
+    /*.k-calendar {
+        font-size: 1.3rem;
+    }*/
+
+    .data-container .btn {
+        font-size: 11px;
+        margin: 0px 2px;
+    }
+
+    .modal-body .btn {
+        font-size: 11px;
+        margin: 0px 2px;
+    }
+
+    .data-container h5 {
+        color: #484848;
+    }
+
+    .icon-description {
+        margin-left: 5px;
+    }
+
+    textarea {
+        border: none;
+    }
+
+    .k-calendar td.k-state-selected .k-link {
+        border-color: #005dc2;
+        background-color: #007bff;
+    }
+
+    .k-popup .k-group-header, .k-popup .k-header {
+        font-size: 1.3rem;
+    }
+
+    .breadcrumb {
+        display: none;
+    }
+
+    label {
+        margin-bottom: 0px;
+    }
+
+    .form-row {
+        margin-top: 7px;
+        vertical-align: central;
+        display: flex;
+    }
+
+    .form-label-col {
+        display: flex;
+        padding-right: 0;
+        justify-content: flex-end;
+    }
+
+    .control-label {
+        color: #556375;
+        font-size: 1.3rem;
+    }
+
+    .control-label-center {
+        display: flex;
+        margin-top: auto;
+        margin-bottom: auto;
+    }
+
+    .control-label-top {
+        display: flex;
+    }
+
+    .control-label-top-small {
+        display: flex;
+        font-size: 1.2rem;
+    }
+
+    .form-control {
+        font-size: 1.3rem;
+        border-color: #ddd;
+    }
+
+    /*.k-dateinput .k-dateinput-wrap, .k-datepicker .k-picker-wrap, .k-datetimepicker .k-picker-wrap, .k-timepicker .k-picker-wrap {
+        border-color: #ddd;
+        color: black;
+    }*/
+
+    /*.k-editor {
+        border-color: #ddd;
+    }*/
+
+    .btn-light {
+        color: #212529;
+        background-color: #e3e6e8;
+        border-color: #dae0e5;
+        padding: 8px 12px;
+    }
+
+        .btn-light:hover {
+            color: #212529;
+            background-color: #e2e6ea;
+            border-color: #dae0e5
+        }
+
+        .btn-light.focus, .btn-light:focus {
+            color: #212529;
+            background-color: #e2e6ea;
+            border-color: #dae0e5;
+            box-shadow: 0 0 0 .2rem rgba(216,217,219,.5)
+        }
+
+    .btn-primary.disabled, .btn-primary.disabled:hover, .btn-primary.disabled:focus, .btn-primary.disabled:active, .btn-primary.disabled.active, .btn-primary[disabled], .btn-primary[disabled]:hover, .btn-primary[disabled]:focus, .btn-primary[disabled]:active, .btn-primary.active[disabled], fieldset[disabled] .btn-primary, fieldset[disabled] .btn-primary:hover, fieldset[disabled] .btn-primary:focus, fieldset[disabled] .btn-primary:active, fieldset[disabled] .btn-primary.active {
+        color: #fff;
+        background-color: #6c757d;
+        border-color: #6c757d;
+    }
+
+    #swal2-title {
+        font-size: 15px;
+    }
+
+    .swal2-popup {
+        padding: 1.25em;
+    }
+
+    .modal-lg {
+        width: 65%;
+    }
+
+    .modal-title {
+        color: #1565C0;
+        font-size: 14px;
+        font-weight: bold;
+    }
+
+    #active-ads li {
+        cursor: pointer;
+    }
+
+    .bs-ObjectList-row {
+        border-radius: 0.25rem;
+    }
+
+    .bs-ObjectList-row--header {
+        position: relative;
+        background-color: #E8E8E8;
+    }
+
+        .bs-ObjectList-row--header .bs-ObjectList-cell {
+            font-weight: bold;
+        }
+
+    .bs-ObjectList-row .bs-ObjectList-cell {
+        width: 20%;
+        text-align: center;
+    }
+
+        .bs-ObjectList-row .bs-ObjectList-cell:last-child {
+            width: 20%;
+            text-align: center;
+        }
+
+        .bs-ObjectList-row .bs-ObjectList-cell:first-child {
+            width: 60%;
+            text-align: left;
+            white-space: pre-wrap;
+        }
+
+    .bs-ObjectList-child, .bs-ObjectList-parent, .bs-ObjectList-row {
+        display: table-row;
+        transition: background-color .15s ease 0s;
+    }
+
+    .bs-ObjectList-cell {
+        display: table-cell;
+        position: relative;
+        padding: 9px 10px;
+        color: #525f7f;
+        font-weight: 400;
+        line-height: 22px;
+        vertical-align: top;
+        white-space: nowrap;
+    }
+
+    textarea {
+      resize: none;
+    }
+
+</style>

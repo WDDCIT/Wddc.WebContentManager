@@ -23,6 +23,7 @@ using Wddc.WebContentManager.Services.WebContent.Sales.EquipmentClearanceSale;
 using Wddc.WebContentManager.Services.WebContent.Videos;
 using Wddc.WebContentManager.Services.WebContent.Search;
 using Wddc.WebContentManager.Services.WebUser;
+using Wddc.WebContentManager.Services.WebContent.Affinity;
 
 namespace Wddc.WebContentManager.Extensions
 {
@@ -61,6 +62,7 @@ namespace Wddc.WebContentManager.Extensions
             services.TryAddSingleton<IVideosService, VideosService>();
             services.TryAddSingleton<ISearchService, SearchService>();
             services.TryAddSingleton<IWebUserLookupService, WebUserLookupService>();
+            services.TryAddSingleton<IAffinityService, AffinityService>();
 
             //dependencies
             var typeFinder = new WebAppTypeFinder();

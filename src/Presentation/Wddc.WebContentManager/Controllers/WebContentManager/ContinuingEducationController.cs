@@ -124,7 +124,7 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             {
                 Log.Logger.Error($"Error adding Web Continuing Education ad by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
                 _logger.Error($"Error adding Web Continuing Education ad. Event Date: {newWeb_CE_Ads.Event_Date.Value.ToString("yyyy-MM-dd")}, Location: {newWeb_CE_Ads.Location}: {ex.Message.Substring(0, 200)}", ex, User, "WebOrdering");
-                return RedirectToAction("Index", new { response = "Failure", message = "Failure adding continuing education ad, event date " + newEventDate.Value.ToString("yyyy-MM-dd") + ex.Message.Substring(0, 100) });
+                return RedirectToAction("Index", new { response = "Failure", message = "Failure adding continuing education ad, event date " + newEventDate.Value.ToString("yyyy-MM-dd") + ex.Message.Substring(0, 200) });
             }
         }
 
@@ -183,7 +183,7 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             {
                 Log.Logger.Error($"Error updating Web Continuing Education Ad by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
                 _logger.Error($"Error updating Web Continuing Education Ad. Event Date: {toUpdateAd.Event_Date.Value.ToString("yyyy-MM-dd")}, Location: {toUpdateAd.Location}: {ex.Message.Substring(0, 200)}", ex, User, "WebOrdering");
-                return RedirectToAction("Index", new { response = "Failure", message = "Failure updating continuing education ad, event date " + eventDate.Value.ToString("yyyy-MM-dd") + ex.Message.Substring(0, 100) });
+                return RedirectToAction("Index", new { response = "Failure", message = "Failure updating continuing education ad, event date " + eventDate.Value.ToString("yyyy-MM-dd") + ex.Message.Substring(0, 200) });
             }
         }
 

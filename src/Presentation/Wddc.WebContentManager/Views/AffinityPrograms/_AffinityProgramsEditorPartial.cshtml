@@ -1,0 +1,208 @@
+﻿@using Wddc.Core.Domain.Webserver.WebOrdering;
+@model Web_AffinityPrograms
+
+<form id="updatedProgramForm" name="updatedProgramForm" method="post" action="@Url.Action("UpdateAffinityProgram", "AffinityPrograms")" enctype="multipart/form-data" onsubmit="return validateUpdateForm()">
+    <input type="hidden" id="programId" name="programId" value="@Model.ProgramID">
+    <div class="demo-section k-content wide">
+        <div class="row form-row">
+            <div class="col-lg-2 form-label-col">
+                <label for="programName" class="control-label control-label-center">Program Name:</label>
+            </div>
+            <div class="col-lg-10">
+                <input id="programName" name="programName" class="form-control" type="text" maxlength="255" value="@Model.ProgramName" onkeydown="startUpdating()">
+            </div>
+        </div>
+        <div class="row form-row">
+            <div class="col-lg-2 form-label-col">
+                <label for="logoURLText" class="control-label control-label-center">Logo:</label>
+            </div>
+            <div class="col-lg-10">
+                <div class="row" style="display: flex;">
+                    <div class="col-lg-11">
+                        <input id="logoURLText" name="logoURLText" class="form-control" type="text" value="@Model.LogoURL" maxlength="100" onkeydown="startUpdating()">
+                        <input id="logoName" name="logoName" class="form-control" type="text" style="display:none" value="@Model.LogoName">
+                    </div>
+                    <div class="col-lg-1 control-label-center" style="justify-content: flex-end;">
+                        <input id="logoUrl" name="logoUrl" class="form-control" type="file" accept="image/*" value="@Model.LogoURL" style="display:none" onchange="loadFile(event)">
+                        <button type="button" class="btn btn-light" onclick="performClick1();" style="margin-right: 0px;">Browse</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row form-row">
+            <div class="col-lg-2 form-label-col">
+            </div>
+            <div class="col-lg-10" style="padding-top: 5px; padding-bottom: 5px;">
+                <img id="output" src="/Affinity_Logos/@Model.LogoName" />	
+            </div>
+        </div>
+        <div class="row form-row">
+            <div class="col-lg-2 form-label-col">
+                <label for="programDescription" class="control-label control-label-top">Description:</label>
+            </div>
+            <div class="col-lg-10">
+                <textarea id="programDescription" name="programDescription" class="form-control" rows="5" onkeydown="startUpdating()">@Model.ProgramDescription</textarea>
+            </div>
+        </div>
+        <div class="row form-row" style="margin-top: 30px;">
+            <div class="col-lg-2 form-label-col">
+                <label for="infoFileUrlText" class="control-label control-label-center">Info File:</label>
+            </div>
+            <div class="col-lg-10">
+                <div class="row" style="display: flex;">
+                    <div class="col-lg-11">
+                        <input id="infoFileUrlText" name="infoFileUrlText" class="form-control" type="text" value="@Model.InfoFileURL" maxlength="100" onkeydown="startUpdating()">
+                        <input id="infoFileName" name="infoFileName" class="form-control" type="text" style="display:none" value="@Model.InfoFileName">
+                    </div>
+                    <div class="col-lg-1 control-label-center" style="justify-content: flex-end;">
+                        <input id="infoFileUrl" name="infoFileUrl" class="form-control" type="file" value="@Model.InfoFileURL" style="display:none" onchange="startUpdating()">
+                        <button type="button" class="btn btn-light" onclick="performClick2();" style="margin-right: 0px;">Browse</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row form-row">
+            <div class="col-lg-2 form-label-col">
+                <label for="infoFileDisplayName" class="control-label control-label-center">Info File Display Name:</label>
+            </div>
+            <div class="col-lg-10">
+                <input id="infoFileDisplayName" name="infoFileDisplayName" class="form-control" type="text" maxlength="50" value="@Model.InfoFileDisplayName" onkeydown="startUpdating()">
+            </div>
+        </div>
+        <div class="row form-row">
+            <div class="col-lg-2 form-label-col">
+                <label for="infoFileUrlText2" class="control-label control-label-center">Info File:</label>
+            </div>
+            <div class="col-lg-10">
+                <div class="row" style="display: flex;">
+                    <div class="col-lg-11">
+                        <input id="infoFileUrlText2" name="infoFileUrlText2" class="form-control" type="text" value="@Model.InfoFileURL2" maxlength="100" onkeydown="startUpdating()">
+                        <input id="infoFileName2" name="infoFileName2" class="form-control" type="text" style="display:none" value="@Model.InfoFileName2">
+                    </div>
+                    <div class="col-lg-1 control-label-center" style="justify-content: flex-end;">
+                        <input id="infoFileUrl2" name="infoFileUrl2" class="form-control" type="file" value="@Model.InfoFileURL2" style="display:none" onchange="startUpdating()">
+                        <button type="button" class="btn btn-light" onclick="performClick3();" style="margin-right: 0px;">Browse</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row form-row">
+            <div class="col-lg-2 form-label-col">
+                <label for="infoFileDisplayName2" class="control-label control-label-center">Info File Display Name:</label>
+            </div>
+            <div class="col-lg-10">
+                <input id="infoFileDisplayName2" name="infoFileDisplayName2" class="form-control" type="text" maxlength="50" value="@Model.InfoFileDisplayName2" onkeydown="startUpdating()">
+            </div>
+        </div>
+        <div class="row form-row" style="margin-top: 30px;">
+            <div class="col-lg-2 form-label-col">
+                <label for="billingThrough" class="control-label control-label-top">Billing Through:</label>
+            </div>
+            <div class="col-lg-10">
+                <textarea id="billingThrough" name="billingThrough" class="form-control" rows="2" onkeydown="startUpdating()">@Model.BillingThrough</textarea>
+            </div>
+        </div>
+        <div class="row form-row">
+            <div class="col-lg-2 form-label-col">
+                <label for="discount" class="control-label control-label-center">Discount:</label>
+            </div>
+            <div class="col-lg-10">
+                <input id="discount" name="discount" class="form-control" type="text" maxlength="255" value="@Model.Discount" onkeydown="startUpdating()">
+            </div>
+        </div>
+        <div class="row form-row">
+            <div class="col-lg-2 form-label-col">
+                <label for="webAddress" class="control-label control-label-center">Website:</label>
+            </div>
+            <div class="col-lg-10">
+                <input id="webAddress" name="webAddress" class="form-control" type="text" maxlength="50" value="@Model.WebAddress" onkeydown="startUpdating()">
+            </div>
+        </div>
+        <div class="row form-row">
+            <div class="col-lg-2 form-label-col">
+                <label for="comments" class="control-label control-label-top">Comments:</label>
+            </div>
+            <div class="col-lg-10">
+                <textarea id="comments" name="comments" class="form-control" rows="3" onkeydown="startUpdating()">@Model.Comments</textarea>
+            </div>
+        </div>
+        <div class="row form-row">
+            <div class="col-lg-2 form-label-col">
+                <label for="contact" class="control-label control-label-top">Contact:</label>
+            </div>
+            <div class="col-lg-10">
+                <textarea id="contact" name="contact" class="form-control" rows="3" onkeydown="startUpdating()">@Model.Contact</textarea>
+            </div>
+        </div>
+    </div>
+</form>
+
+<script src="~/js/plugins/datapicker/bootstrap-datepicker.js"></script>
+<script>
+
+    function validateUpdateForm() {
+
+        var programName = document.forms["updatedProgramForm"]["programName"].value;
+        if (programName.trim() == "") {
+            alert("Program Name must be filled out");
+            return false;
+        }
+
+        return true;
+    }
+
+    function performClick1() {
+        document.getElementById("logoUrl").click();
+    }
+
+    function performClick2() {
+        document.getElementById("infoFileUrl").click();
+    }
+
+    function performClick3() {
+        document.getElementById("infoFileUrl2").click();
+    }
+    
+
+    var loadFile = function(event) {
+	    var image = document.getElementById('output');
+	    image.src = URL.createObjectURL(event.target.files[0]);
+    };
+
+    $(document).ready(function () {
+
+        $("#logoUrl").on("change", function () {
+            var fileName = $(this).val().split("\\").pop();
+            document.getElementById("logoURLText").value = "Affinity Programs/Logos/" + fileName;
+            document.getElementById("logoName").value = fileName;
+        });
+
+        $("#infoFileUrl").on("change", function (e) {
+            var fileName = $(this).val().split("\\").pop();
+            document.getElementById("infoFileUrlText").value = "Affinity Programs/" + fileName;
+            document.getElementById("infoFileName").value = fileName;
+            document.getElementById("infoFileDisplayName").value = fileName.replace(/\.[^/.]+$/, "");
+        });
+
+        $("#infoFileUrl2").on("change", function () {
+            var fileName = $(this).val().split("\\").pop();
+            document.getElementById("infoFileUrlText2").value = "Affinity Programs/" + fileName;
+            document.getElementById("infoFileName2").value = fileName;
+            document.getElementById("infoFileDisplayName2").value = fileName.replace(/\.[^/.]+$/, "");
+        });
+    });
+
+    function startUpdating() {
+
+        if (!startUpdateProgram) {
+            startUpdateProgram = true;
+            document.getElementById("new-program-btn").disabled = true;
+            document.getElementById("save-program-btn").disabled = false;
+            //document.getElementById("delete-ad-btn").disabled = true;
+        }
+    }
+
+
+</script>
+
+
