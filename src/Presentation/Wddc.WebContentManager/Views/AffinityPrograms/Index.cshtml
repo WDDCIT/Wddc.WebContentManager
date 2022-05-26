@@ -25,7 +25,7 @@
     <script>
 
         var clickedActiveProgramId = 0;
-        var startUpdateProgram = false, properImageSize = false;
+        var startUpdateProgram = false;
 
         $(document).ready(function () {
 
@@ -155,11 +155,11 @@
 	        var image = document.getElementById('imgOutput');
 	        image.src = URL.createObjectURL(event.target.files[0]);
 
-            image.onload = function() {
-                var w = this.width;
-                var h = this.height;
-                alert(w + "   " + h)
-            }
+            //image.onload = function() {
+            //    var w = this.width;
+            //    var h = this.height;
+            //    alert(w + "   " + h)
+            //}
 
         };
 
@@ -170,11 +170,6 @@
                 alert("Program Name must be filled out");
                 return false;
             }
-
-            if (!properImageSize) {
-                alert("The uploaded logo image is big. The dimensions should be less than or equal 300px x 100px ");
-                return false;
-            }  
 
             return true;
         }
@@ -338,7 +333,6 @@
                                             </div>
                                             <div class="col-lg-10" style="padding-top: 5px; padding-bottom: 5px;">
                                                 <img id="imgOutput" />	
-                                                @*<small class="warning">The logo dimesnions must be less than or equal 300px x 100px </small>*@
                                             </div>
                                         </div>
                                         <div class="row form-row">

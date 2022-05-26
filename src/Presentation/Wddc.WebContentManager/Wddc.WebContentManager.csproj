@@ -50,6 +50,7 @@
     <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
     <PackageReference Include="Serilog.Sinks.File" Version="4.1.0" />
     <PackageReference Include="SixLabors.ImageSharp" Version="2.1.1" />
+    <PackageReference Include="System.Drawing.Common" Version="6.0.0" />
     <PackageReference Include="System.ServiceModel.Duplex" Version="4.8.1" />
     <PackageReference Include="System.ServiceModel.Http" Version="4.8.1" />
     <PackageReference Include="System.ServiceModel.NetTcp" Version="4.8.1" />
@@ -78,7 +79,6 @@
     <Folder Include="Protos\" />
     <Folder Include="wwwroot\css\Routing\" />
     <Folder Include="wwwroot\js\Routing\" />
-    <Folder Include="wwwroot\Affinity_Logos\" />
   </ItemGroup>
 
 

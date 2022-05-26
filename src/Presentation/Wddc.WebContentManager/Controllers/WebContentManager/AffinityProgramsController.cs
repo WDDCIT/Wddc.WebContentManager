@@ -17,6 +17,7 @@ using Serilog;
 using Wddc.WebContentManager.Models.WebContent.AffinityPrograms;
 using Microsoft.AspNetCore.Hosting;
 using System.Drawing;
+using System.Drawing.Imaging;
 
 namespace Wddc.WebContentManager.Controllers.WebContentManager
 {
@@ -80,30 +81,61 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                 path2 = Path.Combine(path2, newLogoUrl.FileName);
 
                 var wwwrootLogosUpload = $"Affinity_Logos/{newLogoUrl.FileName}";
-                var filePath = System.IO.Path.GetDirectoryName(System.IO.Path.Combine(_hostingEnvironment.WebRootPath, wwwrootLogosUpload));
-                filePath = filePath + "\\" + newLogoUrl.FileName;
+                var path3 = System.IO.Path.GetDirectoryName(System.IO.Path.Combine(_hostingEnvironment.WebRootPath, wwwrootLogosUpload));
+                path3 = path3 + "\\" + newLogoUrl.FileName;
 
-                var image = Image.FromStream(file.OpenReadStream());
-                var resized = new Bitmap(image, new Size(256, 256));
+                var image = Image.FromStream(newLogoUrl.OpenReadStream());
+                int width = image.Width, height = image.Height;
+
+                var resized = new Bitmap(image, new Size(300, 100));
                 using var imageStream = new MemoryStream();
-                resized.Save(imageStream, ImageFormat.Jpeg);
+                resized.Save(imageStream, ImageFormat.Gif);
                 var imageBytes = imageStream.ToArray();
 
                 try
                 {
-                    using (var stream = new FileStream(path, FileMode.Create))
+                    if (width > 300 || height > 100)
                     {
-                        await newLogoUrl.CopyToAsync(stream);
-                    }
+                        using (var stream = new FileStream(path, FileMode.Create))
+                        {
+                            using (var writer = new BinaryWriter(stream))
+                            {
+                                writer.Write(imageBytes);
+                            }
+                        }
 
-                    using (var stream = new FileStream(path2, FileMode.Create))
-                    {
-                        await newLogoUrl.CopyToAsync(stream);
-                    }
+                        using (var stream = new FileStream(path2, FileMode.Create))
+                        {
+                            using (var writer = new BinaryWriter(stream))
+                            {
+                                writer.Write(imageBytes);
+                            }
+                        }
 
-                    using (var stream = new FileStream(filePath, FileMode.Create))
+                        using (var stream = new FileStream(path3, FileMode.Create))
+                        {
+                            using (var writer = new BinaryWriter(stream))
+                            {
+                                writer.Write(imageBytes);
+                            }
+                        }
+                    }
+                    else
                     {
-                        await newLogoUrl.CopyToAsync(stream);
+                        using (var stream = new FileStream(path, FileMode.Create))
+                        {
+                            await newLogoUrl.CopyToAsync(stream);
+                        }
+
+                        using (var stream = new FileStream(path2, FileMode.Create))
+                        {
+                            await newLogoUrl.CopyToAsync(stream);
+                        }
+
+                        using (var stream = new FileStream(path3, FileMode.Create))
+                        {
+                            await newLogoUrl.CopyToAsync(stream);
+                        }
                     }
                 }
                 catch (Exception ex)
@@ -218,24 +250,61 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                 path2 = Path.Combine(path2, logoUrl.FileName);
 
                 var wwwrootLogosUpload = $"Affinity_Logos/{logoUrl.FileName}";
-                var filePath = System.IO.Path.GetDirectoryName(System.IO.Path.Combine(_hostingEnvironment.WebRootPath, wwwrootLogosUpload));
-                filePath = filePath + "\\" + logoUrl.FileName;
+                var path3 = System.IO.Path.GetDirectoryName(System.IO.Path.Combine(_hostingEnvironment.WebRootPath, wwwrootLogosUpload));
+                path3 = path3 + "\\" + logoUrl.FileName;
+
+                var image = Image.FromStream(logoUrl.OpenReadStream());
+                int width = image.Width, height = image.Height;
+
+                var resized = new Bitmap(image, new Size(300, 100));
+                using var imageStream = new MemoryStream();
+                resized.Save(imageStream, ImageFormat.Gif);
+                var imageBytes = imageStream.ToArray();
 
                 try
                 {
-                    using (var stream = new FileStream(path, FileMode.Create))
+                    if (width > 300 || height > 100)
                     {
-                        await logoUrl.CopyToAsync(stream);
-                    }
+                        using (var stream = new FileStream(path, FileMode.Create))
+                        {
+                            using (var writer = new BinaryWriter(stream))
+                            {
+                                writer.Write(imageBytes);
+                            }
+                        }
 
-                    using (var stream = new FileStream(path2, FileMode.Create))
-                    {
-                        await logoUrl.CopyToAsync(stream);
-                    }
+                        using (var stream = new FileStream(path2, FileMode.Create))
+                        {
+                            using (var writer = new BinaryWriter(stream))
+                            {
+                                writer.Write(imageBytes);
+                            }
+                        }
 
-                    using (var stream = new FileStream(filePath, FileMode.Create))
+                        using (var stream = new FileStream(path3, FileMode.Create))
+                        {
+                            using (var writer = new BinaryWriter(stream))
+                            {
+                                writer.Write(imageBytes);
+                            }
+                        }
+                    }
+                    else
                     {
-                        await logoUrl.CopyToAsync(stream);
+                        using (var stream = new FileStream(path, FileMode.Create))
+                        {
+                            await logoUrl.CopyToAsync(stream);
+                        }
+
+                        using (var stream = new FileStream(path2, FileMode.Create))
+                        {
+                            await logoUrl.CopyToAsync(stream);
+                        }
+
+                        using (var stream = new FileStream(path3, FileMode.Create))
+                        {
+                            await logoUrl.CopyToAsync(stream);
+                        }
                     }
                 }
                 catch (Exception ex)
