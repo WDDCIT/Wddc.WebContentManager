@@ -86,11 +86,8 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
 
                 var image = Image.FromStream(newLogoUrl.OpenReadStream());
 
-                int sourceWidth = image.Width;
-                int sourceHeight = image.Height;
-                float nPercent = 0;
-                float nPercentW = 0;
-                float nPercentH = 0;
+                int sourceWidth = image.Width, sourceHeight = image.Height;
+                float nPercent = 0, nPercentW = 0, nPercentH = 0;
 
                 nPercentW = ((float)300 / (float)sourceWidth); 
                 nPercentH = ((float)100 / (float)sourceHeight);
@@ -103,15 +100,15 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                 int destWidth = (int)(sourceWidth * nPercent);
                 int destHeight = (int)(sourceHeight * nPercent);
 
-                var resized = new Bitmap(image, new Size(destWidth, destHeight));
-                using var imageStream = new MemoryStream();
-                resized.Save(imageStream, ImageFormat.Gif);
-                var imageBytes = imageStream.ToArray();
-
                 try
                 {
                     if (sourceWidth > 300 || sourceHeight > 100)
                     {
+                        var resized = new Bitmap(image, new Size(destWidth, destHeight));
+                        using var imageStream = new MemoryStream();
+                        resized.Save(imageStream, ImageFormat.Gif);
+                        var imageBytes = imageStream.ToArray();
+
                         using (var stream = new FileStream(path, FileMode.Create))
                         {
                             using (var writer = new BinaryWriter(stream))
@@ -138,19 +135,33 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                     }
                     else
                     {
+                        var resized = new Bitmap(image, new Size(sourceWidth, sourceHeight));
+                        using var imageStream = new MemoryStream();
+                        resized.Save(imageStream, ImageFormat.Gif);
+                        var imageBytes = imageStream.ToArray();
+
                         using (var stream = new FileStream(path, FileMode.Create))
                         {
-                            await newLogoUrl.CopyToAsync(stream);
+                            using (var writer = new BinaryWriter(stream))
+                            {
+                                writer.Write(imageBytes);
+                            }
                         }
 
                         using (var stream = new FileStream(path2, FileMode.Create))
                         {
-                            await newLogoUrl.CopyToAsync(stream);
+                            using (var writer = new BinaryWriter(stream))
+                            {
+                                writer.Write(imageBytes);
+                            }
                         }
 
                         using (var stream = new FileStream(path3, FileMode.Create))
                         {
-                            await newLogoUrl.CopyToAsync(stream);
+                            using (var writer = new BinaryWriter(stream))
+                            {
+                                writer.Write(imageBytes);
+                            }
                         }
                     }
                 }
@@ -223,13 +234,13 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             newWeb_AffinityPrograms.WebAddress = newWebAddress;
             newWeb_AffinityPrograms.Contact = newContact;
             newWeb_AffinityPrograms.LogoName = newLogoName;
-            newWeb_AffinityPrograms.LogoURL = newLogoURLText == null ? "" : newLogoURLText;
+            newWeb_AffinityPrograms.LogoURL = newLogoURLText;
             newWeb_AffinityPrograms.ModifiedBy = User.Identity.Name.Substring(7).ToLower();
             newWeb_AffinityPrograms.InfoFileName = newInfoFileName;
-            newWeb_AffinityPrograms.InfoFileURL = newInfoFileUrlText == null ? "" : newInfoFileUrlText;
+            newWeb_AffinityPrograms.InfoFileURL = newInfoFileUrlText;
             newWeb_AffinityPrograms.InfoFileDisplayName = newInfoFileDisplayName;
             newWeb_AffinityPrograms.InfoFileName2 = newInfoFileName2;
-            newWeb_AffinityPrograms.InfoFileURL2 = newInfoFileUrlText2 == null ? "" : newInfoFileUrlText2;
+            newWeb_AffinityPrograms.InfoFileURL2 = newInfoFileUrlText2;
             newWeb_AffinityPrograms.InfoFileDisplayName2 = newInfoFileDisplayName2;
 
             Log.Logger.Information(User.Identity.Name.Substring(7).ToLower() + " is adding a new affinity program: {@newWeb_AffinityPrograms}", newWeb_AffinityPrograms);
@@ -271,11 +282,8 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
 
                 var image = Image.FromStream(logoUrl.OpenReadStream());
 
-                int sourceWidth = image.Width;
-                int sourceHeight = image.Height;
-                float nPercent = 0;
-                float nPercentW = 0;
-                float nPercentH = 0;
+                int sourceWidth = image.Width, sourceHeight = image.Height;
+                float nPercent = 0, nPercentW = 0, nPercentH = 0;
 
                 nPercentW = ((float)300 / (float)sourceWidth);
                 nPercentH = ((float)100 / (float)sourceHeight);
@@ -288,15 +296,15 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                 int destWidth = (int)(sourceWidth * nPercent);
                 int destHeight = (int)(sourceHeight * nPercent);
 
-                var resized = new Bitmap(image, new Size(destWidth, destHeight));
-                using var imageStream = new MemoryStream();
-                resized.Save(imageStream, ImageFormat.Gif);
-                var imageBytes = imageStream.ToArray();
-
                 try
                 {
                     if (sourceWidth > 300 || sourceHeight > 100)
                     {
+                        var resized = new Bitmap(image, new Size(destWidth, destHeight));
+                        using var imageStream = new MemoryStream();
+                        resized.Save(imageStream, ImageFormat.Gif);
+                        var imageBytes = imageStream.ToArray();
+
                         using (var stream = new FileStream(path, FileMode.Create))
                         {
                             using (var writer = new BinaryWriter(stream))
@@ -323,19 +331,33 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                     }
                     else
                     {
+                        var resized = new Bitmap(image, new Size(sourceWidth, sourceHeight));
+                        using var imageStream = new MemoryStream();
+                        resized.Save(imageStream, ImageFormat.Gif);
+                        var imageBytes = imageStream.ToArray();
+
                         using (var stream = new FileStream(path, FileMode.Create))
                         {
-                            await logoUrl.CopyToAsync(stream);
+                            using (var writer = new BinaryWriter(stream))
+                            {
+                                writer.Write(imageBytes);
+                            }
                         }
 
                         using (var stream = new FileStream(path2, FileMode.Create))
                         {
-                            await logoUrl.CopyToAsync(stream);
+                            using (var writer = new BinaryWriter(stream))
+                            {
+                                writer.Write(imageBytes);
+                            }
                         }
 
                         using (var stream = new FileStream(path3, FileMode.Create))
                         {
-                            await logoUrl.CopyToAsync(stream);
+                            using (var writer = new BinaryWriter(stream))
+                            {
+                                writer.Write(imageBytes);
+                            }
                         }
                     }
                 }
@@ -407,13 +429,13 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             toUpdateProgram.WebAddress = webAddress;
             toUpdateProgram.Contact = contact;
             toUpdateProgram.LogoName = logoName;
-            toUpdateProgram.LogoURL = logoURLText == null ? "" : logoURLText;
+            toUpdateProgram.LogoURL = logoURLText;
             toUpdateProgram.ModifiedBy = User.Identity.Name.Substring(7).ToLower();
             toUpdateProgram.InfoFileName = infoFileName;
-            toUpdateProgram.InfoFileURL = infoFileUrlText == null ? "" : infoFileUrlText;
+            toUpdateProgram.InfoFileURL = infoFileUrlText;
             toUpdateProgram.InfoFileDisplayName = infoFileDisplayName;
             toUpdateProgram.InfoFileName2 = infoFileName2;
-            toUpdateProgram.InfoFileURL2 = infoFileUrlText2 == null ? "" : infoFileUrlText2;
+            toUpdateProgram.InfoFileURL2 = infoFileUrlText2;
             toUpdateProgram.InfoFileDisplayName2 = infoFileDisplayName2;
 
             Log.Logger.Information(User.Identity.Name.Substring(7).ToLower() + $" is updating affinity program Id: {programId} to: " + "{@toUpdateProgram}", toUpdateProgram);
