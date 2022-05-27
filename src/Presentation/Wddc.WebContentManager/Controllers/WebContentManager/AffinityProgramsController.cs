@@ -85,16 +85,32 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                 path3 = path3 + "\\" + newLogoUrl.FileName;
 
                 var image = Image.FromStream(newLogoUrl.OpenReadStream());
-                int width = image.Width, height = image.Height;
 
-                var resized = new Bitmap(image, new Size(300, 100));
+                int sourceWidth = image.Width;
+                int sourceHeight = image.Height;
+                float nPercent = 0;
+                float nPercentW = 0;
+                float nPercentH = 0;
+
+                nPercentW = ((float)300 / (float)sourceWidth); 
+                nPercentH = ((float)100 / (float)sourceHeight);
+
+                if (nPercentH < nPercentW)
+                    nPercent = nPercentH;
+                else
+                    nPercent = nPercentW;
+ 
+                int destWidth = (int)(sourceWidth * nPercent);
+                int destHeight = (int)(sourceHeight * nPercent);
+
+                var resized = new Bitmap(image, new Size(destWidth, destHeight));
                 using var imageStream = new MemoryStream();
                 resized.Save(imageStream, ImageFormat.Gif);
                 var imageBytes = imageStream.ToArray();
 
                 try
                 {
-                    if (width > 300 || height > 100)
+                    if (sourceWidth > 300 || sourceHeight > 100)
                     {
                         using (var stream = new FileStream(path, FileMode.Create))
                         {
@@ -254,16 +270,32 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                 path3 = path3 + "\\" + logoUrl.FileName;
 
                 var image = Image.FromStream(logoUrl.OpenReadStream());
-                int width = image.Width, height = image.Height;
 
-                var resized = new Bitmap(image, new Size(300, 100));
+                int sourceWidth = image.Width;
+                int sourceHeight = image.Height;
+                float nPercent = 0;
+                float nPercentW = 0;
+                float nPercentH = 0;
+
+                nPercentW = ((float)300 / (float)sourceWidth);
+                nPercentH = ((float)100 / (float)sourceHeight);
+
+                if (nPercentH < nPercentW)
+                    nPercent = nPercentH;
+                else
+                    nPercent = nPercentW;
+
+                int destWidth = (int)(sourceWidth * nPercent);
+                int destHeight = (int)(sourceHeight * nPercent);
+
+                var resized = new Bitmap(image, new Size(destWidth, destHeight));
                 using var imageStream = new MemoryStream();
                 resized.Save(imageStream, ImageFormat.Gif);
                 var imageBytes = imageStream.ToArray();
 
                 try
                 {
-                    if (width > 300 || height > 100)
+                    if (sourceWidth > 300 || sourceHeight > 100)
                     {
                         using (var stream = new FileStream(path, FileMode.Create))
                         {
