@@ -50,6 +50,13 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             return View(webAffinityProgramsModel);
         }
 
+        public  ActionResult AffinityProgramsList(string response, string message)
+        {
+            ViewBag.response = response;
+            ViewBag.Message = message;
+            return View();
+        }
+
         public async Task<JsonResult> GetFirstAffinityProgramAsync()
         {
             List<Web_AffinityPrograms> webAffinityPrograms = await _affinityService.GetAllWebAffinityPrograms();
@@ -475,6 +482,44 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             }
 
             return Json(new { success = true });
+        }
+
+        [HttpPost]
+        public async Task<ActionResult> UpdateAffinityProgramsListAsync(IFormFile infoFileUrl)
+        {
+            Log.Logger.Information(User.Identity.Name.Substring(7).ToLower() + " is updating the affinity programs pdf list");
+
+            if (infoFileUrl != null)
+            {
+                var path = "\\\\WEBsrvr\\WDDCMembers\\WDDCWebPages\\wddc_members\\CS\\Affinity Programs";
+                path = Path.Combine(path, "Affinity_Programs.pdf");
+
+                var path2 = "\\\\WEBsrvr\\WDDCMembers\\WDDCWebPages\\wddc_members\\Affinity Programs";
+                path2 = Path.Combine(path2, "Affinity_Programs.pdf");
+
+                try
+                {
+                    using (var stream = new FileStream(path, FileMode.Create))
+                    {
+                        await infoFileUrl.CopyToAsync(stream);
+                    }
+
+                    using (var stream = new FileStream(path2, FileMode.Create))
+                    {
+                        await infoFileUrl.CopyToAsync(stream);
+                    }
+
+                    _logger.Information($"Uploaded affinity programs pdf list successfully", null, User, "WebOrdering");
+                    return RedirectToAction("AffinityProgramsList", new { response = "Success", message = "Affinity programs pdf list was uploaded successfully! " });
+                }
+                catch (Exception ex)
+                {
+                    Log.Logger.Error($"Error copying affinity programs pdf file: {infoFileUrl.FileName} by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
+                    _logger.Error($"Error uploading affinity programs pdf list: {ex.Message.Substring(0, 200)}", ex, User, "WebOrdering");
+                    return RedirectToAction("AffinityProgramsList", new { response = "Failure", message = "Failure uploading affinity programs pdf list: " + ex.Message.Substring(0, 200) });
+                }
+            }
+            return RedirectToAction("AffinityProgramsList", new { response = "Failure", message = "No file was selected" });
         }
 
         public async Task<ActionResult> LogAsync(int? pageNumber, int pageSize = 5, string referrerUrl = null)

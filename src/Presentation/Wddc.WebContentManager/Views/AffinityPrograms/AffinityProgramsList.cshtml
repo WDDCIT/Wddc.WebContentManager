@@ -1,0 +1,372 @@
+﻿@model Wddc.WebContentManager.Models.WebContent.AffinityPrograms.WebAffinityProgramsModel
+
+@{
+    ViewBag.Title = "Affinity Programs Listing";
+}
+
+@section Styles {
+
+    <link href="https://kendo.cdn.telerik.com/2021.2.511/styles/kendo.default.min.css" rel="stylesheet" />
+    <link href="https://kendo.cdn.telerik.com/2021.2.511/styles/kendo.bootstrap-v4.min.css" rel="stylesheet" type="text/css" />
+
+}
+
+@section Scripts {
+
+    <script src="http://ajax.aspnetcdn.com/ajax/jquery.validate/1.11.0/jquery.validate.min.js"></script>
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script>
+
+    <script src="https://kendo.cdn.telerik.com/2021.2.511/js/kendo.all.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script src="~/js/pagination/pagination.min.js"></script>
+    <script src="~/js/pagination/pagination.custom.js"></script>
+
+    <script>
+
+        $(document).ready(function () {
+
+            prepareLogList(); 
+
+            if('@ViewBag.response') {
+                if ('@ViewBag.response' == "Success") {
+                    document.getElementById("danger-alert").style.display = "none";
+                    document.getElementById("success-alert").style.display = "inline-block";
+                    var alertText = '<strong>Success! </strong>';
+                    alertText += '@ViewBag.Message';
+                    $("#success-alert").html(alertText);
+                    $("#success-alert").fadeTo(8000, 500).slideUp(500, function() {
+                        $("#success-alert").slideUp(500);
+                    });
+                }
+                else {
+                    document.getElementById("success-alert").style.display = "none";
+                    document.getElementById("danger-alert").style.display = "inline-block";
+                    var alertText = '<strong>Failure! </strong>';
+                    alertText += '@ViewBag.Message';
+                    $("#danger-alert").html(alertText);
+                    $("#danger-alert").fadeTo(8000, 500).slideUp(500, function() {
+                        $("#danger-alert").slideUp(500);
+                    });
+                }
+            } else {
+                document.getElementById("success-alert").style.display = "none";
+                document.getElementById("danger-alert").style.display = "none";
+            }
+
+            $("#infoFileUrl").on("change", function (e) {
+
+                var fileName = $(this).val().split("\\").pop();
+                document.getElementById("infoFileUrlText").value = fileName;
+                document.forms["upload-form"]["upload-form-submit"].disabled = false;
+            });
+        })
+
+        function performClick() {
+            document.getElementById("infoFileUrl").click();
+        }
+
+        function validateUpdateForm() {
+
+            var infoFileUrl = document.forms["upload-form"]["infoFileUrl"].value;
+            if (!infoFileUrl || infoFileUrl.length == 0 || infoFileUrl.trim() == "") {
+                alert("A new File must be chosen!")
+                return false;
+            }
+
+            return true;
+        }
+
+        function prepareLogList() {
+            setupPagination('log', 'log-list', '@Url.Action("Log", "AffinityPrograms")?referrerUrl=AffinityPrograms', ['Log', 'Username', 'Created'], 7);
+        }
+
+
+    </script>
+}
+
+<div class="wrapper wrapper-content animated fadeInRight">
+    <div class="row">
+        <div class="col-12 col-lg-12 col-sm-12 col-xl-12 content-center">
+            <div class="alert alert-success" id="success-alert" style="display:none"></div>
+            <div class="alert alert-danger" id="danger-alert" style="display:none"></div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="ibox">
+                <div class="ibox-content">
+                    <div class="row">
+                        <div class="col-lg-12 content-center">
+                            <h4>This tool is to update the affinity programs pdf list on the website </h4>
+                        </div>
+                    </div>
+                    <div class="row" style="margin-top: 20px;">
+                        <div class="col-lg-12 content-center">
+                            <a href="https://www.wddc.com/wddc_members/CS/Affinity%20Programs/Affinity_Programs.pdf" target="_blank" class="btn btn-primary">View Current List</a>
+                        </div>
+                    </div>
+                    <div class="row" style="margin-top: 120px;">
+                        <div class="col-lg-12 content-center">
+                            <form id="upload-form" name="upload-form" method="post" action="@Url.Action("UpdateAffinityProgramsList", "AffinityPrograms")" enctype="multipart/form-data" onsubmit="return validateUpdateForm()">
+                                <div class="row form-row" >
+                                    <div class="col-lg-2"></div>
+                                    <div class="col-lg-8">
+                                        <div class="row" style="display: flex;">
+                                            <div class="col-lg-11">
+                                                <input id="infoFileUrlText" name="infoFileUrlText" class="form-control" type="text" value="" maxlength="100">
+                                            </div>
+                                            <div class="col-lg-1 control-label-center" style="justify-content: flex-end; padding-left:0px;">
+                                                <input id="infoFileUrl" name="infoFileUrl" class="form-control" type="file" value="" style="display:none">
+                                                <button type="button" class="btn btn-light" onclick="performClick();" >Browse</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-2"></div>
+                                </div>
+                                <div class="row form-row" style="padding-top: 20px;">
+                                    <div class="col-lg-12">
+                                        <button id="upload-form-submit" type="submit" class="btn btn-primary" disabled>Upload</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="row" style="margin-top: 180px;">
+                        <div class="col-lg-2"></div>
+                        <div class="col-lg-8 content-center">
+                            <div id="log" class="content-center">
+                                <div class="bs-ObjectList-rows" id="log-list">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-2"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<style>
+
+    .content-center {
+        margin: 0px auto 0px auto;
+        text-align: center;
+    }
+
+    .wrapper-content {
+        padding: 10px 10px 20px;
+    }
+
+    .ibox-title {
+        padding: 15px 0px 15px;
+        color: #1565C0;
+        border: none;
+    }
+
+    .ibox-content {
+        padding: 7px 15px 15px 15px;
+    }
+
+    .data-container {
+        padding: 0px 0px 15px 0px;
+    }
+
+    .list-group {
+        min-height: 850px;
+        max-height: 850px;
+    }
+
+    .list-group {
+        overflow-y: scroll;
+        overflow-x: hidden;
+    }
+
+    .list-group-item {
+        white-space: nowrap;
+    }
+
+    .tools-row {
+        padding: 0px 0px 20px 0px;
+    }
+
+    /*input[type="radio"] {
+        margin: 2px 0 0;
+    }*/
+
+    .k-button {
+        font-size: 1.5rem;
+    }
+
+    .icon-description {
+        margin-left: 5px;
+    }
+
+    textarea {
+        border: none;
+    }
+
+    .k-calendar td.k-state-selected .k-link {
+        border-color: #005dc2;
+        background-color: #007bff;
+    }
+
+    .k-popup .k-group-header, .k-popup .k-header {
+        font-size: 1.3rem;
+    }
+
+    .breadcrumb {
+        display: none;
+    }
+
+    label {
+        margin-bottom: 0px;
+    }
+
+    .form-row {
+        margin-top: 7px;
+        vertical-align: central;
+        display: flex;
+    }
+
+    .form-label-col {
+        display: flex;
+        padding-right: 0;
+        justify-content: flex-end;
+    }
+
+    .control-label {
+        color: #556375;
+        font-size: 1.3rem;
+    }
+
+    .control-label-center {
+        display: flex;
+        margin-top: auto;
+        margin-bottom: auto;
+    }
+
+    .control-label-top {
+        display: flex;
+    }
+
+    .control-label-top-small {
+        display: flex;
+        font-size: 1.2rem;
+    }
+
+    .form-control {
+        font-size: 1.3rem;
+        border-color: #ddd;
+    }
+
+    .btn-light {
+        color: #212529;
+        background-color: #e3e6e8;
+        border-color: #dae0e5;
+        padding: 8px 12px;
+    }
+
+        .btn-light:hover {
+            color: #212529;
+            background-color: #e2e6ea;
+            border-color: #dae0e5
+        }
+
+        .btn-light.focus, .btn-light:focus {
+            color: #212529;
+            background-color: #e2e6ea;
+            border-color: #dae0e5;
+            box-shadow: 0 0 0 .2rem rgba(216,217,219,.5)
+        }
+
+    .btn-primary.disabled, .btn-primary.disabled:hover, .btn-primary.disabled:focus, .btn-primary.disabled:active, .btn-primary.disabled.active, .btn-primary[disabled], .btn-primary[disabled]:hover, .btn-primary[disabled]:focus, .btn-primary[disabled]:active, .btn-primary.active[disabled], fieldset[disabled] .btn-primary, fieldset[disabled] .btn-primary:hover, fieldset[disabled] .btn-primary:focus, fieldset[disabled] .btn-primary:active, fieldset[disabled] .btn-primary.active {
+        color: #fff;
+        background-color: #6c757d;
+        border-color: #6c757d;
+    }
+
+    #swal2-title {
+        font-size: 15px;
+    }
+
+    .swal2-popup {
+        padding: 1.25em;
+    }
+
+    .modal-lg {
+        width: 65%;
+    }
+
+    .modal-title {
+        color: #1565C0;
+        font-size: 14px;
+        font-weight: bold;
+    }
+
+    #active-ads li {
+        cursor: pointer;
+    }
+
+    .bs-ObjectList-row {
+        border-radius: 0.25rem;
+    }
+
+    .bs-ObjectList-row--header {
+        position: relative;
+        background-color: #E8E8E8;
+    }
+
+        .bs-ObjectList-row--header .bs-ObjectList-cell {
+            font-weight: bold;
+        }
+
+    .bs-ObjectList-row .bs-ObjectList-cell {
+        width: 20%;
+        text-align: center;
+    }
+
+        .bs-ObjectList-row .bs-ObjectList-cell:last-child {
+            width: 20%;
+            text-align: center;
+        }
+
+        .bs-ObjectList-row .bs-ObjectList-cell:first-child {
+            width: 60%;
+            text-align: left;
+            white-space: pre-wrap;
+        }
+
+    .bs-ObjectList-child, .bs-ObjectList-parent, .bs-ObjectList-row {
+        display: table-row;
+        transition: background-color .15s ease 0s;
+    }
+
+    .bs-ObjectList-cell {
+        display: table-cell;
+        position: relative;
+        padding: 9px 10px;
+        color: #525f7f;
+        font-weight: 400;
+        line-height: 22px;
+        vertical-align: top;
+        white-space: nowrap;
+    }
+
+    textarea {
+      resize: none;
+    }
+
+
+    h4 {
+        color: darkblue;
+    }
+
+    .btn {
+        padding: 4px 12px;
+    }
+
+</style>
