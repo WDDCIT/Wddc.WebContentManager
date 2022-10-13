@@ -51,12 +51,6 @@
             <li id="search-li">
                 <a href="@Url.Action("Index", "Search", new { area = ""})"><i class="fa fa-search"></i> <span class="nav-label">Search Control</span></a>
             </li>
-            @*<li id="websiteNotes-li">
-                <a href="@Url.Action("Index", "WebsiteNotes", new { area = ""})"><i class="fa fa-laptop"></i> <span class="nav-label">Website Notes</span></a>
-            </li>*@
-            @*<li id="affinity-li">
-                <a href="@Url.Action("Index", "AffinityPrograms", new { area = ""})"><i class="fa fa-star"></i> <span class="nav-label">Affinity Programs</span></a>
-            </li>*@
             <li class="@Html.IsSelected(controller: "AffinityPrograms")">
                 <a href="#"><i class="fa fa-star"></i> <span class="nav-label">Affinity Programs</span><span class="fa arrow"></span></a>
                 <ul class="nav nav-second-level collapse" aria-expanded="true" id="message-ul">
@@ -65,6 +59,17 @@
                     </li>
                     <li id="affinityList-li">
                         <a href="@Url.Action("AffinityProgramsList", "AffinityPrograms", new { area = ""})">Programs PDF List</a>
+                    </li>
+                </ul>
+            </li>
+            <li class="@Html.IsSelected(controller: "FYINewsletter") @Html.IsSelected(controller: "InsiderNewsletter")">
+                <a href="#"><i class="fa fa-newspaper-o"></i> <span class="nav-label">Website Newsletter</span><span class="fa arrow"></span></a>
+                <ul class="nav nav-second-level collapse" aria-expanded="true" id="newsletter-ul">
+                    <li id="fyiNewsletter-li">
+                        <a href="@Url.Action("Index", "FYINewsletter", new { area = ""})">FYI Newsletter</a>
+                    </li>
+                    <li id="insiderNewsletter-li">
+                        <a href="@Url.Action("Index", "InsiderNewsletter", new { area = ""})">Insider Newsletter</a>
                     </li>
                 </ul>
             </li>
