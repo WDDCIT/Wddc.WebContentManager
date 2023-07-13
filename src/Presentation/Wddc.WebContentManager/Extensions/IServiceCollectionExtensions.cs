@@ -25,6 +25,7 @@ using Wddc.WebContentManager.Services.WebContent.Search;
 using Wddc.WebContentManager.Services.WebUser;
 using Wddc.WebContentManager.Services.WebContent.Affinity;
 using Wddc.WebContentManager.Services.WebContent.Newsletter;
+using Wddc.WebContentManager.Services.WebContent.ClientVantageBanners;
 
 namespace Wddc.WebContentManager.Extensions
 {
@@ -65,6 +66,7 @@ namespace Wddc.WebContentManager.Extensions
             services.TryAddSingleton<IWebUserLookupService, WebUserLookupService>();
             services.TryAddSingleton<IAffinityService, AffinityService>();
             services.TryAddSingleton<INewsletterService, NewsletterService>();
+            services.TryAddSingleton<IClientVantageBannersService, ClientVantageBannersService>();
 
             //dependencies
             var typeFinder = new WebAppTypeFinder();
