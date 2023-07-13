@@ -19,5 +19,11 @@ namespace Wddc.WebContentManager.Services.WebContent.Newsletter
         Task<Web_News> CreateWebInsiderNews(Web_News Web_News);
         Task UpdateWebInsiderNews(Web_News Web_News, int ID);
         Task DeleteWebInsiderNews(int ID);
+        Task<List<Web_News>> GetPriceSheets();
+        Task<Web_News> GetPriceSheetById(int ID);
+        Task<Web_News> CreatePriceSheet(Web_News Web_News);
+        Task UpdatePriceSheet(Web_News Web_News, int ID);
+        Task DeletePriceSheet(int ID);
+
     }
 }

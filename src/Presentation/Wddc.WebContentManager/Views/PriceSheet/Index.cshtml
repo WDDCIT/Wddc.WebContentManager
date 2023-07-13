@@ -1,0 +1,986 @@
+﻿@{
+    ViewBag.Title = "Supplier Price Sheets";
+}
+
+@section Styles {
+
+    <link href="https://kendo.cdn.telerik.com/2021.2.511/styles/kendo.default.min.css" rel="stylesheet" />
+    <link href="https://kendo.cdn.telerik.com/2021.2.511/styles/kendo.bootstrap-v4.min.css" rel="stylesheet" type="text/css" />
+
+}
+
+@section Scripts {
+
+    <script src="http://ajax.aspnetcdn.com/ajax/jquery.validate/1.11.0/jquery.validate.min.js"></script>
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script>
+
+    <script src="https://kendo.cdn.telerik.com/2021.2.511/js/kendo.all.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script src="~/js/pagination/pagination.min.js"></script>
+    <script src="~/js/pagination/pagination.custom.js"></script>
+
+    <script>
+
+        $(document).ready(function () {
+            
+            prepareLogList(); 
+
+            if('@ViewBag.response') {
+                if ('@ViewBag.response' == "Success") {
+                    document.getElementById("danger-alert").style.display = "none";
+                    document.getElementById("success-alert").style.display = "inline-block";
+                    var alertText = '<strong>Success! </strong>';
+                    alertText += '@ViewBag.Message';
+                    $("#success-alert").html(alertText);
+                    $("#success-alert").fadeTo(8000, 500).slideUp(500, function() {
+                        $("#success-alert").slideUp(500);
+                    });
+                }
+                else {
+                    document.getElementById("success-alert").style.display = "none";
+                    document.getElementById("danger-alert").style.display = "inline-block";
+                    var alertText = '<strong>Failure! </strong>';
+                    alertText += '@ViewBag.Message';
+                    $("#danger-alert").html(alertText);
+                    $("#danger-alert").fadeTo(8000, 500).slideUp(500, function() {
+                        $("#danger-alert").slideUp(500);
+                    });
+                }
+            } else {
+                document.getElementById("success-alert").style.display = "none";
+                document.getElementById("danger-alert").style.display = "none";
+            }
+
+            $("#newInfoFileUrl").on("change", function (e) {
+                var fileName = $(this).val().split("\\").pop();
+                document.getElementById("newInfoFileUrlText").value = fileName;
+            });
+
+            $("#updatedInfoFileUrl").on("change", function (e) {
+                var fileName = $(this).val().split("\\").pop();
+                document.getElementById("updatedInfoFileUrlText").value = fileName;
+            });
+
+            $("#priceSheetToUpdate").kendoDropDownList({
+                filter: "contains",
+                valueTemplate: '<span class="k-state-default"><p>#: kendo.toString(new Date(data.IssueDate), "MMMM dd,yyyy") #</p></span>&nbsp;&nbsp;&nbsp;&nbsp;' +
+                               '<span class="k-state-default"><p>#: data.Description #</p></span>',
+                template: '<span class="k-state-default"><p>#: kendo.toString(new Date(data.IssueDate), "MMMM dd,yyyy") #</p></span>&nbsp;&nbsp;&nbsp;&nbsp;' +
+                          '<span class="k-state-default"><p>#: data.Description #</p></span>',
+                footerTemplate: 'Total #: instance.dataSource.total() # items found',
+                dataTextField: "Description",
+                dataValueField: "ID",
+                //optionLabel: "Select ..",
+                 height: 300,
+                dataSource: {
+                    transport: {
+                        read: {
+                            url: '@Url.Action("GetPriceSheets", "PriceSheet")',
+                            dataType: "json"
+                        }
+                    }
+                },
+                open: function(e) {
+                    document.getElementById("update-form-row").style.visibility  = "hidden";
+                },
+                filtering: function (ev) {
+                    var filterValue = ev.filter != undefined ? ev.filter.value : "";
+                    ev.preventDefault();
+
+                    this.dataSource.filter({
+                        logic: "or",
+                        filters: [
+                            {
+                                field: "IssueDate",
+                                operator: "contains",
+                                value: filterValue
+                            },
+                            {
+                                field: "Description",
+                                operator: "contains",
+                                value: filterValue
+                            }
+                        ]
+                    });
+                }
+            });
+
+
+            $("#priceSheetToDelete").kendoDropDownList({
+                filter: "contains",
+                valueTemplate: '<span class="k-state-default"><p>#: kendo.toString(new Date(data.IssueDate), "MMMM dd,yyyy") #</p></span>&nbsp;&nbsp;&nbsp;&nbsp;' +
+                               '<span class="k-state-default"><p>#: data.Description #</p></span>',
+                template: '<span class="k-state-default"><p>#: kendo.toString(new Date(data.IssueDate), "MMMM dd,yyyy") #</p></span>&nbsp;&nbsp;&nbsp;&nbsp;' +
+                          '<span class="k-state-default"><p>#: data.Description #</p></span>',
+                footerTemplate: 'Total #: instance.dataSource.total() # items found',
+                dataTextField: "Description",
+                dataValueField: "ID",
+                height: 300,
+                dataSource: {
+                    transport: {
+                        read: {
+                            url: '@Url.Action("GetPriceSheets", "PriceSheet")',
+                            dataType: "json"
+                        }
+                    }
+                },
+                open: function(e) {
+                    document.getElementById("delete-form-row").style.visibility  = "hidden";
+                },
+                filtering: function (ev) {
+                    var filterValue = ev.filter != undefined ? ev.filter.value : "";
+                    ev.preventDefault();
+
+                    this.dataSource.filter({
+                        logic: "or",
+                        filters: [
+                            {
+                                field: "IssueDate",
+                                operator: "contains",
+                                value: filterValue
+                            },
+                            {
+                                field: "Description",
+                                operator: "contains",
+                                value: filterValue
+                            }
+                        ]
+                    });
+                }
+            });
+
+
+        })
+
+        function selectPriceSheetToUpdate() {
+
+            let priceSheetToUpdateId = document.getElementById("priceSheetToUpdate").value.trim();
+
+            $.getJSON('@Url.Action("GetPriceSheetById", "PriceSheet")?ID=' + priceSheetToUpdateId, function (result) {
+
+                document.getElementById("updatedPriceSheetId").value = result.ID;
+
+                document.getElementById("updatedDescription").value = result.Description;
+
+                $("#updatedIssueDate").data("kendoDatePicker").value(new Date(result.IssueDate));
+
+                if (result.Status == 1)
+                    document.getElementById("updatedStatusYes").checked = true;
+                else
+                    document.getElementById("updatedStatusNo").checked = true;
+
+                var updateFormRow = document.getElementById("update-form-row");
+                updateFormRow.style.visibility  = "visible";
+
+                document.getElementById("toUpdatePriceSheetLogo").src = "../css/images/pdf-icon.png";
+                document.getElementById("toUpdatePriceSheetPdf").href = "https://www.wddc.com/wddc_members/CS/Price%20Lists/" + result.IssueNumber + ".pdf";
+            });
+        }
+
+        function selectPriceSheetToDelete() {
+
+            let priceSheetToDeleteId = document.getElementById("priceSheetToDelete").value.trim();
+
+            $.getJSON('@Url.Action("GetPriceSheetById", "PriceSheet")?ID=' + priceSheetToDeleteId, function (result) {
+
+                document.getElementById("deletedPriceSheetId").value = result.ID;
+
+                document.getElementById("deletedDescription").value = result.Description;
+
+                $("#deletedIssueDate").data("kendoDatePicker").value(new Date(result.IssueDate));
+                $("#deletedIssueDate").data("kendoDatePicker").enable(false);
+
+                if (result.Status == 1)
+                    document.getElementById("deletedStatusYes").checked = true;
+                else
+                    document.getElementById("deletedStatusNo").checked = true;
+
+                var deleteFormRow = document.getElementById("delete-form-row");
+                deleteFormRow.style.visibility  = "visible";
+
+                document.getElementById("toDeletePriceSheetLogo").src = "../css/images/pdf-icon.png";
+                document.getElementById("toDeletePriceSheetPdf").href = "https://www.wddc.com/wddc_members/CS/Price%20Lists/" + result.IssueNumber + ".pdf";
+            });
+        }
+
+        function newInfoFileUrlClick() {
+            document.getElementById("newInfoFileUrl").click();
+        }
+
+        function updatedInfoFileUrlClick() {
+            document.getElementById("updatedInfoFileUrl").click();
+        }
+
+        function validateAddForm() {
+
+            var newDescription = document.forms["add-form"]["newDescription"].value;
+            if (newDescription.trim() == "") {
+                alert("Description must be filled out");
+                return false;
+            }
+
+            var newInfoFileUrl = document.forms["add-form"]["newInfoFileUrl"].value;
+            if (!newInfoFileUrl || newInfoFileUrl.length == 0 || newInfoFileUrl.trim() == "") {
+                alert("A pdf file must be chosen!")
+                return false;
+            }
+
+            var newIssueDate = document.forms["add-form"]["newIssueDate"].value;
+            if (newIssueDate == null || newIssueDate.trim() == "") {
+                alert("Issue Date must be filled out");
+                return false;
+            }
+
+            return true;
+        }
+
+        function validateUpdateForm() {
+
+            var updatedDescription = document.forms["update-form"]["updatedDescription"].value;
+            if (updatedDescription.trim() == "") {
+                alert("Description must be filled out");
+                return false;
+            }
+
+            var updatedIssueDate = document.forms["update-form"]["updatedIssueDate"].value;
+            if (updatedIssueDate == null || updatedIssueDate.trim() == "") {
+                alert("Issue Date must be filled out");
+                return false;
+            }
+
+            return true;
+        }
+
+        function prepareLogList() {
+            setupPagination('log', 'log-list', '@Url.Action("Log", "PriceSheet")?referrerUrl=PriceSheet', ['Log', 'Username', 'Created'], 7);
+        }
+
+        var coll = document.getElementsByClassName("collapsible-info");
+
+        for (var i = 0; i < coll.length; i++) {
+            coll[i].addEventListener("click", function () {
+
+                this.classList.toggle("active");
+                var content = this.nextElementSibling;
+                if (content.style.maxHeight) {
+                    content.style.maxHeight = null;
+                } else {
+                    //content.style.maxHeight = content.scrollHeight + "px";
+                    content.style.maxHeight = "1000px";   
+                }
+
+                var updateFormRow = document.getElementById("update-form-row");
+                updateFormRow.style.visibility  = "hidden";
+            });
+        }
+
+        $("#newIssueDate").kendoDatePicker({
+             format: "MMMM dd, yyyy",
+             value: new Date()
+        });
+
+        $("#updatedIssueDate").kendoDatePicker({
+             format: "MMMM dd, yyyy",
+        });
+
+        $("#deletedIssueDate").kendoDatePicker({
+             format: "MMMM dd, yyyy",
+        });
+
+
+    </script>
+}
+
+<div class="wrapper wrapper-content animated fadeInRight">
+    <div class="row">
+        <div class="col-12 col-lg-12 col-sm-12 col-xl-12 content-center">
+            <div class="alert alert-success" id="success-alert" style="display:none"></div>
+            <div class="alert alert-danger" id="danger-alert" style="display:none"></div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="ibox">
+                <div class="ibox-content">
+                    <div class="row">
+                        <div class="col-lg-12 content-center">
+                             <h4>
+                                 This tool is to add, edit, and delete supplier price sheets on the website
+                             </h4>
+                             <a href="https://www.wddc.com/wddc_members/m_Price_Lists.aspx" target="_blank"><img id="websiteImg" src="~/css/images/Price Sheets.png" class="img-shadow" alt="Visit WDDC Supplier Price Sheets"></a>
+                        </div>
+                    </div>
+                    <div class="row priceSheet-action" style="margin-top: 50px;">
+                        <div class="col-2 col-lg-2 col-sm-2 col-xl-2"></div>
+                        <div class="col-8 col-lg-8 col-sm-8 col-xl-8 collapsible-col">
+                            <button type="button" class="collapsible-info">Add Price Sheet</button>
+                            <div class="content">
+                                <div class="row">
+                                     <div class="col-lg-12 content-center">
+                                            <form id="add-form" name="add-form" method="post" action="@Url.Action("AddPriceSheet", "PriceSheet")" enctype="multipart/form-data" onsubmit="return validateAddForm()">
+                                              <div class="row form-row" >
+                                                    <div class="col-lg-2"></div>
+                                                    <div class="col-lg-8">
+                                                         <div class="row">
+                                                             <div class="col-lg-2 form-label-col">
+                                                                <label for="newDescription" class="control-label control-label-center">Description:</label>
+                                                            </div>
+                                                            <div class="col-lg-10">
+                                                                <input id="newDescription" name="newDescription" class="form-control" type="text" maxlength="69" value="" >
+                                                            </div>
+                                                         </div>
+                                                    </div>
+                                                    <div class="col-lg-2"></div>
+                                               </div>
+                                              <div class="row form-row" >
+                                                    <div class="col-lg-2"></div>
+                                                    <div class="col-lg-8">
+                                                         <div class="row" >
+                                                              <div class="col-lg-2 form-label-col">
+                                                                   <label for="newInfoFileUrlText" class="control-label control-label-center">PDF File:</label>
+                                                              </div>
+                                                              <div class="col-lg-10">
+                                                                  <div class="row">
+                                                                      <div class="col-lg-11">
+                                                                           <input id="newInfoFileUrlText" name="newInfoFileUrlText" class="form-control" type="text" value="">
+                                                                      </div>
+                                                                      <div class="col-lg-1 control-label-center" style="justify-content: flex-end;">
+                                                                           <input id="newInfoFileUrl" name="newInfoFileUrl" class="form-control" type="file" value="" style="display:none">
+                                                                           <button type="button" class="btn btn-light" onclick="newInfoFileUrlClick();">Browse</button>
+                                                                      </div>
+                                                                  </div>
+                                                              </div>
+                                                         </div>
+                                                    </div>
+                                                    <div class="col-lg-2"></div>
+                                               </div>
+                                               <div class="row form-row" >
+                                                    <div class="col-lg-2"></div>
+                                                    <div class="col-lg-8">
+                                                         <div class="row">
+                                                             <div class="col-lg-2 form-label-col">
+                                                                <label for="newIssueDate" class="control-label control-label-center">Issue Date:</label>
+                                                            </div>
+                                                            <div class="col-lg-10" style="text-align: left;">
+                                                                <input id="newIssueDate" name="newIssueDate" style="width: 40%" />
+                                                            </div>
+                                                         </div>
+                                                    </div>
+                                                    <div class="col-lg-2"></div>
+                                               </div>
+                                               <div class="row form-row" >
+                                                    <div class="col-lg-2"></div>
+                                                    <div class="col-lg-8">
+                                                         <div class="row">
+                                                             <div class="col-lg-2 form-label-col">
+                                                                <label for="newStatus" class="control-label control-label-center">Visible:</label>
+                                                            </div>
+                                                            <div class="col-lg-10" style="text-align: left;">
+                                                                <label class="radio-inline">
+                                                                    <input type="radio" id="newStatusYes" name="newStatus" value="yes" checked>Yes
+                                                                </label>
+                                                                <label class="radio-inline">
+                                                                    <input type="radio" id="newStatusNo" name="newStatus" value="no">No
+                                                                </label>
+                                                            </div>
+                                                         </div>
+                                                    </div>
+                                                    <div class="col-lg-2"></div>
+                                               </div>
+                                               <div class="row form-row" style="padding-top: 20px;">
+                                                    <div class="col-lg-12">
+                                                         <button id="add-form-submit" type="submit" class="k-button k-primary submit-btn">Add</button>
+                                                    </div>
+                                               </div>
+                                          </form>
+                                     </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-2 col-lg-2 col-sm-2 col-xl-2"></div>
+                    </div>
+                    <div class="row priceSheet-action" style="margin-top: 50px;">
+                        <div class="col-2 col-lg-2 col-sm-2 col-xl-2"></div>
+                        <div class="col-8 col-lg-8 col-sm-8 col-xl-8 collapsible-col">
+                            <button type="button" class="collapsible-info">Update Price Sheet</button>
+                            <div class="content">
+                                <div class="row" style="padding-top: 30px;">
+                                     <div class="col-2 col-lg-2 col-sm-2 col-xl-2"></div>
+                                     <div class="col-8 col-lg-8 col-sm-8 col-xl-8">
+                                         <h4>Select a price sheet to update:</h4>
+                                     </div>
+                                     <div class="col-2 col-lg-2 col-sm-2 col-xl-2"></div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-2 col-lg-2 col-sm-2 col-xl-2"></div>
+                                    <div class="col-8 col-lg-8 col-sm-8 col-xl-8 content-center">
+                                        <div class="demo-section k-content">
+                                            <input id="priceSheetToUpdate" style="width: 100%;" />
+                                        </div>
+                                        <button class="k-button k-primary submit-btn" onclick="selectPriceSheetToUpdate()" style="margin-top: 20px;">Select</button>
+                                    </div>
+                                    <div class="col-2 col-lg-2 col-sm-2 col-xl-2"></div>
+                                </div>
+                                <div class="row" id="update-form-row" style="visibility:hidden">
+                                     <div class="col-12 col-lg-12 col-sm-12 col-xl-12 content-center">
+                                         <div class="row">
+                                             <div class="col-12 col-lg-12 col-sm-12 col-xl-12">
+                                                 <div class="logo-description">
+                                                     <span>Click on the below logo to display the current price sheet PDF</span>
+                                                 </div>
+                                                 <div>
+                                                        <a href="https://www.wddc.com/wddc_members/CS/Price Lists/Zoetis.pdf" id="toUpdatePriceSheetPdf" target="_blank"><img id="toUpdatePriceSheetLogo" alt="Visit WDDC Price Sheet"></a>
+                                                 </div>
+                                             </div>
+                                         </div>
+                                         <div class="row">
+                                             <div class="col-12 col-lg-12 col-sm-12 col-xl-12">
+                                                    <form id="update-form" name="update-form" method="post" action="@Url.Action("UpdatePriceSheet", "PriceSheet")" enctype="multipart/form-data" onsubmit="return validateUpdateForm()">
+                                                     <input type="hidden" id="updatedPriceSheetId" name="updatedPriceSheetId"> 
+                                                     <div class="row form-row" >
+                                                            <div class="col-lg-2"></div>
+                                                            <div class="col-lg-8">
+                                                                 <div class="row">
+                                                                     <div class="col-lg-2 form-label-col">
+                                                                        <label for="updatedDescription" class="control-label control-label-center">Description:</label>
+                                                                    </div>
+                                                                    <div class="col-lg-10">
+                                                                        <input id="updatedDescription" name="updatedDescription" class="form-control" type="text" maxlength="69" value="" >
+                                                                    </div>
+                                                                 </div>
+                                                            </div>
+                                                            <div class="col-lg-2"></div>
+                                                       </div>
+                                                      <div class="row form-row" >
+                                                            <div class="col-lg-2"></div>
+                                                            <div class="col-lg-8">
+                                                                 <div class="row">
+                                                                      <div class="col-lg-2 form-label-col">
+                                                                           <label for="updatedInfoFileUrlText" class="control-label control-label-center">PDF File:</label>
+                                                                      </div>
+                                                                      <div class="col-lg-10">
+                                                                          <div class="row">
+                                                                              <div class="col-lg-11">
+                                                                                   <input id="updatedInfoFileUrlText" name="updatedInfoFileUrlText" class="form-control" type="text" placeholder="Leave this empty if you want to keep the current PDF. Upload a new one if you want to update it">
+                                                                              </div>
+                                                                              <div class="col-lg-1 control-label-center" style="justify-content: flex-end;">
+                                                                                   <input id="updatedInfoFileUrl" name="updatedInfoFileUrl" class="form-control" type="file" value="" style="display:none">
+                                                                                   <button type="button" class="btn btn-light" onclick="updatedInfoFileUrlClick();">Browse</button>
+                                                                              </div>
+                                                                          </div>
+                                                                      </div>
+                                                                 </div>
+                                                            </div>
+                                                            <div class="col-lg-2"></div>
+                                                       </div>
+                                                       <div class="row form-row" >
+                                                            <div class="col-lg-2"></div>
+                                                            <div class="col-lg-8">
+                                                                 <div class="row">
+                                                                     <div class="col-lg-2 form-label-col">
+                                                                        <label for="updatedIssueDate" class="control-label control-label-center">Issue Date:</label>
+                                                                    </div>
+                                                                    <div class="col-lg-10" style="text-align: left;">
+                                                                        <input id="updatedIssueDate" name="updatedIssueDate" style="width: 40%" />
+                                                                    </div>
+                                                                 </div>
+                                                            </div>
+                                                            <div class="col-lg-2"></div>
+                                                       </div>
+                                                       <div class="row form-row" >
+                                                            <div class="col-lg-2"></div>
+                                                            <div class="col-lg-8">
+                                                                 <div class="row">
+                                                                     <div class="col-lg-2 form-label-col">
+                                                                        <label for="updatedStatus" class="control-label control-label-center">Visible:</label>
+                                                                    </div>
+                                                                    <div class="col-lg-10" style="text-align: left;">
+                                                                        <label class="radio-inline">
+                                                                            <input type="radio" id="updatedStatusYes" name="updatedStatus" value="yes" checked>Yes
+                                                                        </label>
+                                                                        <label class="radio-inline">
+                                                                            <input type="radio" id="updatedStatusNo" name="updatedStatus" value="no">No
+                                                                        </label>
+                                                                    </div>
+                                                                 </div>
+                                                            </div>
+                                                            <div class="col-lg-2"></div>
+                                                       </div>
+                                                       <div class="row form-row" style="padding-top: 20px;">
+                                                            <div class="col-lg-12">
+                                                                 <button id="update-form-submit" type="submit" class="k-button k-primary submit-btn">Update</button>
+                                                            </div>
+                                                       </div>
+                                                 </form>
+                                             </div>
+                                         </div>
+                                     </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-2 col-lg-2 col-sm-2 col-xl-2"></div>
+                    </div>
+                    <div class="row priceSheet-action" style="margin-top: 50px;">
+                        <div class="col-2 col-lg-2 col-sm-2 col-xl-2"></div>
+                        <div class="col-8 col-lg-8 col-sm-8 col-xl-8 collapsible-col">
+                            <button type="button" class="collapsible-info">Delete Price Sheet</button>
+                            <div class="content">
+                                <div class="row" style="padding-top: 30px;">
+                                     <div class="col-2 col-lg-2 col-sm-2 col-xl-2"></div>
+                                     <div class="col-8 col-lg-8 col-sm-8 col-xl-8">
+                                         <h4>Select a price sheet to delete:</h4>
+                                     </div>
+                                     <div class="col-2 col-lg-2 col-sm-2 col-xl-2"></div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-2 col-lg-2 col-sm-2 col-xl-2"></div>
+                                    <div class="col-8 col-lg-8 col-sm-8 col-xl-8 content-center">
+                                        <div class="demo-section k-content">
+                                            <input id="priceSheetToDelete" style="width: 100%;" />
+                                        </div>
+                                        <button class="k-button k-primary submit-btn" onclick="selectPriceSheetToDelete()" style="margin-top: 20px;">Select</button>
+                                    </div>
+                                    <div class="col-2 col-lg-2 col-sm-2 col-xl-2"></div>
+                                </div>
+                                <div class="row" id="delete-form-row" style="visibility:hidden">
+                                     <div class="col-12 col-lg-12 col-sm-12 col-xl-12 content-center">
+                                         <div class="row">
+                                             <div class="col-12 col-lg-12 col-sm-12 col-xl-12">
+                                                 <div class="logo-description">
+                                                     <span>Click on the below logo to display the current price sheet PDF</span>
+                                                 </div>
+                                                 <div>
+                                                        <a href="https://www.wddc.com/wddc_members/CS/Price Lists/Zoetis.pdf" id="toDeletePriceSheetPdf" target="_blank"><img id="toDeletePriceSheetLogo" alt="Visit WDDC Price Sheet"></a>
+                                                 </div>
+                                             </div>
+                                         </div>
+                                         <div class="row">
+                                             <div class="col-12 col-lg-12 col-sm-12 col-xl-12">
+                                                    <form id="delete-form" name="delete-form" method="post" action="@Url.Action("DeletePriceSheet", "PriceSheet")" enctype="multipart/form-data">
+                                                     <input type="hidden" id="deletedPriceSheetId" name="deletedPriceSheetId"> 
+                                                     <div class="row form-row" >
+                                                            <div class="col-lg-2"></div>
+                                                            <div class="col-lg-8">
+                                                                 <div class="row">
+                                                                     <div class="col-lg-2 form-label-col">
+                                                                        <label for="deletedDescription" class="control-label control-label-center">Description:</label>
+                                                                    </div>
+                                                                    <div class="col-lg-10">
+                                                                        <input id="deletedDescription" name="deletedDescription" class="form-control" type="text" maxlength="69" disabled>
+                                                                    </div>
+                                                                 </div>
+                                                            </div>
+                                                            <div class="col-lg-2"></div>
+                                                       </div>
+                                                       <div class="row form-row" >
+                                                            <div class="col-lg-2"></div>
+                                                            <div class="col-lg-8">
+                                                                 <div class="row">
+                                                                     <div class="col-lg-2 form-label-col">
+                                                                        <label for="deletedIssueDate" class="control-label control-label-center">Issue Date:</label>
+                                                                    </div>
+                                                                    <div class="col-lg-10" style="text-align: left;">
+                                                                        <input id="deletedIssueDate" name="deletedIssueDate" style="width: 40%" />
+                                                                    </div>
+                                                                 </div>
+                                                            </div>
+                                                            <div class="col-lg-2"></div>
+                                                       </div>
+                                                       <div class="row form-row" >
+                                                            <div class="col-lg-2"></div>
+                                                            <div class="col-lg-8">
+                                                                 <div class="row">
+                                                                     <div class="col-lg-2 form-label-col">
+                                                                        <label for="deletedStatus" class="control-label control-label-center">Visible:</label>
+                                                                    </div>
+                                                                    <div class="col-lg-10" style="text-align: left;">
+                                                                        <label class="radio-inline">
+                                                                            <input type="radio" id="deletedStatusYes" name="deletedStatus" value="yes" checked disabled>Yes
+                                                                        </label>
+                                                                        <label class="radio-inline">
+                                                                            <input type="radio" id="deletedStatusNo" name="deletedStatus" value="no" disabled>No
+                                                                        </label>
+                                                                    </div>
+                                                                 </div>
+                                                            </div>
+                                                            <div class="col-lg-2"></div>
+                                                       </div>
+                                                       <div class="row form-row" style="padding-top: 20px;">
+                                                            <div class="col-lg-12">
+                                                                 <button id="delete-form-submit" type="submit" class="k-button k-primary submit-btn">Delete</button>
+                                                            </div>
+                                                       </div>
+                                                 </form>
+                                             </div>
+                                         </div>
+                                     </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-2 col-lg-2 col-sm-2 col-xl-2"></div>
+                    </div>
+
+                    <div class="row" style="margin-top: 90px;">
+                        <div class="col-lg-2"></div>
+                        <div class="col-lg-8 content-center">
+                            <div id="log" class="content-center">
+                                <div class="bs-ObjectList-rows" id="log-list">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-2"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<style>
+
+    .content-center {
+        margin: 0px auto 0px auto;
+        text-align: center;
+    }
+
+    .wrapper-content {
+        padding: 10px 10px 20px;
+    }
+
+    .ibox-title {
+        padding: 15px 0px 15px;
+        color: #1565C0;
+        border: none;
+    }
+
+    .ibox-content {
+        padding: 7px 15px 15px 15px;
+    }
+
+    /*.data-container {
+        padding: 0px 0px 15px 0px;
+    }*/
+
+    .list-group {
+        min-height: 850px;
+        max-height: 850px;
+    }
+
+    .list-group {
+        overflow-y: scroll;
+        overflow-x: hidden;
+    }
+
+    .list-group-item {
+        white-space: nowrap;
+    }
+
+    .tools-row {
+        padding: 0px 0px 20px 0px;
+    }
+
+    .k-button {
+        font-size: 1.5rem;
+    }
+
+    .icon-description {
+        margin-left: 5px;
+    }
+
+    textarea {
+        border: none;
+    }
+
+    .k-calendar td.k-state-selected .k-link {
+        border-color: #005dc2;
+        background-color: #007bff;
+    }
+
+    .k-popup .k-group-header, .k-popup .k-header {
+        font-size: 1.3rem;
+    }
+
+    .breadcrumb {
+        display: none;
+    }
+
+    label {
+        margin-bottom: 0px;
+    }
+
+    .form-row {
+        margin-top: 20px;
+        /*vertical-align: central;
+        display: flex;*/
+    }
+
+    .form-label-col {
+        display: flex;
+        padding-right: 0;
+        justify-content: flex-end;
+    }
+
+    .control-label {
+        color: #556375;
+        font-size: 1.3rem;
+    }
+
+    .control-label-center {
+        /*display: flex;*/
+        margin-top: auto;
+        margin-bottom: auto;
+    }
+
+    .control-label-top {
+        display: flex;
+    }
+
+    .control-label-top-small {
+        display: flex;
+        font-size: 1.2rem;
+    }
+
+    .form-control {
+        font-size: 1.3rem;
+        border-color: #ddd;
+    }
+
+    .btn-light {
+        color: #212529;
+        background-color: #e3e6e8;
+        border-color: #dae0e5;
+        margin: 2px ;
+        font-size: 12px;
+    }
+
+        .btn-light:hover {
+            color: #212529;
+            background-color: #e2e6ea;
+            border-color: #dae0e5
+        }
+
+        .btn-light.focus, .btn-light:focus {
+            color: #212529;
+            background-color: #e2e6ea;
+            border-color: #dae0e5;
+            box-shadow: 0 0 0 .2rem rgba(216,217,219,.5)
+        }
+
+    .btn-primary.disabled, .btn-primary.disabled:hover, .btn-primary.disabled:focus, .btn-primary.disabled:active, .btn-primary.disabled.active, .btn-primary[disabled], .btn-primary[disabled]:hover, .btn-primary[disabled]:focus, .btn-primary[disabled]:active, .btn-primary.active[disabled], fieldset[disabled] .btn-primary, fieldset[disabled] .btn-primary:hover, fieldset[disabled] .btn-primary:focus, fieldset[disabled] .btn-primary:active, fieldset[disabled] .btn-primary.active {
+        color: #fff;
+        background-color: #6c757d;
+        border-color: #6c757d;
+    }
+
+    #swal2-title {
+        font-size: 15px;
+    }
+
+    .swal2-popup {
+        padding: 1.25em;
+    }
+
+    .modal-lg {
+        width: 65%;
+    }
+
+    .modal-title {
+        color: #1565C0;
+        font-size: 14px;
+        font-weight: bold;
+    }
+
+    #active-ads li {
+        cursor: pointer;
+    }
+
+    .bs-ObjectList-row {
+        border-radius: 0.25rem;
+    }
+
+    .bs-ObjectList-row--header {
+        position: relative;
+        background-color: #E8E8E8;
+    }
+
+        .bs-ObjectList-row--header .bs-ObjectList-cell {
+            font-weight: bold;
+        }
+
+    .bs-ObjectList-row .bs-ObjectList-cell {
+        width: 20%;
+        text-align: center;
+    }
+
+        .bs-ObjectList-row .bs-ObjectList-cell:last-child {
+            width: 20%;
+            text-align: center;
+        }
+
+        .bs-ObjectList-row .bs-ObjectList-cell:first-child {
+            width: 60%;
+            text-align: left;
+            white-space: pre-wrap;
+        }
+
+    .bs-ObjectList-child, .bs-ObjectList-parent, .bs-ObjectList-row {
+        display: table-row;
+        transition: background-color .15s ease 0s;
+    }
+
+    .bs-ObjectList-cell {
+        display: table-cell;
+        position: relative;
+        padding: 9px 10px;
+        color: #525f7f;
+        font-weight: 400;
+        line-height: 22px;
+        vertical-align: top;
+        white-space: nowrap;
+    }
+
+    textarea {
+      resize: none;
+    }
+
+    h4 {
+        color: darkblue;
+    }
+
+    .collapsible-col h4 {
+        color: 	#484848;
+        margin-bottom: 20px;
+    }
+
+    /*h5 a {
+        color: darkblue;
+        text-decoration: underline;
+    }*/
+
+    .btn {
+        padding: 4px 12px;
+    }
+
+    .collapsible-col {
+        padding-left: 50px;
+        padding-right: 50px;
+    }
+
+    .collapsible-info {
+        background-color: #2e6da4;
+        color: white;
+        cursor: pointer;
+        padding: 8px 20px 8px 20px;
+        width: 100%;
+        border: none;
+        text-align: left;
+        outline: none;
+        font-size: 15px;
+    }
+
+    .priceSheet-action .active, .collapsible-info:hover {
+        background-color: #337ab7;
+    }
+
+    .collapsible-info:after {
+        content: '\002B';
+        color: white;
+        font-weight: bold;
+        float: right;
+        margin-left: 5px;
+    }
+
+    .priceSheet-action .active:after {
+        content: "\2212";
+    }
+
+    .priceSheet-action p5 {
+        font-weight: bold;
+    }
+
+    .content {
+        padding: 5px 18px;
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.2s ease-out;
+        background-color: #f1f1f1;
+    }
+
+    .k-datepicker, .k-timepicker {
+        font-size: 1.3rem;
+    }
+
+    .k-datepicker, .k-timepicker {
+        font-size: 1.3rem;
+    }
+
+    .k-calendar {
+        font-size: 1.3rem;
+    }
+
+    input[type="radio"] {
+        margin: 2px 2px 2px 0px;
+        transform: scale(1.3); 
+    }
+
+    .radio-inline {
+        margin-right: 10px;
+        color: #556375;
+        font-size: 1.3rem;
+    }
+
+    #websiteImg {
+       box-shadow: 0 15px 35px rgba(50,50,93,.1), 0 5px 15px rgba(0,0,0,.07);
+       width: 370px;
+       height: 250px;
+    }
+
+    #update-form-row img, #delete-form-row img {
+       width: 81px;
+       height: 100px;
+       margin-bottom: 20px;
+    }
+
+    .k-dropdown, .k-textbox {
+        font-size: 14px;
+    }
+
+    .submit-btn {
+        /*margin-top: 20px;*/
+        font-size: 13px;
+    }
+
+    .k-footer {
+        margin-top: 20px;
+        font-weight: bold;
+        font-size: 12px;
+    }
+
+    #update-form-row, #delete-form-row {
+        margin-top: 40px;
+    }
+
+    .logo-description {
+        margin-bottom: 5px;
+    }
+
+    input[type=text]:disabled, .k-state-disabled {
+        color: grey;
+        opacity: 1;
+    }
+
+    .img-shadow {
+         box-shadow: 0 15px 35px rgba(50,50,93,.1), 0 5px 15px rgba(0,0,0,.07);
+         /*width: 255px;
+         height: 320px;*/
+         margin-bottom: 20px;
+    }
+
+    p {
+        margin: 0px;
+    }
+
+</style>

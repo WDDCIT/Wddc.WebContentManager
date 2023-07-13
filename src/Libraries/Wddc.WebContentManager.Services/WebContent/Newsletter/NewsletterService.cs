@@ -76,6 +76,32 @@ namespace Wddc.WebContentManager.Services.WebContent.Newsletter
             await _apiService.PostAsync($"/api/InsiderNewsletter/WebInsiderNews/Delete/{ID}");
         }
 
+        /*-----------------------------------------------------------------------------------*/
+
+        public async Task<List<Web_News>> GetPriceSheets()
+        {
+            return await _apiService.GetAsync<List<Web_News>>($"/api/PriceSheet/PriceSheets");
+        }
+
+        public async Task<Web_News> GetPriceSheetById(int ID)
+        {
+            return await _apiService.GetAsync<Web_News>($"/api/PriceSheet/PriceSheet/{ID}");
+        }
+
+        public async Task<Web_News> CreatePriceSheet(Web_News Web_News)
+        {
+            return await _apiService.PostAsync<Web_News>($"/api/PriceSheet/PriceSheet", Web_News);
+        }
+
+        public async Task UpdatePriceSheet(Web_News Web_News, int ID)
+        {
+            await _apiService.PostAsync($"/api/PriceSheet/PriceSheet/{ID}", Web_News);
+        }
+
+        public async Task DeletePriceSheet(int ID)
+        {
+            await _apiService.PostAsync($"/api/PriceSheet/PriceSheet/Delete/{ID}");
+        }
 
     }
 }
