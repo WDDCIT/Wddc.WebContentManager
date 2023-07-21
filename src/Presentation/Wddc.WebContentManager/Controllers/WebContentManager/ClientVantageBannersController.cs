@@ -57,39 +57,36 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
 
         public Task<JsonResult> GetBannersOfCategoryAsync(string category)
         {
-            string sourceDir = "\\\\WEBsrvr\\WDDCMembers\\WDDCWebPages\\wddc_members\\images\\Client Vantage\\" + category + "\\small";
+            string sourceDir1 = "\\\\WEBsrvr\\WDDCMembers\\WDDCWebPages\\wddc_members\\images\\Client Vantage\\" + category + "\\small",
+                   sourceDir2 = "\\\\WEBsrvr\\WDDCMembers\\WDDCWebPages\\wddc_members\\images\\Client Vantage\\" + category;
+          
+            string tempDir1 = Path.Combine(this._hostingEnvironment.WebRootPath, "ClientVantage_Banners_Temp\\" + category + "\\small"),
+                   tempDir2 = Path.Combine(this._hostingEnvironment.WebRootPath, "ClientVantage_Banners_Temp\\" + category);
 
-            //string[] filePaths = Directory.GetFiles(sourceDir);
+            if (Directory.Exists(Path.Combine(this._hostingEnvironment.WebRootPath, "ClientVantage_Banners_Temp")))
+                Directory.Delete(Path.Combine(this._hostingEnvironment.WebRootPath, "ClientVantage_Banners_Temp"), true);
 
-            Directory.Delete(Path.Combine(this._hostingEnvironment.WebRootPath, "ClientVantage_Banners_Temp"), true);
+            Directory.CreateDirectory(tempDir1);
 
-            string tempDir = Path.Combine(this._hostingEnvironment.WebRootPath, "ClientVantage_Banners_Temp\\" + category);
+            var dir1 = new DirectoryInfo(sourceDir1);
+            var dir2 = new DirectoryInfo(sourceDir2);
 
-            if (!Directory.Exists(tempDir))
-                Directory.CreateDirectory(tempDir);
-
-            var dir = new DirectoryInfo(sourceDir);
-
-            if (!dir.Exists)
-                throw new DirectoryNotFoundException($"Source directory not found: {dir.FullName}");
+            if (!dir1.Exists)
+                throw new DirectoryNotFoundException($"Source directory not found: {dir1.FullName}");
 
             List<string> fileNames = new List<string>();
 
-            foreach (FileInfo file in dir.GetFiles())
+            foreach (FileInfo file1 in dir1.GetFiles())
             {
-                file.CopyTo(Path.Combine(tempDir, file.Name), true);
-                fileNames.Add(file.Name);
+                FileInfo file2 = new FileInfo(sourceDir2 + "\\" + file1.Name.Trim());
+
+                if (file2.Exists)
+                {
+                    file1.CopyTo(Path.Combine(tempDir1, file1.Name.Trim()), true);
+                    file2.CopyTo(Path.Combine(tempDir2, file2.Name.Trim()), true);
+                    fileNames.Add(file1.Name);
+                } 
             }
-
-            //foreach (string filePath in filePaths)
-            //{
-            //    using (FileStream stream = new FileStream(Path.Combine(tempInputPath, Path.GetFileName(filePath)), FileMode.Create))
-            //    {
-            //        await newInfoFileUrl.CopyToAsync(stream);
-            //    }
-
-            //    //files.Add(Path.GetFileName(filePath));
-            //}
 
             return Task.FromResult(Json(fileNames));
         }

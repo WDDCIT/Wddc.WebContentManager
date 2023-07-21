@@ -52,16 +52,6 @@
                 document.getElementById("danger-alert").style.display = "none";
             }
 
-            $("#imageUrl").on("change", function (e) {
-                var fileName = $(this).val().split("\\").pop();
-                document.getElementById("imageUrlText").value = fileName;
-            });
-
-            $("#thumbnailImageUrl").on("change", function (e) {
-                var fileName = $(this).val().split("\\").pop();
-                document.getElementById("thumbnailImageUrlText").value = fileName;
-            });
-
             $("#categoryToUpload").kendoDropDownList({
                 dataSource: {
                     transport: {
@@ -91,15 +81,6 @@
         })
 
 
-        function imageUrlClick() {
-            document.getElementById("imageUrl").click();
-        }
-
-        function thumbnailImageUrlClick() {
-            document.getElementById("thumbnailImageUrl").click();
-        }
-
-
         function validateUploadForm() {
 
             if (document.getElementById("imageUrl").files.length == 0) {
@@ -126,20 +107,38 @@
 
             $.getJSON('@Url.Action("GetBannersOfCategory", "ClientVantageBanners")?category=' + categoryToDeleteValue, function (results) {
 
-                for (var i = 0; i < results.length; i++) {
+                for (var i = 0; i < results.length; i = i+3) {
 
                     var bannerName = results[i];
-
                     var newRow = document.createElement('div');
-                    newRow.classList.add('row', 'banners-row');
-                    var newRowContent = '<div class="col-6 col-lg-6 col-sm-6 col-xl-6 banner-img-col">' +
-                                             '<img class="small-banner" src = "../ClientVantage_Banners_Temp/' + categoryToDeleteValue + '/' + bannerName + '">' +
-                                        '</div>' +
-                                        '<div class="col-6 col-lg-6 col-sm-6 col-xl-6 action-col">' +
-                                              '<button class="k-button k-primary submit-btn" onclick="deleteBanner(\'' + bannerName + '\', \' ' + categoryToDeleteValue + '\')">Delete</button>' +
-                                        '</div>';
-                    newRow.innerHTML = newRowContent;
+                    newRow.classList.add('img-row', 'content-center');
+
+                    var newColumn = '<div class="column" style="text-align:right;">' +
+                        '<img class="small-banner" src = "../ClientVantage_Banners_Temp/' + categoryToDeleteValue + '/' + bannerName + '" id="banner-' + bannerName + '">' +
+                        '<i class="fa fa-trash fa-2x" aria-hidden="true" onclick="deleteBanner(\'' + bannerName + '\', \' ' + categoryToDeleteValue + '\')"></i>' +
+                        '</div>';
+
+                    if (i + 1 < results.length) {
+                        bannerName = results[i + 1];
+                        newColumn = newColumn +
+                            '<div class="column">' +
+                            '<img class="small-banner" src = "../ClientVantage_Banners_Temp/' + categoryToDeleteValue + '/' + bannerName + '" id="banner-' + bannerName + '">' +
+                            '<i class="fa fa-trash fa-2x" aria-hidden="true" onclick="deleteBanner(\'' + bannerName + '\', \' ' + categoryToDeleteValue + '\')"></i>' +
+                            '</div>';
+                    }
+
+                    if (i + 2 < results.length) {
+                        bannerName = results[i + 2];
+                        newColumn = newColumn +
+                            '<div class="column" style="text-align:left;">' +
+                            '<img class="small-banner" src = "../ClientVantage_Banners_Temp/' + categoryToDeleteValue + '/' + bannerName + '" id="banner-' + bannerName + '">' +
+                            '<i class="fa fa-trash fa-2x" aria-hidden="true" onclick="deleteBanner(\'' + bannerName + '\', \' ' + categoryToDeleteValue + '\')"></i>' +
+                            '</div>';
+                    }
+
+                    newRow.innerHTML = newColumn;
                     bannersList.appendChild(newRow);
+
                 }
 
                 document.getElementById("delete-form-row").style.visibility = "visible";
@@ -247,11 +246,10 @@
                         </div>
                     </div>
                     <div class="row banners-action" style="margin-top: 50px;">
-                        <div class="col-2 col-lg-2 col-sm-2 col-xl-2"></div>
-                        <div class="col-8 col-lg-8 col-sm-8 col-xl-8 collapsible-col">
+                        <div class="col-12 col-lg-12 col-sm-12 col-xl-12 collapsible-col content-center">
                             <button type="button" class="collapsible-info">Upload ClientVantage Banners</button>
                             <div class="content">
-                                <form id="upload-form" name="upload-form" method="post" action="@Url.Action("UploadCVBanner", "ClientVantageBanners")" enctype="multipart/form-data" onsubmit="return validateUploadForm()">
+                                    <form id="upload-form" class="content-center w-60" name="upload-form" method="post" action="@Url.Action("UploadCVBanner", "ClientVantageBanners")" enctype="multipart/form-data" onsubmit="return validateUploadForm()">
                                     <div class="row form-row">
                                          <div class="col-lg-2 form-label-col">
                                              <label for="categoryToUpload" class="control-label control-label-center">Category:</label>
@@ -268,32 +266,28 @@
                                     </div>
                                     <div class="row form-row">
                                          <div class="col-lg-2 form-label-col">
-                                             <label for="imageUrlText" class="control-label control-label-center">Banner:</label>
+                                             <label for="imageUrl" class="control-label control-label-center">Banner:</label>
                                          </div>
                                          <div class="col-lg-10">
                                              <div class="row">
-                                                 <div class="col-lg-11">
-                                                     <input id="imageUrlText" name="imageUrlText" class="form-control" type="text">
-                                                 </div>
-                                                 <div class="col-lg-1 control-label-center" style="justify-content: flex-end;">
-                                                     <input id="imageUrl" name="imageUrl" class="form-control" type="file" value="" style="display:none" accept="image/*" >
-                                                     <button type="button" class="btn btn-light" onclick="imageUrlClick();">Browse</button>
+                                                 <div class="col-lg-12">
+                                                     <div class="demo-section k-content">
+                                                          <input class="form-control form-control-sm" id="imageUrl" name="imageUrl" type="file" accept="image/*">
+                                                     </div>
                                                  </div>
                                              </div>
                                          </div>
                                     </div>
                                     <div class="row form-row">
                                          <div class="col-lg-2 form-label-col">
-                                             <label for="thumbnailImageUrlText" class="control-label control-label-center">Thumbnail Banner:</label>
+                                             <label for="thumbnailImageUrl" class="control-label control-label-center">Thumbnail:</label>
                                          </div>
                                          <div class="col-lg-10">
                                              <div class="row">
-                                                 <div class="col-lg-11">
-                                                     <input id="thumbnailImageUrlText" name="thumbnailImageUrlText" class="form-control" type="text">
-                                                 </div>
-                                                 <div class="col-lg-1 control-label-center" style="justify-content: flex-end;">
-                                                     <input id="thumbnailImageUrl" name="thumbnailImageUrl" class="form-control" type="file" value="" style="display:none" accept="image/*" >
-                                                     <button type="button" class="btn btn-light" onclick="thumbnailImageUrlClick();">Browse</button>
+                                                 <div class="col-lg-12">
+                                                     <div class="demo-section k-content">
+                                                          <input class="form-control form-control-sm" id="thumbnailImageUrl" name="thumbnailImageUrl" type="file" accept="image/*">
+                                                     </div>
                                                  </div>
                                              </div>
                                          </div>
@@ -304,50 +298,42 @@
                                         </div>
                                     </div>
                                 </form>
-                                
                             </div>
                         </div>
-                        <div class="col-2 col-lg-2 col-sm-2 col-xl-2"></div>
                     </div>
                     <div class="row">
                          <div id="spinningWheel"></div>
                     </div>
                     <div class="row banners-action" style="margin-top: 50px;">
-                        <div class="col-2 col-lg-2 col-sm-2 col-xl-2"></div>
-                        <div class="col-8 col-lg-8 col-sm-8 col-xl-8 collapsible-col">
+                        <div class="col-12 col-lg-12 col-sm-12 col-xl-12 collapsible-col content-center">
                             <button type="button" class="collapsible-info">Delete ClientVantage Banners</button>
                             <div class="content">
-                                <div class="row" style="padding-top: 30px;">
-                                     <div class="col-2 col-lg-2 col-sm-2 col-xl-2"></div>
-                                     <div class="col-8 col-lg-8 col-sm-8 col-xl-8">
-                                         <h5>Select a category to delete a banner from:</h5>
+                                <div class="row" style="padding-top: 30px; ">
+                                     <div class="col-12 col-lg-12 col-sm-12 col-xl-12 content-center" >
+                                          <div class="w-60 content-center">
+                                               <h5 style="text-align: left;">Select a category to delete a banner from:</h5>
+                                          </div>
                                      </div>
-                                     <div class="col-2 col-lg-2 col-sm-2 col-xl-2"></div>
                                 </div>
                                 <div class="row">
-                                    <div class="col-2 col-lg-2 col-sm-2 col-xl-2"></div>
-                                    <div class="col-8 col-lg-8 col-sm-8 col-xl-8 content-center">
-                                        <div class="demo-section k-content">
+                                    <div class="col-12 col-lg-12 col-sm-12 col-xl-12" >
+                                        <div class="k-content w-60 content-center">
                                             <input id="categoryToDelete" name="categoryToDelete" style="width: 100%;" />
+                                            <button class="k-button k-primary submit-btn search-btn" onclick="selectCategoryToDelete()">Search</button>
                                         </div>
-                                        <button class="k-button k-primary submit-btn search-btn" onclick="selectCategoryToDelete()">Search</button>
                                     </div>
-                                    <div class="col-2 col-lg-2 col-sm-2 col-xl-2"></div>
                                 </div>
-                                <div class="row" id="search-results-row" style="visibility:hidden">
-                                    <div class="col-2 col-lg-2 col-sm-2 col-xl-2"></div>
-                                    <div class="col-8 col-lg-8 col-sm-8 col-xl-8">
+                                    <div class="row content-center" id="search-results-row" style="visibility:hidden">
+                                    <div class="col-12 col-lg-12 col-sm-12 col-xl-12">
                                          <h5 id="search-results"></h5>
                                     </div>
-                                    <div class="col-2 col-lg-2 col-sm-2 col-xl-2"></div>
                                 </div>
-                                <div class="row" id="delete-form-row" style="visibility:hidden">
-                                     <div class="col-12 col-lg-12 col-sm-12 col-xl-12" id="banners-list">
+                                <div class="row content-center" id="delete-form-row" style="visibility:hidden">
+                                     <div class="col-12 col-lg-12 col-sm-12 col-xl-12 content-center" id="banners-list">
                                      </div>
                                 </div> 
                             </div>
                         </div>
-                        <div class="col-2 col-lg-2 col-sm-2 col-xl-2"></div>
                     </div>
                     <div class="row" style="margin-top: 90px;">
                         <div class="col-lg-2"></div>
@@ -522,7 +508,7 @@
         color: white;
         cursor: pointer;
         padding: 8px 20px 8px 20px;
-        width: 100%;
+        width: 60%;
         border: none;
         text-align: left;
         outline: none;
@@ -607,14 +593,52 @@
         text-align: right;
      }
 
-    .action-col {
-        text-align: left;
-        padding-top: 15px;
-        padding-bottom: 15px;
+
+   .img-row {
+       display: -ms-flexbox; /* IE10 */
+       display: flex;
+       -ms-flex-wrap: wrap; /* IE10 */
+       flex-wrap: wrap;
+   }
+
+   .column {
+       -ms-flex: 33%; /* IE10 */
+       flex: 33%;
+       max-width: 33%;
+       padding: 8px;
+   }
+
+    .small-banner {
+         margin: 8px;
+         position:relative;
+         -webkit-transition: transform .4s ease-out;
+         transition: transform .4s ease-out;
     }
 
-        .action-col button {
-            margin-left: 50px;
-        }
+    .small-banner:hover, .small-banner:active {
+     -webkit-transform: scale(2);
+      transform: scale(2);
+      z-index:10;
+    }
+
+    .w-60 {
+        width: 60%;
+    }
+
+    .fa-trash {
+        color: #007bff;
+        margin-left: 15px;
+        position:relative;
+        -webkit-transition: transform .3s ease-out;
+        transition: transform .3s ease-out;
+    }
+
+     .fa-trash:hover, .fa-trash:active {
+         cursor: pointer;
+         -webkit-transform: scale(2);
+         transform: scale(2);
+         z-index:10;
+     }
+
 
 </style>
