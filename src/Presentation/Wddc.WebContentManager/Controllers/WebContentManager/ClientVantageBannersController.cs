@@ -14,6 +14,9 @@ using Wddc.WebContentManager.Models;
 using Serilog;
 using Microsoft.AspNetCore.Hosting;
 using Wddc.WebContentManager.Services.WebContent.ClientVantageBanners;
+using static System.Net.WebRequestMethods;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Processing;
 
 namespace Wddc.WebContentManager.Controllers.WebContentManager
 {
@@ -69,7 +72,6 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             Directory.CreateDirectory(tempDir1);
 
             var dir1 = new DirectoryInfo(sourceDir1);
-            var dir2 = new DirectoryInfo(sourceDir2);
 
             if (!dir1.Exists)
                 throw new DirectoryNotFoundException($"Source directory not found: {dir1.FullName}");
@@ -80,7 +82,7 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             {
                 FileInfo file2 = new FileInfo(sourceDir2 + "\\" + file1.Name.Trim());
 
-                if (file2.Exists)
+                if (file2.Exists && file2.Extension != ".db")
                 {
                     file1.CopyTo(Path.Combine(tempDir1, file1.Name.Trim()), true);
                     file2.CopyTo(Path.Combine(tempDir2, file2.Name.Trim()), true);
@@ -93,26 +95,20 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
 
 
         [HttpPost]
-        public async Task<ActionResult> UploadCVBannerAsync(string categoryToUpload, IFormFile imageUrl, IFormFile thumbnailImageUrl)
+        public async Task<ActionResult> UploadCVBannerAsync(string categoryToUpload, IFormFile imageUrl)
         {
             Log.Logger.Information(User.Identity.Name.Substring(7).ToLower() + " is uploading a new CV banner, category: " + categoryToUpload);
 
-            if (imageUrl == null || thumbnailImageUrl == null)
+            if (imageUrl == null)
                 return RedirectToAction("Index", new { response = "Failure", message = "No banner image was selected" });
 
             if (imageUrl.ContentType != "image/jpg" && imageUrl.ContentType != "image/jpeg" && imageUrl.ContentType != "image/pjpeg" &&
                 imageUrl.ContentType != "image/gif" && imageUrl.ContentType != "image/x-png" && imageUrl.ContentType != "image/png" )
                 return RedirectToAction("Index", new { response = "Failure", message = "File uploaded must be an image type (jpg, jpeg, pjpeg, gif, png)" });
 
-            if (thumbnailImageUrl.ContentType != "image/jpg" && thumbnailImageUrl.ContentType != "image/jpeg" && thumbnailImageUrl.ContentType != "image/pjpeg" &&
-                thumbnailImageUrl.ContentType != "image/gif" && thumbnailImageUrl.ContentType != "image/x-png" && thumbnailImageUrl.ContentType != "image/png")
-                return RedirectToAction("Index", new { response = "Failure", message = "File uploaded must be an image type (jpg, jpeg, pjpeg, gif, png)" });
-
             string imageName = Path.GetFileName(imageUrl.FileName);
             string imagePath = "\\\\WEBsrvr\\WDDCMembers\\WDDCWebPages\\wddc_members\\images\\Client Vantage\\" + categoryToUpload + "\\" + imageName;
-
-            string thumbnailImageName = Path.GetFileName(thumbnailImageUrl.FileName);
-            string thumbnailImagePath = "\\\\WEBsrvr\\WDDCMembers\\WDDCWebPages\\wddc_members\\images\\Client Vantage\\" + categoryToUpload + "\\small\\" + thumbnailImageName;
+            string thumbnailImagePath = "\\\\WEBsrvr\\WDDCMembers\\WDDCWebPages\\wddc_members\\images\\Client Vantage\\" + categoryToUpload + "\\small\\" + imageName;
 
             try
             {
@@ -121,10 +117,9 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                     await imageUrl.CopyToAsync(stream);
                 }
 
-                using (var stream = new FileStream(thumbnailImagePath, FileMode.Create))
-                {
-                    await thumbnailImageUrl.CopyToAsync(stream);
-                }
+                using var image = Image.Load(imageUrl.OpenReadStream());
+                image.Mutate(x => x.Resize(300, 75));
+                image.Save(thumbnailImagePath);
             }
             catch (Exception ex)
             {
