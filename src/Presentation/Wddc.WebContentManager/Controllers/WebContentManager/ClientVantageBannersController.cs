@@ -73,59 +73,142 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
 
             var dir1 = new DirectoryInfo(sourceDir1);
 
-            if (!dir1.Exists)
-                throw new DirectoryNotFoundException($"Source directory not found: {dir1.FullName}");
+            List<string> fileNames = new List<string>();
+
+            if (dir1.Exists)
+
+                foreach (FileInfo file1 in dir1.GetFiles())
+                {
+                    FileInfo file2 = new FileInfo(sourceDir2 + "\\" + file1.Name.Trim());
+
+                    if (file2.Exists && file2.Extension != ".db")
+                    {
+                        file1.CopyTo(Path.Combine(tempDir1, file1.Name.Trim()), true);
+                        file2.CopyTo(Path.Combine(tempDir2, file2.Name.Trim()), true);
+                        fileNames.Add(file1.Name);
+                    } 
+                }
+
+            return Task.FromResult(Json(fileNames));
+        }
+
+        public Task<JsonResult> GetMobileBannersOfCategoryAsync(string category)
+        {
+            string sourceDir1 = "\\\\WEBsrvr\\WDDCMembers\\WDDCWebPages\\wddc_members\\images\\Client Vantage Mobile\\" + category + "\\small",
+                   sourceDir2 = "\\\\WEBsrvr\\WDDCMembers\\WDDCWebPages\\wddc_members\\images\\Client Vantage Mobile\\" + category;
+
+            string tempDir1 = Path.Combine(this._hostingEnvironment.WebRootPath, "ClientVantage_Mobile_Banners_Temp\\" + category + "\\small"),
+                   tempDir2 = Path.Combine(this._hostingEnvironment.WebRootPath, "ClientVantage_Mobile_Banners_Temp\\" + category);
+
+            if (Directory.Exists(Path.Combine(this._hostingEnvironment.WebRootPath, "ClientVantage_Mobile_Banners_Temp")))
+                Directory.Delete(Path.Combine(this._hostingEnvironment.WebRootPath, "ClientVantage_Mobile_Banners_Temp"), true);
+
+            Directory.CreateDirectory(tempDir1);
+
+            var dir1 = new DirectoryInfo(sourceDir1);
 
             List<string> fileNames = new List<string>();
 
-            foreach (FileInfo file1 in dir1.GetFiles())
-            {
-                FileInfo file2 = new FileInfo(sourceDir2 + "\\" + file1.Name.Trim());
+            if (dir1.Exists)
 
-                if (file2.Exists && file2.Extension != ".db")
+                foreach (FileInfo file1 in dir1.GetFiles())
                 {
-                    file1.CopyTo(Path.Combine(tempDir1, file1.Name.Trim()), true);
-                    file2.CopyTo(Path.Combine(tempDir2, file2.Name.Trim()), true);
-                    fileNames.Add(file1.Name);
-                } 
-            }
+                    FileInfo file2 = new FileInfo(sourceDir2 + "\\" + file1.Name.Trim());
+
+                    if (file2.Exists && file2.Extension != ".db")
+                    {
+                        file1.CopyTo(Path.Combine(tempDir1, file1.Name.Trim()), true);
+                        file2.CopyTo(Path.Combine(tempDir2, file2.Name.Trim()), true);
+                        fileNames.Add(file1.Name);
+                    }
+                }
 
             return Task.FromResult(Json(fileNames));
         }
 
 
         [HttpPost]
-        public async Task<ActionResult> UploadCVBannerAsync(string categoryToUpload, IFormFile imageUrl)
+        public async Task<ActionResult> UploadCVBannerAsync(string categoryToUpload, IFormFile imageUrl, IFormFile imageMobileUrl)
         {
             Log.Logger.Information(User.Identity.Name.Substring(7).ToLower() + " is uploading a new CV banner, category: " + categoryToUpload);
 
-            if (imageUrl == null)
+            if (imageUrl == null && imageMobileUrl == null)
+            {
                 return RedirectToAction("Index", new { response = "Failure", message = "No banner image was selected" });
-
-            if (imageUrl.ContentType != "image/jpg" && imageUrl.ContentType != "image/jpeg" && imageUrl.ContentType != "image/pjpeg" &&
-                imageUrl.ContentType != "image/gif" && imageUrl.ContentType != "image/x-png" && imageUrl.ContentType != "image/png" )
-                return RedirectToAction("Index", new { response = "Failure", message = "File uploaded must be an image type (jpg, jpeg, pjpeg, gif, png)" });
-
-            string imageName = Path.GetFileName(imageUrl.FileName);
-            string imagePath = "\\\\WEBsrvr\\WDDCMembers\\WDDCWebPages\\wddc_members\\images\\Client Vantage\\" + categoryToUpload + "\\" + imageName;
-            string thumbnailImagePath = "\\\\WEBsrvr\\WDDCMembers\\WDDCWebPages\\wddc_members\\images\\Client Vantage\\" + categoryToUpload + "\\small\\" + imageName;
-
-            try
-            {
-                using (var stream = new FileStream(imagePath, FileMode.Create))
-                {
-                    await imageUrl.CopyToAsync(stream);
-                }
-
-                using var image = Image.Load(imageUrl.OpenReadStream());
-                image.Mutate(x => x.Resize(300, 75));
-                image.Save(thumbnailImagePath);
             }
-            catch (Exception ex)
+
+            if (imageUrl != null)
             {
-                Log.Logger.Error($"Error uploading ClientVantage banner, folder {categoryToUpload} by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
-                _logger.Error($"Error uploading ClientVantage banner, category {categoryToUpload}: {ex.Message.Substring(0, 300)}", ex, User, "WebOrdering");
-                return RedirectToAction("Index", new { response = "Failure", message = "Failure uploading ClientVantage banner: " + ex.Message.Substring(0, 300) });
+                if (imageUrl.ContentType != "image/jpg" && imageUrl.ContentType != "image/jpeg" && imageUrl.ContentType != "image/pjpeg" &&
+                imageUrl.ContentType != "image/gif" && imageUrl.ContentType != "image/x-png" && imageUrl.ContentType != "image/png")
+                    return RedirectToAction("Index", new { response = "Failure", message = "File uploaded must be an image type (jpg, jpeg, pjpeg, gif, png)" });
+
+                string imageName = Path.GetFileName(imageUrl.FileName);
+                string path = "\\\\WEBsrvr\\WDDCMembers\\WDDCWebPages\\wddc_members\\images\\Client Vantage\\" + categoryToUpload;
+                string thumbnailPath = "\\\\WEBsrvr\\WDDCMembers\\WDDCWebPages\\wddc_members\\images\\Client Vantage\\" + categoryToUpload + "\\small";
+                string imagePath = path + "\\" + imageName;
+                string thumbnailImagePath = thumbnailPath + "\\" + imageName;
+
+                if (!Directory.Exists(path))
+                    Directory.CreateDirectory(path);
+
+                if (!Directory.Exists(thumbnailPath))
+                    Directory.CreateDirectory(thumbnailPath);
+
+                try
+                {
+                    using (var stream = new FileStream(imagePath, FileMode.Create))
+                    {
+                        await imageUrl.CopyToAsync(stream);
+                    }
+
+                    using var image = Image.Load(imageUrl.OpenReadStream());
+                    image.Mutate(x => x.Resize(300, 75));
+                    image.Save(thumbnailImagePath);
+                }
+                catch (Exception ex)
+                {
+                    Log.Logger.Error($"Error uploading ClientVantage banner, folder {categoryToUpload} by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
+                    _logger.Error($"Error uploading ClientVantage banner, category {categoryToUpload}: {ex.Message.Substring(0, 300)}", ex, User, "WebOrdering");
+                    return RedirectToAction("Index", new { response = "Failure", message = "Failure uploading ClientVantage banner: " + ex.Message.Substring(0, 300) });
+                }
+            }
+
+            if (imageMobileUrl != null)
+            {
+                if (imageMobileUrl.ContentType != "image/jpg" && imageMobileUrl.ContentType != "image/jpeg" && imageMobileUrl.ContentType != "image/pjpeg" &&
+                    imageMobileUrl.ContentType != "image/gif" && imageMobileUrl.ContentType != "image/x-png" && imageMobileUrl.ContentType != "image/png")
+                    return RedirectToAction("Index", new { response = "Failure", message = "File uploaded must be an image type (jpg, jpeg, pjpeg, gif, png)" });
+
+                string imageName = Path.GetFileName(imageMobileUrl.FileName);
+                string path = "\\\\WEBsrvr\\WDDCMembers\\WDDCWebPages\\wddc_members\\images\\Client Vantage Mobile\\" + categoryToUpload;
+                string thumbnailPath = "\\\\WEBsrvr\\WDDCMembers\\WDDCWebPages\\wddc_members\\images\\Client Vantage Mobile\\" + categoryToUpload + "\\small";
+                string imagePath = path + "\\" + imageName;
+                string thumbnailImagePath = thumbnailPath + "\\" + imageName;
+
+                if (!Directory.Exists(path))
+                    Directory.CreateDirectory(path);
+
+                if (!Directory.Exists(thumbnailPath))
+                    Directory.CreateDirectory(thumbnailPath);
+
+                try
+                {
+                    using (var stream = new FileStream(imagePath, FileMode.Create))
+                    {
+                        await imageMobileUrl.CopyToAsync(stream);
+                    }
+
+                    using var image = Image.Load(imageMobileUrl.OpenReadStream());
+                    image.Mutate(x => x.Resize(200, 167));
+                    image.Save(thumbnailImagePath);
+                }
+                catch (Exception ex)
+                {
+                    Log.Logger.Error($"Error uploading ClientVantage mobile banner, folder {categoryToUpload} by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
+                    _logger.Error($"Error uploading ClientVantage mobile banner, category {categoryToUpload}: {ex.Message.Substring(0, 300)}", ex, User, "WebOrdering");
+                    return RedirectToAction("Index", new { response = "Failure", message = "Failure uploading ClientVantage mobile banner: " + ex.Message.Substring(0, 300) });
+                }
             }
 
             Log.Logger.Information($"{User.Identity.Name.Substring(7).ToLower()} uploaded ClientVantage banner, category {categoryToUpload} successfully");
@@ -169,6 +252,43 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             Log.Logger.Information($"{User.Identity.Name.Substring(7).ToLower()} deleted ClientVantage banner, category {categoryToDelete} successfully");
             _logger.Information($"Deleted banner from ClientVantage banners library, category {categoryToDelete}, successfully", null, User, "WebOrdering");
             return Json(new { success = true, message = "ClientVantage banner was deleted successfully! "});
+        }
+
+        [HttpPost]
+        public async Task<ActionResult> DeleteMobileCVBannerAsync(string categoryToDelete, string bannerName)
+        {
+            Log.Logger.Information(User.Identity.Name.Substring(7).ToLower() + " is deleting CV mobile banner " + bannerName + ", category: " + categoryToDelete);
+
+            string imagePath = "\\\\WEBsrvr\\WDDCMembers\\WDDCWebPages\\wddc_members\\images\\Client Vantage Mobile\\" + categoryToDelete.Trim() + "\\" + bannerName.Trim();
+            string thumbnailImagePath = "\\\\WEBsrvr\\WDDCMembers\\WDDCWebPages\\wddc_members\\images\\Client Vantage Mobile\\" + categoryToDelete.Trim() + "\\small\\" + bannerName.Trim();
+
+            FileInfo imageFile = new FileInfo(imagePath);
+            FileInfo thumbnailImageFile = new FileInfo(thumbnailImagePath);
+
+            try
+            {
+                if (imageFile.Exists && thumbnailImageFile.Exists)
+                {
+                    imageFile.Delete();
+                    thumbnailImageFile.Delete();
+                }
+                else
+                {
+                    Log.Logger.Error($"Error deleting ClientVantage mobile banner, category {categoryToDelete} by {User.Identity.Name.Substring(7).ToLower()}: file not found");
+                    _logger.Error($"Error deleting ClientVantage mobile banner, category {categoryToDelete}: file not found", null, User, "WebOrdering");
+                    return Json(new { success = false, message = "Failure deleting ClientVantage mobile banner: file not found" });
+                }
+            }
+            catch (IOException ex)
+            {
+                Log.Logger.Error($"Error deleting ClientVantage mobile banner, category {categoryToDelete} by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
+                _logger.Error($"Error deleting ClientVantage mobile banner, category {categoryToDelete}: {ex.Message.Substring(0, 300)}", ex, User, "WebOrdering");
+                return Json(new { success = false, message = "Failure deleting ClientVantage mobile banner: " + ex.Message.Substring(0, 300) });
+            }
+
+            Log.Logger.Information($"{User.Identity.Name.Substring(7).ToLower()} deleted ClientVantage mobile banner, category {categoryToDelete} successfully");
+            _logger.Information($"Deleted banner from ClientVantage mobile banners library, category {categoryToDelete}, successfully", null, User, "WebOrdering");
+            return Json(new { success = true, message = "ClientVantage mobile banner was deleted successfully! " });
         }
 
 

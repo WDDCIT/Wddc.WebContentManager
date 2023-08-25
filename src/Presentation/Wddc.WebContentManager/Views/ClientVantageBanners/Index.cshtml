@@ -74,7 +74,9 @@
                 },
                 open: function (e) {
                     document.getElementById("delete-form-row").style.visibility = "hidden";
+                    document.getElementById("mobile-delete-form-row").style.visibility = "hidden";
                     document.getElementById("search-results-row").style.visibility = "hidden";
+                    document.getElementById("mobile-search-results-row").style.visibility = "hidden";
                 },
             });
 
@@ -83,8 +85,8 @@
 
         function validateUploadForm() {
 
-            if (document.getElementById("imageUrl").files.length == 0) {
-                alert("You must select an image for the banner to upload!")
+            if (document.getElementById("imageUrl").files.length == 0 && document.getElementById("imageMobileUrl").files.length == 0) {
+                alert("You must select at least one banner to upload!")
                 return false;
             }
 
@@ -97,8 +99,11 @@
 
             let categoryToDeleteValue = document.getElementById("categoryToDelete").value.trim();
             var bannersList = document.getElementById("banners-list");
+            var mobileBannersList = document.getElementById("mobile-banners-list");
             bannersList.innerHTML = '';
+            mobileBannersList.innerHTML = '';
             document.getElementById("search-results-row").style.visibility = "hidden";
+            document.getElementById("mobile-search-results-row").style.visibility = "hidden";
 
             $.getJSON('@Url.Action("GetBannersOfCategory", "ClientVantageBanners")?category=' + categoryToDeleteValue, function (results) {
 
@@ -133,12 +138,52 @@
 
                     newRow.innerHTML = newColumn;
                     bannersList.appendChild(newRow);
-
                 }
 
                 document.getElementById("delete-form-row").style.visibility = "visible";
-                document.getElementById("search-results").innerHTML = results.length + " banners found";
+                document.getElementById("search-results").innerHTML = "(" + results.length + " banners found)";
                 document.getElementById("search-results-row").style.visibility = "visible";
+
+                $.getJSON('@Url.Action("GetMobileBannersOfCategory", "ClientVantageBanners")?category=' + categoryToDeleteValue, function (mobileResults) {
+
+                    for (var i = 0; i < mobileResults.length; i = i + 3) {
+
+                        var bannerName = mobileResults[i];
+                        var newRow = document.createElement('div');
+                        newRow.classList.add('img-row', 'content-center');
+
+                        var newColumn = '<div class="column" style="text-align:right;">' +
+                            '<img class="mobile-small-banner" src = "../ClientVantage_Mobile_Banners_Temp/' + categoryToDeleteValue + '/' + bannerName + '" id="banner-' + bannerName + '">' +
+                            '<i class="fa fa-trash fa-2x" aria-hidden="true" onclick="deleteMobileBanner(\'' + bannerName + '\', \' ' + categoryToDeleteValue + '\')"></i>' +
+                            '</div>';
+
+                        if (i + 1 < mobileResults.length) {
+                            bannerName = mobileResults[i + 1];
+                            newColumn = newColumn +
+                                '<div class="column">' +
+                                '<img class="mobile-small-banner" src = "../ClientVantage_Mobile_Banners_Temp/' + categoryToDeleteValue + '/' + bannerName + '" id="banner-' + bannerName + '">' +
+                                '<i class="fa fa-trash fa-2x" aria-hidden="true" onclick="deleteMobileBanner(\'' + bannerName + '\', \' ' + categoryToDeleteValue + '\')"></i>' +
+                                '</div>';
+                        }
+
+                        if (i + 2 < mobileResults.length) {
+                            bannerName = mobileResults[i + 2];
+                            newColumn = newColumn +
+                                '<div class="column" style="text-align:left;">' +
+                                '<img class="mobile-small-banner" src = "../ClientVantage_Mobile_Banners_Temp/' + categoryToDeleteValue + '/' + bannerName + '" id="banner-' + bannerName + '">' +
+                                '<i class="fa fa-trash fa-2x" aria-hidden="true" onclick="deleteMobileBanner(\'' + bannerName + '\', \' ' + categoryToDeleteValue + '\')"></i>' +
+                                '</div>';
+                        }
+
+                        newRow.innerHTML = newColumn;
+                        mobileBannersList.appendChild(newRow);
+                    }
+
+                    document.getElementById("mobile-delete-form-row").style.visibility = "visible";
+                    document.getElementById("mobile-search-results").innerHTML = "(" + mobileResults.length + " banners found)";
+                    document.getElementById("mobile-search-results-row").style.visibility = "visible";
+                
+                });
 
                 stopSpinner(spinner, "spinningWheel");
             });
@@ -149,8 +194,12 @@
             var confirmDelete = confirm("Confirm deleting ClientVantage banner image: " + bannerName + "?");
 
             if (confirmDelete == true) {
+
                 document.getElementById("delete-form-row").style.visibility = "hidden";
+                document.getElementById("mobile-delete-form-row").style.visibility = "hidden";
                 document.getElementById("search-results-row").style.visibility = "hidden";
+                document.getElementById("mobile-search-results-row").style.visibility = "hidden";
+
                 var spinner = startSpinner("spinningWheel"); 
                 $.post('@Url.Action("DeleteCVBanner", "ClientVantageBanners")?categoryToDelete=' + categoryToDelete + '&bannerName=' + bannerName, (result) => {
                     if (result.success) {
@@ -167,6 +216,33 @@
             }
         }
 
+        function deleteMobileBanner(bannerName, categoryToDelete) {
+
+            var confirmDelete = confirm("Confirm deleting ClientVantage banner image: " + bannerName + "?");
+
+            if (confirmDelete == true) {
+
+                document.getElementById("delete-form-row").style.visibility = "hidden";
+                document.getElementById("mobile-delete-form-row").style.visibility = "hidden";
+                document.getElementById("search-results-row").style.visibility = "hidden";
+                document.getElementById("mobile-search-results-row").style.visibility = "hidden";
+
+                var spinner = startSpinner("spinningWheel");
+                $.post('@Url.Action("DeleteMobileCVBanner", "ClientVantageBanners")?categoryToDelete=' + categoryToDelete + '&bannerName=' + bannerName, (result) => {
+                    if (result.success) {
+                        alert("ClientVantage mobile banner was deleted successfully! ");
+                        window.location.href = "@Url.Action("Index", "ClientVantageBanners")";
+                    } else {
+                        alert(result.message);
+                        prepareLogList();
+                    }
+                }).fail((xhr, textStatus, errorThrown) => {
+                    alert("Failure deleting ClientVantage mobile banner: " + `${textStatus} : ${errorThrown}`);
+                    prepareLogList();
+                });
+            }
+        }
+
         function prepareLogList() {
             setupPagination('log', 'log-list', '@Url.Action("Log", "ClientVantageBanners")?referrerUrl=ClientVantageBanners', ['Log', 'Username', 'Created'], 7);
         }
@@ -176,7 +252,6 @@
                 lines: 30, // The number of lines to draw
                 length: 8, // The length of each line
                 width: 18, // The line thickness
-                //radius: 45, // The radius of the inner circle
                 radius: 30, // The radius of the inner circle
                 scale: 1, // Scales overall size of the spinner
                 corners: 1, // Corner roundness (0..1)
@@ -188,11 +263,11 @@
                 direction: 1, // 1: clockwise, -1: counterclockwise
                 zIndex: 2e9, // The z-index (defaults to 2000000000)
                 className: 'spinner', // The CSS class to assign to the spinner
-                top: '50%', // Top position relative to parent
+                top: '15%', // Top position relative to parent
                 left: '50%', // Left position relative to parent
                 shadow: '0 0 1px transparent', // Box-shadow for the lines
-                //position: 'absolute' // Element positioning
-                position: 'fixed' // Element positioning
+                position: 'absolute' // Element positioning
+                //position: 'fixed' // Element positioning
             };
 
             var target = document.getElementById(targetId);
@@ -273,6 +348,20 @@
                                              </div>
                                          </div>
                                     </div>
+                                    <div class="row form-row">
+                                         <div class="col-lg-2 form-label-col">
+                                             <label for="imageMobileUrl" class="control-label control-label-center">Mobile Banner:</label>
+                                         </div>
+                                         <div class="col-lg-10">
+                                             <div class="row">
+                                                 <div class="col-lg-12">
+                                                     <div class="demo-section k-content">
+                                                            <input class="form-control form-control-sm" id="imageMobileUrl" name="imageMobileUrl" type="file" accept="image/*">
+                                                     </div>
+                                                 </div>
+                                             </div>
+                                         </div>
+                                    </div>
                                     <div class="row form-row" style="padding-top: 20px;">
                                         <div class="col-lg-12 content-center">
                                             <button id="upload-form-submit" type="submit" class="k-button k-primary submit-btn">Upload</button>
@@ -304,19 +393,26 @@
                                         </div>
                                     </div>
                                 </div>
-                                    <div class="row content-center" id="search-results-row" style="visibility:hidden">
+                                <div class="row content-center" id="search-results-row" style="visibility:hidden">
                                     <div class="col-12 col-lg-12 col-sm-12 col-xl-12">
-                                         <h5 id="search-results"></h5>
+                                         <h2>Banners <span id="search-results"></span></h2>
                                     </div>
                                 </div>
                                 <div class="row content-center" id="delete-form-row" style="visibility:hidden">
-                                     <div class="col-12 col-lg-12 col-sm-12 col-xl-12 content-center" id="banners-list" style="padding-bottom: 20px;">
-                                     </div>
+                                     <div class="col-12 col-lg-12 col-sm-12 col-xl-12 content-center" id="banners-list"></div>
+                                </div> 
+                                <div class="row content-center" id="mobile-search-results-row" style="visibility:hidden; margin-top: 120px;">
+                                    <div class="col-12 col-lg-12 col-sm-12 col-xl-12">
+                                         <h2>Mobile Banners <span id="mobile-search-results"></span></h2>
+                                    </div>
+                                </div>
+                                <div class="row content-center" id="mobile-delete-form-row" style="visibility:hidden">
+                                     <div class="col-12 col-lg-12 col-sm-12 col-xl-12 content-center" id="mobile-banners-list"></div>
                                 </div> 
                             </div>
                         </div>
                     </div>
-                    <div class="row" style="margin-top: 90px;">
+                    <div class="row" style="margin-top: 120px;">
                         <div class="col-lg-2"></div>
                         <div class="col-lg-8 content-center">
                             <div id="log" class="content-center">
@@ -570,6 +666,14 @@
         width: 300px;
     }
 
+    .mobile-small-banner {
+        border-color: #CCCCCC;
+        border-width: 1px;
+        border-style: Solid;
+        width: 150px;
+        height: 125px;
+    }
+
     .banner-img-col {
         text-align: right;
      }
@@ -589,17 +693,17 @@
        padding: 8px;
    }
 
-    .small-banner {
-         margin: 8px;
-         position:relative;
-         -webkit-transition: transform .4s ease-out;
-         transition: transform .4s ease-out;
-    }
+   .small-banner, .mobile-small-banner {
+        margin: 8px;
+        position:relative;
+        -webkit-transition: transform .4s ease-out;
+        transition: transform .4s ease-out;
+   }
 
-    .small-banner:hover, .small-banner:active {
-     -webkit-transform: scale(2);
-      transform: scale(2);
-      z-index:10;
+    .small-banner:hover, .small-banner:active, .mobile-small-banner:hover, .mobile-small-banner:active {
+       -webkit-transform: scale(2);
+        transform: scale(2);
+        z-index:10;
     }
 
     .w-60 {
@@ -619,6 +723,17 @@
          -webkit-transform: scale(2);
          transform: scale(2);
          z-index:10;
+     }
+
+     #banners-list, #mobile-banners-list {
+         padding-top: 60px;
+         padding-bottom: 20px;
+         overflow-y: scroll;
+         height: 500px;
+     }
+
+     #search-results, #mobile-search-results {
+         font-size: 12px;
      }
 
 
