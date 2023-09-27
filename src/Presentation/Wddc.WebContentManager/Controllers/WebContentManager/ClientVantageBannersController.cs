@@ -63,11 +63,11 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             string sourceDir1 = "\\\\WEBsrvr\\WDDCMembers\\WDDCWebPages\\wddc_members\\images\\Client Vantage\\" + category + "\\small",
                    sourceDir2 = "\\\\WEBsrvr\\WDDCMembers\\WDDCWebPages\\wddc_members\\images\\Client Vantage\\" + category;
           
-            string tempDir1 = Path.Combine(this._hostingEnvironment.WebRootPath, "ClientVantage_Banners_Temp\\" + category + "\\small"),
-                   tempDir2 = Path.Combine(this._hostingEnvironment.WebRootPath, "ClientVantage_Banners_Temp\\" + category);
+            string tempDir1 = Path.Combine(this._hostingEnvironment.WebRootPath, "img\\ClientVantage_Banners_Temp\\" + category + "\\small"),
+                   tempDir2 = Path.Combine(this._hostingEnvironment.WebRootPath, "img\\ClientVantage_Banners_Temp\\" + category);
 
-            if (Directory.Exists(Path.Combine(this._hostingEnvironment.WebRootPath, "ClientVantage_Banners_Temp")))
-                Directory.Delete(Path.Combine(this._hostingEnvironment.WebRootPath, "ClientVantage_Banners_Temp"), true);
+            if (Directory.Exists(Path.Combine(this._hostingEnvironment.WebRootPath, "img\\ClientVantage_Banners_Temp")))
+                Directory.Delete(Path.Combine(this._hostingEnvironment.WebRootPath, "img\\ClientVantage_Banners_Temp"), true);
 
             Directory.CreateDirectory(tempDir1);
 
@@ -97,11 +97,11 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             string sourceDir1 = "\\\\WEBsrvr\\WDDCMembers\\WDDCWebPages\\wddc_members\\images\\Client Vantage Mobile\\" + category + "\\small",
                    sourceDir2 = "\\\\WEBsrvr\\WDDCMembers\\WDDCWebPages\\wddc_members\\images\\Client Vantage Mobile\\" + category;
 
-            string tempDir1 = Path.Combine(this._hostingEnvironment.WebRootPath, "ClientVantage_Mobile_Banners_Temp\\" + category + "\\small"),
-                   tempDir2 = Path.Combine(this._hostingEnvironment.WebRootPath, "ClientVantage_Mobile_Banners_Temp\\" + category);
+            string tempDir1 = Path.Combine(this._hostingEnvironment.WebRootPath, "img\\ClientVantage_Mobile_Banners_Temp\\" + category + "\\small"),
+                   tempDir2 = Path.Combine(this._hostingEnvironment.WebRootPath, "img\\ClientVantage_Mobile_Banners_Temp\\" + category);
 
-            if (Directory.Exists(Path.Combine(this._hostingEnvironment.WebRootPath, "ClientVantage_Mobile_Banners_Temp")))
-                Directory.Delete(Path.Combine(this._hostingEnvironment.WebRootPath, "ClientVantage_Mobile_Banners_Temp"), true);
+            if (Directory.Exists(Path.Combine(this._hostingEnvironment.WebRootPath, "img\\ClientVantage_Mobile_Banners_Temp")))
+                Directory.Delete(Path.Combine(this._hostingEnvironment.WebRootPath, "img\\ClientVantage_Mobile_Banners_Temp"), true);
 
             Directory.CreateDirectory(tempDir1);
 

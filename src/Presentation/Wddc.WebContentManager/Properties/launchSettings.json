@@ -1,22 +1,10 @@
 {
-  "iisSettings": {
-    "windowsAuthentication": true,
-    "anonymousAuthentication": false,
-    "iis": {
-      "applicationUrl": "http://localhost/Wddc.WebContentManager",
-      "sslPort": 0
-    },
-    "iisExpress": {
-      "applicationUrl": "http://localhost:58669/",
-      "sslPort": 0
-    }
-  },
   "profiles": {
     "IIS Express": {
       "commandName": "IISExpress",
       "launchBrowser": true,
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Production"
       }
     },
     "Development": {
@@ -34,6 +22,18 @@
         "ASPNETCORE_ENVIRONMENT": "Staging"
       },
       "applicationUrl": "http://localhost:58670/"
+    }
+  },
+  "iisSettings": {
+    "windowsAuthentication": true,
+    "anonymousAuthentication": false,
+    "iis": {
+      "applicationUrl": "http://localhost/Wddc.WebContentManager",
+      "sslPort": 0
+    },
+    "iisExpress": {
+      "applicationUrl": "http://localhost:58669/",
+      "sslPort": 0
     }
   }
 }
