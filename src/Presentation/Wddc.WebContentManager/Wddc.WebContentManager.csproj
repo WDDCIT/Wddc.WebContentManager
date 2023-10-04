@@ -58,7 +58,7 @@
     <PackageReference Include="System.ServiceModel.Security" Version="4.8.1" />
     <PackageReference Include="System.Text.Encoding.CodePages" Version="5.0.0" />
     <PackageReference Include="Telerik.UI.for.AspNet.Core" Version="2021.1.224" />
-    <PackageReference Include="Wddc.Core" Version="1.3.420" />
+    <PackageReference Include="Wddc.Core" Version="1.3.422" />
     <PackageReference Include="X.PagedList.Mvc.Core" Version="8.0.7" />
   </ItemGroup>
 

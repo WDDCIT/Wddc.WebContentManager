@@ -1,0 +1,1121 @@
+﻿@{
+    ViewBag.Title = "ClientVantage Banners";
+}
+
+@section Styles {
+
+    @*<link href="https://kendo.cdn.telerik.com/2021.2.511/styles/kendo.default.min.css" rel="stylesheet" />*@
+    <link href="https://kendo.cdn.telerik.com/2021.2.511/styles/kendo.bootstrap-v4.min.css" rel="stylesheet" type="text/css" />
+
+}
+
+@section Scripts { gdfgfg
+
+    <script src="http://ajax.aspnetcdn.com/ajax/jquery.validate/1.11.0/jquery.validate.min.js"></script>
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script>
+
+    <script src="https://kendo.cdn.telerik.com/2021.2.511/js/kendo.all.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script src="~/js/pagination/pagination.min.js"></script>
+    <script src="~/js/pagination/pagination.custom.js"></script>
+
+
+
+    <script>
+
+        $(document).ready(function () {
+            
+            prepareLogList(); 
+
+            if('@ViewBag.response') {
+                if ('@ViewBag.response' == "Success") {
+                    document.getElementById("danger-alert").style.display = "none";
+                    document.getElementById("success-alert").style.display = "inline-block";
+                    var alertText = '<strong>Success! </strong>';
+                    alertText += '@ViewBag.Message';
+                    $("#success-alert").html(alertText);
+                    $("#success-alert").fadeTo(8000, 500).slideUp(500, function() {
+                        $("#success-alert").slideUp(500);
+                    });
+                }
+                else {
+                    document.getElementById("success-alert").style.display = "none";
+                    document.getElementById("danger-alert").style.display = "inline-block";
+                    var alertText = '<strong>Failure! </strong>';
+                    alertText += '@ViewBag.Message';
+                    $("#danger-alert").html(alertText);
+                    $("#danger-alert").fadeTo(8000, 500).slideUp(500, function() {
+                        $("#danger-alert").slideUp(500);
+                    });
+                }
+            } else {
+                document.getElementById("success-alert").style.display = "none";
+                document.getElementById("danger-alert").style.display = "none";
+            }
+
+            $("#create-form #subject").kendoTextArea({
+                maxLength: 128,
+                placeholder: "Enter message subject ..."
+            });
+
+            $("#create-form #expiryDate").kendoDatePicker({
+                dateInput: true,
+                value: new Date(),
+                min: new Date()
+            });
+
+            $("#create-form #site").kendoRadioGroup({
+                items: [{
+                    value: -1,
+                    label: "All"
+                }, {
+                    value: 1,
+                    label: "AB"
+                }, {
+                    value: 2,
+                    label: "MB"
+                }, {
+                    value: 3,
+                    label: "BC"
+                }],
+                layout: "horizontal",
+                value: -1
+            });
+
+
+            $('#create-form #priority').kendoSwitch({
+                messages: {
+                    checked: "Hight",
+                    unchecked: "Low"
+                },
+                checked: false
+            });
+
+            $("#edit-form #expiryDate").kendoDatePicker({
+                dateInput: true,
+            });
+
+            $("#edit-form #site").kendoRadioGroup({
+                items: [{
+                    value: -1,
+                    label: "All"
+                }, {
+                    value: 1,
+                    label: "AB"
+                }, {
+                    value: 2,
+                    label: "MB"
+                }, {
+                    value: 3,
+                    label: "BC"
+                }],
+                layout: "horizontal",
+            });
+
+            $('#edit-form #priority').kendoSwitch({
+                messages: {
+                    checked: "Hight",
+                    unchecked: "Low"
+                },
+            });
+
+            /* ------------------------- */
+
+            $("#delete-form #expiryDate").kendoDatePicker({
+                dateInput: true,
+            });
+
+            $("#delete-form #site").kendoRadioGroup({
+                items: [{
+                    value: -1,
+                    label: "All"
+                }, {
+                    value: 1,
+                    label: "AB"
+                }, {
+                    value: 2,
+                    label: "MB"
+                }, {
+                    value: 3,
+                    label: "BC"
+                }],
+                layout: "horizontal",
+            });
+
+            $('#delete-form #priority').kendoSwitch({
+                messages: {
+                    checked: "Hight",
+                    unchecked: "Low"
+                },
+            });
+
+           
+        })
+
+
+        function cancelUpdate() {
+
+            var spinner = startSpinner('spinningWheelEdit');
+
+            const element = $('#headingOne');
+            $('html, body').animate({
+                scrollTop: $(element).offset().top
+            }, 900);
+
+            stopSpinner(spinner, 'spinningWheelEdit');
+            document.getElementById("message-toUpdate-row").style.visibility = "hidden";
+        }
+
+        function cancelDelete() {
+
+            var spinner = startSpinner('spinningWheelDelete');
+
+            const element = $('#headingTwo');
+            $('html, body').animate({
+                scrollTop: $(element).offset().top
+            }, 900);
+
+            stopSpinner(spinner, 'spinningWheelDelete');
+            document.getElementById("message-toDelete-row").style.visibility = "hidden";
+        }
+
+
+        function prepareLogList() {
+            setupPagination('log', 'log-list', '@Url.Action("Log", "GenericMessage")?referrerUrl=GenericMessage', ['Log', 'Username', 'Created'], 7);
+        }
+
+        function startSpinner(targetId) {
+            var opts = {
+                lines: 30, // The number of lines to draw
+                length: 5, // The length of each line
+                width: 10, // The line thickness
+                radius: 20, // The radius of the inner circle
+                scale: 1, // Scales overall size of the spinner
+                corners: 1, // Corner roundness (0..1)
+                color: '#A0A0A0',
+                fadeColor: 'transparent', // CSS color or array of colors
+                speed: 1, // Rounds per second
+                rotate: 0, // The rotation offset
+                animation: 'spinner-line-fade-quick', // The CSS animation name for the lines
+                direction: 1, // 1: clockwise, -1: counterclockwise
+                zIndex: 2e9, // The z-index (defaults to 2000000000)
+                className: 'spinner', // The CSS class to assign to the spinner
+                top: '50%', // Top position relative to parent
+                left: '50%', // Left position relative to parent
+                shadow: '0 0 1px transparent', // Box-shadow for the lines
+                position: 'absolute' // Element positioning
+                //position: 'fixed' // Element positioning
+            };
+
+            var target = document.getElementById(targetId);
+            var spinner = new Spinner(opts).spin(target);
+            return spinner;
+        }
+
+        function stopSpinner(spinner, targetId) {
+            spinner.stop();
+        }
+
+
+        var $myGroup = $('#accordion');
+        $myGroup.on('show.bs.collapse','.collapse', function() {
+            $myGroup.find('.collapse.in').collapse('hide');
+        });
+
+        $("#edit-form #messageId").kendoDropDownList({
+            dataSource: {
+                transport: {
+                    read: {
+                        url: '@Url.Action("GetMessages", "GenericMessage")',
+                        dataType: "json"
+                    }
+                }
+            },
+            dataTextField: "Subject",
+            dataValueField: "MsgGenericID",
+            filter: "contains",
+            open: function (e) {
+                document.getElementById("message-toUpdate-row").style.visibility = "hidden";
+            }
+        });
+
+        $("#delete-form #messageId").kendoDropDownList({
+            dataSource: {
+                transport: {
+                    read: {
+                        url: '@Url.Action("GetMessages", "GenericMessage")',
+                        dataType: "json"
+                    }
+                }
+            },
+            dataTextField: "Subject",
+            dataValueField: "MsgGenericID",
+            filter: "contains",
+            open: function (e) {
+                document.getElementById("message-toDelete-row").style.visibility = "hidden";
+            }
+        });
+
+
+        function submitCreateForm() {
+
+            startSpinner('spinningWheelCreate'); 
+            $('#create-form-submit').attr('disabled', true);
+            $('#create-form #priority').val($('#create-form #priority').data("kendoSwitch").value());
+        }
+
+        function submitEditForm() {
+
+            startSpinner('spinningWheelEdit'); 
+            $('#edit-form-submit').attr('disabled', true);
+            $('#edit-form #priority').val($('#edit-form #priority').data("kendoSwitch").value());
+        }
+
+        function submitDeleteForm() {
+
+            var spinner = startSpinner('spinningWheelDelete');
+            $('#delete-form-submit').attr('disabled', true);
+
+            var confirmDelete = confirm("Confirm deleting generic message?");
+
+            if (confirmDelete == true) {
+                return true; 
+            }
+            else {
+                stopSpinner(spinner, "spinningWheelDelete");
+                $('#delete-form-submit').attr('disabled', false);
+                return false;
+            }
+        }
+
+        function searchMessageToUpdate() {
+
+            var messageId = $("#edit-form #messageId").data("kendoDropDownList").value();
+            
+            var spinner = startSpinner("spinningWheelSearchUpdate");
+
+            document.getElementById("message-toUpdate-row").style.visibility = "hidden";
+
+            $.get('@Url.Action("GetMessageById", "GenericMessage")?Id=' + messageId, (result) => {
+
+                document.getElementById("update-form-textarea-container").innerHTML = "<textarea id='subject' name='subject' style='width: 100%;' required></textarea>";
+
+                $("#edit-form #subject").kendoTextArea({
+                    maxLength: 128,
+                    value: result.Subject
+                });
+
+                $("#edit-form #pdf-view-current-filename").html(result.FileName);
+
+                $("#edit-form #pdf-view-current").attr("href", "Message_Generic_Temp\\" + result.FileName);
+
+                $("#edit-form #expiryDate").data("kendoDatePicker").value(result.ExpiryDate);
+
+                if (result.Location == 0)
+                    $("#edit-form #site").getKendoRadioGroup().value(-1);
+                else
+                    $("#edit-form #site").getKendoRadioGroup().value(result.Location);
+
+                if (result.Priority == 1)
+                    $("#edit-form #priority").data("kendoSwitch").check(true);
+                else
+                    $("#edit-form #priority").data("kendoSwitch").check(false);
+
+                document.getElementById("message-toUpdate-row").style.visibility = "visible";
+
+                const element = $('#headingTwo');
+                $('html, body').animate({
+                    scrollTop: $(element).offset().top
+                }, 900);
+
+                stopSpinner(spinner, "spinningWheelSearchUpdate");
+            });
+        }
+
+        function searchMessageToDelete() {
+
+            var messageId = $("#delete-form #messageId").data("kendoDropDownList").value();
+
+            var spinner = startSpinner("spinningWheelSearchDelete");
+
+            document.getElementById("message-toDelete-row").style.visibility = "hidden";
+
+            $.get('@Url.Action("GetMessageById", "GenericMessage")?Id=' + messageId, (result) => {
+
+                document.getElementById("delete-form-textarea-container").innerHTML = "<textarea id='subject' name='subject' style='width: 100%;'></textarea>";
+
+                $("#delete-form #subject").kendoTextArea({
+                    maxLength: 128,
+                    value: result.Subject,
+                    enable: false
+                });
+
+                $("#delete-form #pdf-view-current-filename").html(result.FileName);
+
+                $("#delete-form #pdf-view-current").attr("href", "Message_Generic_Temp\\" + result.FileName);
+
+                $("#delete-form #expiryDate").data("kendoDatePicker").value(result.ExpiryDate);
+                $("#delete-form #expiryDate").data("kendoDatePicker").enable(false);
+
+                if (result.Location == 0)
+                    $("#delete-form #site").getKendoRadioGroup().value(-1);
+                else
+                    $("#delete-form #site").getKendoRadioGroup().value(result.Location);
+
+                $("#delete-form #site").getKendoRadioGroup().enable(false);
+
+                if (result.Priority == 1)
+                    $("#delete-form #priority").data("kendoSwitch").check(true);
+                else
+                    $("#delete-form #priority").data("kendoSwitch").check(false);
+
+                $("#delete-form #priority").data("kendoSwitch").enable(false);
+
+                document.getElementById("message-toDelete-row").style.visibility = "visible";
+
+                const element = $('#headingThree');
+                $('html, body').animate({
+                    scrollTop: $(element).offset().top
+                }, 900);
+
+                stopSpinner(spinner, "spinningWheelSearchDelete");
+            });
+        }
+
+
+    </script>
+}
+
+<div class="wrapper wrapper-content animated fadeInRight">
+    <div class="row">
+        <div class="col-12 col-lg-12 col-sm-12 col-xl-12 content-center">
+            <div class="alert alert-success" id="success-alert" style="display:none"></div>
+            <div class="alert alert-danger" id="danger-alert" style="display:none"></div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="ibox">
+                <div class="ibox-content">
+                    <div class="row">
+                        <div class="col-lg-12 content-center">
+                            <h4>This tool is to create, edit, and delete the generic messages on the website</h4>
+                        </div>
+                    </div>
+                    <div class="row" style="margin-top: 50px;">
+                        <div class="col-2 col-lg-2 col-sm-2 col-xl-2"></div>
+                        <div class="col-8 col-lg-8 col-sm-8 col-xl-8">
+                                <div id="accordion">
+                                    <div class="card">
+                                        <div class="card-header" id="headingOne">
+                                            <h3 class="mb-0">
+                                                <button class="btn btn-link" data-toggle="collapse" data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                                                    Create Generic Message
+                                                </button>
+                                            </h3>
+                                        </div>
+                                        <div id="collapseOne" class="collapse " aria-labelledby="headingOne" data-parent="#accordion">
+                                            <div class="card-body">
+                                                <form id="create-form" class="content-center" name="create-form" method="post" action="@Url.Action("CreateMessage", "GenericMessage")" enctype="multipart/form-data" style="padding-top: 5px; padding-bottom: 50px;" onsubmit="submitCreateForm();">
+                                                    <div class="row form-row">
+                                                         <div class="col-lg-2 form-label-col">
+                                                             <label for="subject" class="control-label control-label-center">Subject:</label>
+                                                         </div>
+                                                         <div class="col-lg-9">
+                                                            <textarea id="subject" name="subject" style="width: 100%;" required></textarea>
+                                                         </div>
+                                                         <div class="col-lg-1"></div>
+                                                    </div>
+                                                    <div class="row form-row">
+                                                        <div class="col-lg-2 form-label-col">
+                                                            <label for="pdfFile" class="control-label control-label-center">PDF File:</label>
+                                                        </div>
+                                                        <div class="col-lg-9">
+                                                            <input type="file" class="form-control form-control-sm" id="pdfFile" name="pdfFile" accept="application/pdf" required>
+                                                        </div>
+                                                        <div class="col-lg-1"></div>
+                                                    </div>
+                                                    <div class="row form-row">
+                                                        <div class="col-lg-2 form-label-col">
+                                                            <label for="expiryDate" class="control-label control-label-center">Expiry Date:</label>
+                                                        </div>
+                                                        <div class="col-lg-9" style="text-align: left;">
+                                                            <input id="expiryDate" name="expiryDate" style="width: 40%;" required />
+                                                        </div>
+                                                        <div class="col-lg-1"></div>
+                                                    </div>
+                                                    <div class="row form-row">
+                                                        <div class="col-lg-2 form-label-col">
+                                                            <label for="site" class="control-label control-label-center">Site:</label>
+                                                        </div>
+                                                        <div class="col-lg-9" style="text-align: left;">
+                                                            <ul id="site" name="site"></ul>
+                                                        </div>
+                                                        <div class="col-lg-1"></div>
+                                                    </div>
+                                                    <div class="row form-row">
+                                                        <div class="col-lg-2 form-label-col">
+                                                            <label for="priority" class="control-label control-label-center">Priority:</label>
+                                                        </div>
+                                                        <div class="col-lg-9" style="text-align: left;">
+                                                            <input type="checkbox" id="priority" name="priority" aria-label="Priority Switch" />
+                                                        </div>
+                                                        <div class="col-lg-1"></div>
+                                                    </div>
+                                                    <div class="row form-row" style="padding-top: 20px;">
+                                                        <div class="col-lg-12 content-center">
+                                                            <div id="spinningWheelCreate"></div>
+                                                            <button type="submit" id="create-form-submit" class="k-button k-primary submit-btn" @*onClick="this.form.submit(); this.disabled=true; startSpinner('spinningWheelCreate')"*@>Create</button>
+                                                        </div>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="card">
+                                        <div class="card-header" id="headingTwo">
+                                            <h3 class="mb-0">
+                                                <button class="btn btn-link collapsed" data-toggle="collapse" data-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                                                    Edit Generic Message
+                                                </button>
+                                            </h3>
+                                        </div>
+                                        <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordion">
+                                            <div class="card-body">
+                                                <form id="edit-form" class="content-center" name="edit-form" method="post" action="@Url.Action("UpdateMessage", "GenericMessage")" enctype="multipart/form-data" style="padding-top: 5px; padding-bottom: 50px;" onsubmit="submitEditForm();">
+                                                    <div class="row form-row">
+                                                        <div class="col-lg-1"></div>
+                                                        <div class="col-lg-10">
+                                                            <div class="row form-row">
+                                                                <div class="col-lg-2 form-label-col">
+                                                                    <label for="messageId" class="control-label control-label-center">Search by Subject:</label>
+                                                                </div>
+                                                                <div class="col-lg-10">
+                                                                    <input id="messageId" name="messageId" style="width: 100%;" />
+                                                                </div>
+                                                            </div>
+                                                            <div class="row form-row">
+                                                                <div class="col-lg-12">
+                                                                    <div id="spinningWheelSearchUpdate"></div>
+                                                                    <div class="k-button k-primary submit-btn" onclick="searchMessageToUpdate()">Search</div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-lg-1"></div>
+                                                    </div>
+                                                    <div class="row form-row" id="message-toUpdate-row" style="visibility:hidden; margin-top: 70px;">
+                                                        <div class="col-lg-12">
+                                                            <div class="row form-row">
+                                                                <div class="col-lg-2 form-label-col">
+                                                                    <label for="subject" class="control-label control-label-center">Subject:</label>
+                                                                </div>
+                                                                <div class="col-lg-9" id="update-form-textarea-container"></div>
+                                                                <div class="col-lg-1"></div>
+                                                            </div>
+                                                            <div class="row form-row">
+                                                                <div class="col-lg-2 form-label-col">
+                                                                    <label for="pdfFileCurrent" class="control-label control-label-center">View Current:</label>
+                                                                </div>
+                                                                <div class="col-lg-9" style="text-align: left;">
+                                                                    <a href="#" id="pdf-view-current" target="_blank">
+                                                                        <i class="fa fa-file-pdf-o"></i> <span id="pdf-view-current-filename">file</span>
+                                                                    </a>
+                                                                </div>
+                                                                <div class="col-lg-1"></div>
+                                                            </div>
+                                                            <div class="row form-row">
+                                                                <div class="col-lg-2 form-label-col">
+                                                                    <label for="pdfFile" class="control-label control-label-center">PDF File:</label>
+                                                                </div>
+                                                                <div class="col-lg-9">
+                                                                    <input type="file" class="form-control form-control-sm" id="pdfFile" name="pdfFile" accept="application/pdf">
+                                                                </div>
+                                                                <div class="col-lg-1 pdf-view-col">
+                                                                </div>
+                                                            </div>
+                                                            <div class="row form-row">
+                                                                <div class="col-lg-2 form-label-col">
+                                                                    <label for="expiryDate" class="control-label control-label-center">Expiry Date:</label>
+                                                                </div>
+                                                                <div class="col-lg-9" style="text-align: left;">
+                                                                    <input id="expiryDate" name="expiryDate" style="width: 40%;" required />
+                                                                </div>
+                                                                <div class="col-lg-1"></div>
+                                                            </div>
+                                                            <div class="row form-row">
+                                                                <div class="col-lg-2 form-label-col">
+                                                                    <label for="site" class="control-label control-label-center">Site:</label>
+                                                                </div>
+                                                                <div class="col-lg-9" style="text-align: left;">
+                                                                    <ul id="site" name="site"></ul>
+                                                                </div>
+                                                                <div class="col-lg-1"></div>
+                                                            </div>
+                                                            <div class="row form-row">
+                                                                <div class="col-lg-2 form-label-col">
+                                                                    <label for="priority" class="control-label control-label-center">Priority:</label>
+                                                                </div>
+                                                                <div class="col-lg-9" style="text-align: left;">
+                                                                    <input type="checkbox" id="priority" name="priority" aria-label="Priority Switch" />
+                                                                </div>
+                                                                <div class="col-lg-1"></div>
+                                                            </div>
+                                                            <div class="row form-row" style="padding-top: 20px;">
+                                                                <div class="col-lg-12 content-center">
+                                                                    <div id="spinningWheelEdit"></div>
+                                                                    <button type="submit" id="edit-form-submit" class="k-button k-primary submit-btn">Update</button>
+                                                                    <div class="k-button k-primary submit-btn" onClick="cancelUpdate();">Cancel</div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="card">
+                                        <div class="card-header" id="headingThree">
+                                            <h3 class="mb-0">
+                                                <button class="btn btn-link collapsed" data-toggle="collapse" data-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                                                    Delete Generic Message
+                                                </button>
+                                            </h3>
+                                        </div>
+                                        <div id="collapseThree" class="collapse" aria-labelledby="headingThree" data-parent="#accordion">
+                                            <div class="card-body">
+                                                <form id="delete-form" class="content-center" name="edit-form" method="post" action="@Url.Action("DeleteMessage", "GenericMessage")" enctype="multipart/form-data" style="padding-top: 5px; padding-bottom: 50px;" onsubmit="return submitDeleteForm(this);">
+                                                    <div class="row form-row">
+                                                        <div class="col-lg-1"></div>
+                                                        <div class="col-lg-10">
+                                                            <div class="row form-row">
+                                                                <div class="col-lg-2 form-label-col">
+                                                                    <label for="messageId" class="control-label control-label-center">Search by Subject:</label>
+                                                                </div>
+                                                                <div class="col-lg-10">
+                                                                    <input id="messageId" name="messageId" style="width: 100%;" />
+                                                                </div>
+                                                            </div>
+                                                            <div class="row form-row">
+                                                                <div class="col-lg-12">
+                                                                    <div id="spinningWheelSearchDelete"></div>
+                                                                    <div class="k-button k-primary submit-btn" onclick="searchMessageToDelete()">Search</div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-lg-1"></div>
+                                                    </div>
+                                                    <div class="row form-row" id="message-toDelete-row" style="visibility:hidden; margin-top: 70px;">
+                                                        <div class="col-lg-12">
+                                                            <div class="row form-row">
+                                                                <div class="col-lg-2 form-label-col">
+                                                                    <label for="subject" class="control-label control-label-center">Subject:</label>
+                                                                </div>
+                                                                <div class="col-lg-9" id="delete-form-textarea-container"></div>
+                                                                <div class="col-lg-1"></div>
+                                                            </div>
+                                                            <div class="row form-row">
+                                                                <div class="col-lg-2 form-label-col">
+                                                                    <label for="pdfFileCurrent" class="control-label control-label-center">View Current:</label>
+                                                                </div>
+                                                                <div class="col-lg-9" style="text-align: left;">
+                                                                    <a href="#" id="pdf-view-current" target="_blank">
+                                                                        <i class="fa fa-file-pdf-o"></i> <span id="pdf-view-current-filename">file</span>
+                                                                    </a>
+                                                                </div>
+                                                                <div class="col-lg-1"></div>
+                                                            </div>
+                                                            <div class="row form-row">
+                                                                <div class="col-lg-2 form-label-col">
+                                                                    <label for="expiryDate" class="control-label control-label-center">Expiry Date:</label>
+                                                                </div>
+                                                                <div class="col-lg-9" style="text-align: left;">
+                                                                    <input id="expiryDate" name="expiryDate" style="width: 40%;" required />
+                                                                </div>
+                                                                <div class="col-lg-1"></div>
+                                                            </div>
+                                                            <div class="row form-row">
+                                                                <div class="col-lg-2 form-label-col">
+                                                                    <label for="site" class="control-label control-label-center">Site:</label>
+                                                                </div>
+                                                                <div class="col-lg-9" style="text-align: left;">
+                                                                    <ul id="site" name="site"></ul>
+                                                                </div>
+                                                                <div class="col-lg-1"></div>
+                                                            </div>
+                                                            <div class="row form-row">
+                                                                <div class="col-lg-2 form-label-col">
+                                                                    <label for="priority" class="control-label control-label-center">Priority:</label>
+                                                                </div>
+                                                                <div class="col-lg-9" style="text-align: left;">
+                                                                    <input type="checkbox" id="priority" name="priority" aria-label="Priority Switch" />
+                                                                </div>
+                                                                <div class="col-lg-1"></div>
+                                                            </div>
+                                                            <div class="row form-row" style="padding-top: 20px;">
+                                                                <div class="col-lg-12 content-center">
+                                                                    <div id="spinningWheelDelete"></div>
+                                                                    <button type="submit" id="edit-form-submit" class="k-button k-primary submit-btn">Delete</button>
+                                                                    <div class="k-button k-primary submit-btn" onClick="cancelDelete();">Cancel</div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                        </div>
+                        <div class="col-2 col-lg-2 col-sm-2 col-xl-2"></div>
+                    </div>
+                    <div class="row" style="margin-top: 120px;">
+                        <div class="col-lg-3"></div>
+                        <div class="col-lg-6 content-center">
+                            <div id="log" class="content-center">
+                                <div class="bs-ObjectList-rows" id="log-list">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-3"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<style>
+
+    .content-center {
+        margin: 0px auto 0px auto;
+        text-align: center;
+    }
+
+    .wrapper-content {
+        padding: 10px 10px 20px;
+    }
+
+    .ibox-title {
+        padding: 15px 0px 15px;
+        color: #1565C0;
+        border: none;
+    }
+
+    .ibox-content {
+        padding: 7px 15px 15px 15px;
+    }
+
+    .breadcrumb {
+        display: none;
+    }
+
+    label {
+        margin-bottom: 0px;
+    }
+
+    .form-row {
+        margin-top: 20px;
+        vertical-align: central;
+        display: flex;
+    }
+
+    .form-label-col {
+        display: flex;
+        padding-right: 0;
+        justify-content: flex-end;
+    }
+
+    .control-label {
+        color: #556375;
+        font-size: 1.3rem;
+    }
+
+    .control-label-center {
+        display: flex;
+        margin-top: auto;
+        margin-bottom: auto;
+    }
+
+    .form-control {
+        font-size: 1.3rem;
+        border-color: #ddd;
+    }
+
+    .btn-primary.disabled, .btn-primary.disabled:hover, .btn-primary.disabled:focus, .btn-primary.disabled:active, .btn-primary.disabled.active, .btn-primary[disabled], .btn-primary[disabled]:hover, .btn-primary[disabled]:focus, .btn-primary[disabled]:active, .btn-primary.active[disabled], fieldset[disabled] .btn-primary, fieldset[disabled] .btn-primary:hover, fieldset[disabled] .btn-primary:focus, fieldset[disabled] .btn-primary:active, fieldset[disabled] .btn-primary.active {
+        color: #fff;
+        background-color: #6c757d;
+        border-color: #6c757d;
+    }
+
+    .bs-ObjectList-row {
+        border-radius: 0.25rem;
+    }
+
+    .bs-ObjectList-row--header {
+        position: relative;
+        background-color: #E8E8E8;
+    }
+
+        .bs-ObjectList-row--header .bs-ObjectList-cell {
+            font-weight: bold;
+        }
+
+    .bs-ObjectList-row .bs-ObjectList-cell {
+        width: 20%;
+        text-align: center;
+    }
+
+        .bs-ObjectList-row .bs-ObjectList-cell:last-child {
+            width: 20%;
+            text-align: center;
+        }
+
+        .bs-ObjectList-row .bs-ObjectList-cell:first-child {
+            width: 60%;
+            text-align: left;
+            white-space: pre-wrap;
+        }
+
+    .bs-ObjectList-child, .bs-ObjectList-parent, .bs-ObjectList-row {
+        display: table-row;
+        transition: background-color .15s ease 0s;
+    }
+
+    .bs-ObjectList-cell {
+        display: table-cell;
+        position: relative;
+        padding: 9px 10px;
+        color: #525f7f;
+        font-weight: 400;
+        line-height: 22px;
+        vertical-align: top;
+        white-space: nowrap;
+    }
+
+    textarea {
+      resize: none;
+    }
+
+    h4 {
+        color: darkblue;
+    }
+
+    .btn {
+        padding: 4px 12px;
+    }
+
+    .collapsible-col {
+        padding-left: 5px;
+        padding-right: 5px;
+    }
+
+    .content {
+        padding: 5px 18px;
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.2s ease-out;
+        background-color: #f1f1f1;
+    }
+
+    .k-dropdown, .k-textbox {
+        font-size: 12px;
+    }
+
+    .submit-btn {
+        margin: 10px;
+        font-size: 13px;
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+
+    .k-footer {
+        margin-top: 20px;
+        font-weight: bold;
+        font-size: 12px;
+    }
+
+    .search-btn {
+        margin-top: 40px;
+    }
+
+    .banners-row {
+        padding: 10px 0px;
+    }
+
+    .small-banner, .small-banner-grid {
+        border-color: #CCCCCC;
+        border-width: 1px;
+        border-style: Solid;
+        height: 75px;
+        width: 300px;
+    }
+
+    .mobile-small-banner, .mobile-small-banner-grid {
+        border-color: #CCCCCC;
+        border-width: 1px;
+        border-style: Solid;
+        width: 150px;
+        height: 125px;
+    }
+
+    .banner-img-col {
+        text-align: right;
+     }
+
+
+   .img-row {
+       display: -ms-flexbox; /* IE10 */
+       display: flex;
+       -ms-flex-wrap: wrap; /* IE10 */
+       flex-wrap: wrap;
+       padding-bottom: 30px;
+   }
+
+   .img-row-delete {
+       display: -ms-flexbox; /* IE10 */
+       display: flex;
+       -ms-flex-wrap: wrap; /* IE10 */
+       flex-wrap: wrap;
+       padding-top: 15px;
+       padding-bottom: 40px;
+       border-top: 1px Solid #E0E0E0;
+   }
+
+   .column {
+       -ms-flex: 33%; /* IE10 */
+       flex: 33%;
+       max-width: 33%;
+       padding: 8px;
+   }
+
+   .small-banner, .mobile-small-banner, .small-banner-grid, .mobile-small-banner-grid {
+        margin: 8px;
+        position:relative;
+        -webkit-transition: transform .4s ease-out;
+        transition: transform .4s ease-out;
+   }
+
+    .small-banner:hover, .small-banner:active, .mobile-small-banner:hover, .mobile-small-banner:active {
+       -webkit-transform: scale(2);
+        transform: scale(2);
+        z-index:10;
+    }
+
+    .small-banner-grid:hover, .small-banner-grid:active, .mobile-small-banner-grid:hover, .mobile-small-banner-grid:active {
+       -webkit-transform: scale(1.5);
+        transform: scale(1.5);
+        z-index:10;
+    }
+
+    .w-60 {
+        width: 60%;
+    }
+
+    .fa-trash, .fa-edit {
+        color: #007bff;
+        margin-left: 15px;
+        position:relative;
+        -webkit-transition: transform .3s ease-out;
+        transition: transform .3s ease-out;
+    }
+
+     .fa-trash:hover, .fa-trash:active, .fa-edit:hover, .fa-edit:active {
+         cursor: pointer;
+         -webkit-transform: scale(2);
+         transform: scale(2);
+         z-index:10;
+     }
+
+     .select-btn {
+         font-size: 10px;
+     }
+
+     .card {
+         position: relative;
+         display: flex;
+         -webkit-box-orient: vertical;
+         -webkit-box-direction: normal;
+         ms-flex-direction: column;
+         flex-direction: column;
+         min-width: 0;
+         word-wrap: break-word;
+         background-color: #fff;
+         background-clip: border-box;
+         margin-bottom: 20px;
+         border: none;
+     }
+
+     .card-header:first-child {
+         border-radius: calc(0.25rem - 1px) calc(0.25rem - 1px) 0 0;
+     }
+
+     .card-header {
+         padding: 0.75rem 1.25rem;
+         margin-bottom: 0;
+         margin-top: 30px;
+         background-color: rgba(0,0,0,.03);
+         border-bottom: 1px solid rgba(0,0,0,.125);
+         background-color: #2e6da4;
+         color: white;
+         font-size: 15px;
+     }
+
+     .mb-0, .my-0 {
+         margin-bottom: 0 !important;
+     }
+
+     .btn:not(:disabled):not(.disabled) {
+         cursor: pointer;
+     }
+
+     .btn-link {
+         font-weight: 400;
+         background-color: transparent;
+     }
+
+     .btn {
+         display: inline-block;
+         font-weight: 400;
+         white-space: nowrap;
+         vertical-align: middle;
+         -webkit-user-select: none;
+         -moz-user-select: none;
+         -ms-user-select: none;
+         user-select: none;
+         border: 1px solid transparent;
+         padding: 0.375rem 0.75rem;
+         line-height: 1.5;
+         border-radius: 0.25rem;
+         transition: color .15s ease-in-out,background-color .15s ease-in-out,border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+         text-align: left;
+     }
+
+     .collapse {
+         display: none;
+     }
+
+     .btn-link {
+         width: 100%;
+         text-align: left;
+     }
+
+     .btn-link:hover, .btn-link:focus, .btn-link:active, .btn-link.active, .open .dropdown-toggle.btn-link {
+         color: white;
+     }
+
+     .card-header:hover, .card-header:focus, .card-header:active, .card-header.active, .open .dropdown-toggle.btn-link {
+         color: white;
+         text-decoration: none;
+         background-color: #3279b8;
+     }
+
+    .k-input, .k-datepicker, .k-calendar {
+       font-size: 12px;
+    }
+
+      .form-control, .single-line {
+            padding: 0px;
+            border-radius: 0.25rem;
+            border-color: #ced4da;
+      }
+
+      input[type="file"]::file-selector-button {
+            height: 100%;
+            border:none;
+            border-right: 1px solid #ccc;
+            font-size: 12px;
+            background-color: #E8E8E8;
+            color: #556375;
+            cursor: pointer;
+      }
+
+      .k-switch-container {
+           padding: 0.05px 0.05px;
+           width: 70px;
+      }
+
+      .k-switch-label-on {
+        left: 10px;
+    }
+
+    .k-switch-label-off {
+        right: 10px;
+    }
+
+    .k-switch-label-off, .k-switch-label-on {
+        text-transform: uppercase;
+        display: inline;
+        position: absolute;
+        top: 50%;
+        -webkit-transform: translateY(-50%);
+        -ms-transform: translateY(-50%);
+        transform: translateY(-50%);
+        overflow: hidden;
+        font-size: 10px;
+    }
+
+    .k-switch-on  {
+        color: #fff;
+    }
+
+    .k-switch-off  {
+        color: black;
+    }
+
+    .k-switch-on.k-state-focused, .k-switch-on:focus {
+         box-shadow: none;
+    }
+
+    .k-switch-off.k-state-focused, .k-switch-off:focus {
+            box-shadow: none;
+     }
+
+     input[type='file'] {
+         cursor: pointer;
+     }
+
+     input[type="radio"] {
+         margin: 0px;
+     }
+
+    .k-radio, .k-checkbox {
+         width: 15px;
+         height: 15px;
+    }
+
+    .k-radio + .k-radio-label, .k-radio-label + .k-radio {
+         margin-left: 5px;
+    }
+
+
+    .k-list-horizontal .k-radio-item {
+        margin: 0 15px 0 0;
+    }
+
+    .pdf-view-col {
+        text-align: left;
+        padding-left: 0px;
+    }
+
+    #pdf-view-current .fa-file-pdf-o {
+        cursor: pointer;
+        font-size:25px; 
+        color:red; 
+    }
+
+    #pdf-view-current span {
+        margin-left: 5px;
+    }
+
+    .fa-file-pdf-o {
+        cursor: pointer;
+        font-size:30px; 
+        color:red; 
+        margin-bottom: 0px;
+    }
+
+
+</style>
