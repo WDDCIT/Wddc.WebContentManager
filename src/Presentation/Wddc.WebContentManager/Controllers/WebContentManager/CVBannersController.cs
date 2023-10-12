@@ -171,10 +171,14 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             string catgory = categories.SingleOrDefault(_ => _.Id == categoryId).Name;
 
             char[] invalidList = Path.GetInvalidFileNameChars();
+
             foreach (char c in invalidList)
             {
                 bannerName = bannerName.Replace(c.ToString(), "");
             }
+
+            if (bannerName.Contains('\''))
+                bannerName = bannerName.Replace("'", "");
 
             string bannerFileName = bannerName.Trim();
             string mobileBannerFileName = bannerName.Trim() + "-mobile";
@@ -313,6 +317,9 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             {
                 bannerName = bannerName.Replace(c.ToString(), "");
             }
+
+            if (bannerName.Contains('\''))
+                bannerName = bannerName.Replace("'", "");
 
             string bannerFileName = bannerName.Trim();
             string mobileBannerFileName = bannerName.Trim() + "-mobile";
