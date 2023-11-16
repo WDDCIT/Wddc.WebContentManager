@@ -182,10 +182,10 @@
                     var newRow = document.createElement('div');
                     newRow.classList.add('row', 'img-row', 'content-center');
 
-                    var newColumn = '<div class="col-lg-1"></div>';
+                    var newColumn = '';
 
-                    newColumn = newColumn + 
-                        '<div class="col-lg-3" style="text-align:center;">' +
+                    newColumn = newColumn +
+                        '<div class="col-md-4" style="text-align:center;">' +
                         '<div>' + bannerName + '</div>' +
                         '<div><img class="small-banner-grid" src = "../img/banners/' + bannerFileName + '" id="banner-' + bannerId + '"></div>' +
                         '<div id="spinningWheelSelectBanner-' + bannerId + '"></div>' +
@@ -198,7 +198,7 @@
                         bannerName = results[i + 1].Name;
 
                         newColumn = newColumn +
-                            '<div class="col-lg-4">' +
+                            '<div class="col-md-4">' +
                             '<div>' + bannerName + '</div>' +
                             '<div><img class="small-banner-grid" src = "../img/banners/' + bannerFileName + '" id="banner-' + bannerId + '"></div>' +
                             '<div id="spinningWheelSelectBanner-' + bannerId + '"></div>' +
@@ -212,7 +212,7 @@
                         bannerName = results[i + 2].Name;
 
                         newColumn = newColumn +
-                            '<div class="col-lg-3" style="text-align:center;">' +
+                            '<div class="col-md-4" style="text-align:center;">' +
                             '<div>' + bannerName + '</div>' +
                             '<div><img class="small-banner-grid" src = "../img/banners/' + bannerFileName + '" id="banner-' + bannerId + '"></div>' +
                             '<div id="spinningWheelSelectBanner-' + bannerId + '"></div>' +
@@ -220,7 +220,7 @@
                             '</div>';
                     }
 
-                    newColumn = newColumn + '<div class="col-lg-1"></div>';
+                    //newColumn = newColumn + '<div class="col-lg-1"></div>';
                     newRow.innerHTML = newColumn;
                     bannersList.appendChild(newRow);
 
@@ -1076,5 +1076,10 @@
          font-size: 10px;
      }
 
+
+        .col-md-4 {
+            flex: 0 0 auto;
+            width: 33.33333333%;
+        }
 
 </style>

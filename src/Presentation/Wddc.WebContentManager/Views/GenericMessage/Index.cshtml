@@ -1,5 +1,5 @@
 ﻿@{
-    ViewBag.Title = "ClientVantage Banners";
+    ViewBag.Title = "Customers Generic Messages";
 }
 
 @section Styles {
@@ -235,8 +235,12 @@
             dataTextField: "Subject",
             dataValueField: "MsgGenericID",
             filter: "contains",
+            optionLabel: "Select a message to update ...",
             open: function (e) {
                 document.getElementById("message-toUpdate-row").style.visibility = "hidden";
+            },
+            change: function (e) {
+                searchMessageToUpdate();
             }
         });
 
@@ -252,8 +256,12 @@
             dataTextField: "Subject",
             dataValueField: "MsgGenericID",
             filter: "contains",
+            optionLabel: "Select a message to delete ...",
             open: function (e) {
                 document.getElementById("message-toDelete-row").style.visibility = "hidden";
+            },
+            change: function (e) {
+                searchMessageToDelete();
             }
         });
 
@@ -292,95 +300,103 @@
         function searchMessageToUpdate() {
 
             var messageId = $("#edit-form #messageId").data("kendoDropDownList").value();
-            
-            var spinner = startSpinner("spinningWheelSearchUpdate");
 
-            document.getElementById("message-toUpdate-row").style.visibility = "hidden";
+            if (messageId) {
 
-            $.get('@Url.Action("GetMessageById", "GenericMessage")?Id=' + messageId, (result) => {
+                var spinner = startSpinner("spinningWheelSearchUpdate");
 
-                document.getElementById("update-form-textarea-container").innerHTML = "<textarea id='subject' name='subject' style='width: 100%;' required></textarea>";
+                document.getElementById("message-toUpdate-row").style.visibility = "hidden";
 
-                $("#edit-form #subject").kendoTextArea({
-                    maxLength: 128,
-                    value: result.Subject
+                $.get('@Url.Action("GetMessageById", "GenericMessage")?Id=' + messageId, (result) => {
+
+                    document.getElementById("update-form-textarea-container").innerHTML = "<textarea id='subject' name='subject' style='width: 100%;' required></textarea>";
+
+                    $("#edit-form #subject").kendoTextArea({
+                        maxLength: 128,
+                        value: result.Subject
+                    });
+
+                    $("#edit-form #pdf-view-current-filename").html(result.FileName);
+
+                    $("#edit-form #pdf-view-current").attr("href", "Message_Generic_Temp\\" + result.FileName);
+
+                    $("#edit-form #expiryDate").data("kendoDatePicker").value(result.ExpiryDate);
+
+                    if (result.Location == 0)
+                        $("#edit-form #site").getKendoRadioGroup().value(-1);
+                    else
+                        $("#edit-form #site").getKendoRadioGroup().value(result.Location);
+
+                    if (result.Priority == 1)
+                        $("#edit-form #priority").data("kendoSwitch").check(true);
+                    else
+                        $("#edit-form #priority").data("kendoSwitch").check(false);
+
+                    document.getElementById("message-toUpdate-row").style.visibility = "visible";
+
+                    const element = $('#headingTwo');
+                    $('html, body').animate({
+                        scrollTop: $(element).offset().top
+                    }, 900);
+
+                    stopSpinner(spinner, "spinningWheelSearchUpdate");
                 });
-
-                $("#edit-form #pdf-view-current-filename").html(result.FileName);
-
-                $("#edit-form #pdf-view-current").attr("href", "Message_Generic_Temp\\" + result.FileName);
-
-                $("#edit-form #expiryDate").data("kendoDatePicker").value(result.ExpiryDate);
-
-                if (result.Location == 0)
-                    $("#edit-form #site").getKendoRadioGroup().value(-1);
-                else
-                    $("#edit-form #site").getKendoRadioGroup().value(result.Location);
-
-                if (result.Priority == 1)
-                    $("#edit-form #priority").data("kendoSwitch").check(true);
-                else
-                    $("#edit-form #priority").data("kendoSwitch").check(false);
-
-                document.getElementById("message-toUpdate-row").style.visibility = "visible";
-
-                const element = $('#headingTwo');
-                $('html, body').animate({
-                    scrollTop: $(element).offset().top
-                }, 900);
-
-                stopSpinner(spinner, "spinningWheelSearchUpdate");
-            });
+            }
+            
+            
         }
 
         function searchMessageToDelete() {
 
             var messageId = $("#delete-form #messageId").data("kendoDropDownList").value();
 
-            var spinner = startSpinner("spinningWheelSearchDelete");
+            if (messageId) {
 
-            document.getElementById("message-toDelete-row").style.visibility = "hidden";
+                var spinner = startSpinner("spinningWheelSearchDelete");
 
-            $.get('@Url.Action("GetMessageById", "GenericMessage")?Id=' + messageId, (result) => {
+                document.getElementById("message-toDelete-row").style.visibility = "hidden";
 
-                document.getElementById("delete-form-textarea-container").innerHTML = "<textarea id='subject' name='subject' style='width: 100%;'></textarea>";
+                $.get('@Url.Action("GetMessageById", "GenericMessage")?Id=' + messageId, (result) => {
 
-                $("#delete-form #subject").kendoTextArea({
-                    maxLength: 128,
-                    value: result.Subject,
-                    enable: false
+                    document.getElementById("delete-form-textarea-container").innerHTML = "<textarea id='subject' name='subject' style='width: 100%;'></textarea>";
+
+                    $("#delete-form #subject").kendoTextArea({
+                        maxLength: 128,
+                        value: result.Subject,
+                        enable: false
+                    });
+
+                    $("#delete-form #pdf-view-current-filename").html(result.FileName);
+
+                    $("#delete-form #pdf-view-current").attr("href", "Message_Generic_Temp\\" + result.FileName);
+
+                    $("#delete-form #expiryDate").data("kendoDatePicker").value(result.ExpiryDate);
+                    $("#delete-form #expiryDate").data("kendoDatePicker").enable(false);
+
+                    if (result.Location == 0)
+                        $("#delete-form #site").getKendoRadioGroup().value(-1);
+                    else
+                        $("#delete-form #site").getKendoRadioGroup().value(result.Location);
+
+                    $("#delete-form #site").getKendoRadioGroup().enable(false);
+
+                    if (result.Priority == 1)
+                        $("#delete-form #priority").data("kendoSwitch").check(true);
+                    else
+                        $("#delete-form #priority").data("kendoSwitch").check(false);
+
+                    $("#delete-form #priority").data("kendoSwitch").enable(false);
+
+                    document.getElementById("message-toDelete-row").style.visibility = "visible";
+
+                    const element = $('#headingThree');
+                    $('html, body').animate({
+                        scrollTop: $(element).offset().top
+                    }, 900);
+
+                    stopSpinner(spinner, "spinningWheelSearchDelete");
                 });
-
-                $("#delete-form #pdf-view-current-filename").html(result.FileName);
-
-                $("#delete-form #pdf-view-current").attr("href", "Message_Generic_Temp\\" + result.FileName);
-
-                $("#delete-form #expiryDate").data("kendoDatePicker").value(result.ExpiryDate);
-                $("#delete-form #expiryDate").data("kendoDatePicker").enable(false);
-
-                if (result.Location == 0)
-                    $("#delete-form #site").getKendoRadioGroup().value(-1);
-                else
-                    $("#delete-form #site").getKendoRadioGroup().value(result.Location);
-
-                $("#delete-form #site").getKendoRadioGroup().enable(false);
-
-                if (result.Priority == 1)
-                    $("#delete-form #priority").data("kendoSwitch").check(true);
-                else
-                    $("#delete-form #priority").data("kendoSwitch").check(false);
-
-                $("#delete-form #priority").data("kendoSwitch").enable(false);
-
-                document.getElementById("message-toDelete-row").style.visibility = "visible";
-
-                const element = $('#headingThree');
-                $('html, body').animate({
-                    scrollTop: $(element).offset().top
-                }, 900);
-
-                stopSpinner(spinner, "spinningWheelSearchDelete");
-            });
+            }  
         }
 
 
@@ -489,7 +505,7 @@
                                                         <div class="col-lg-10">
                                                             <div class="row form-row">
                                                                 <div class="col-lg-2 form-label-col">
-                                                                    <label for="messageId" class="control-label control-label-center">Search by Subject:</label>
+                                                                    <label for="messageId" class="control-label control-label-center">Search:</label>
                                                                 </div>
                                                                 <div class="col-lg-10">
                                                                     <input id="messageId" name="messageId" style="width: 100%;" />
@@ -498,7 +514,6 @@
                                                             <div class="row form-row">
                                                                 <div class="col-lg-12">
                                                                     <div id="spinningWheelSearchUpdate"></div>
-                                                                    <div class="k-button k-primary submit-btn" onclick="searchMessageToUpdate()">Search</div>
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -590,7 +605,7 @@
                                                         <div class="col-lg-10">
                                                             <div class="row form-row">
                                                                 <div class="col-lg-2 form-label-col">
-                                                                    <label for="messageId" class="control-label control-label-center">Search by Subject:</label>
+                                                                    <label for="messageId" class="control-label control-label-center">Search:</label>
                                                                 </div>
                                                                 <div class="col-lg-10">
                                                                     <input id="messageId" name="messageId" style="width: 100%;" />
@@ -599,7 +614,6 @@
                                                             <div class="row form-row">
                                                                 <div class="col-lg-12">
                                                                     <div id="spinningWheelSearchDelete"></div>
-                                                                    <div class="k-button k-primary submit-btn" onclick="searchMessageToDelete()">Search</div>
                                                                 </div>
                                                             </div>
                                                         </div>
