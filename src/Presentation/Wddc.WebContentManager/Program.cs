@@ -24,7 +24,7 @@ namespace Wddc.WebContentManager
                 .WriteTo.Console()
                 .WriteTo.Sentry(o =>
                 {
-                    o.Dsn = new Dsn("https://bfeda7e727a94353be97a07357f2fa2e@sentry.io/1540220");
+                    o.Dsn = "https://bfeda7e727a94353be97a07357f2fa2e@sentry.io/1540220";
                     o.MinimumEventLevel = LogEventLevel.Error;
                 })
                 .WriteTo.File($"\\logs\\{System.Reflection.Assembly.GetEntryAssembly().GetName().Name}_{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")}.log.txt",
