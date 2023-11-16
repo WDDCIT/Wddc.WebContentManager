@@ -25,10 +25,8 @@ using System;
 using System.IO;
 using iTextSharp.text.pdf.parser;
 using Path = System.IO.Path;
-using Google.Protobuf.WellKnownTypes;
 using Wddc.Core.Domain.ClientVantage.Catalog;
 using Category = Wddc.Core.Domain.Media.Category;
-using Microsoft.VisualStudio.Web.CodeGeneration.Design;
 
 namespace Wddc.WebContentManager.Controllers.WebContentManager
 {
