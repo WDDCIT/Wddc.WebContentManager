@@ -37,20 +37,20 @@
                     <li id="liquidationSale-li">
                         <a href="@Url.Action("Index", "LiquidationSale", new { area = ""})">Liquidation (Returns)</a>
                     </li>
-                    <li id="clearanceRetailSale-li">
+                    @* <li id="clearanceRetailSale-li">
                         <a href="@Url.Action("Index", "RetailClearanceSale", new { area = ""})">Clearance - Retail</a>
                     </li>
                     <li id="clearanceEquipmentSale-li">
                         <a href="@Url.Action("Index", "EquipmentClearanceSale", new { area = ""})">Clearance - Equipment</a>
-                    </li>
+                    </li> *@
                 </ul>
             </li>
             <li id="videos-li">
                 <a href="@Url.Action("Index", "Videos", new { area = ""})"><i class="fa fa-video-camera"></i> <span class="nav-label">WDDC Videos</span></a>
             </li>
-            <li id="search-li">
+            @* <li id="search-li">
                 <a href="@Url.Action("Index", "Search", new { area = ""})"><i class="fa fa-search"></i> <span class="nav-label">Search Control</span></a>
-            </li>
+            </li> *@
             <li class="@Html.IsSelected(controller: "AffinityPrograms")">
                 <a href="#"><i class="fa fa-star"></i> <span class="nav-label">Affinity Programs</span><span class="fa arrow"></span></a>
                 <ul class="nav nav-second-level collapse" aria-expanded="true" id="message-ul">
