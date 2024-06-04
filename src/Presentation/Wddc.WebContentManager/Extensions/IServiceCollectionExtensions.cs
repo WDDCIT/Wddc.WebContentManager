@@ -69,6 +69,7 @@ namespace Wddc.WebContentManager.Extensions
             services.TryAddSingleton<INewsletterService, NewsletterService>();
             services.TryAddSingleton<IClientVantageBannersService, ClientVantageBannersService>();
             services.TryAddSingleton<IGenericMessageService, GenericMessageService>();
+            services.TryAddSingleton<IItemInfoService, ItemInfoService>();
 
             //dependencies
             var typeFinder = new WebAppTypeFinder();

@@ -1,0 +1,634 @@
+﻿@{
+    ViewBag.Title = "Item Info";
+}
+
+@section Styles {
+
+    <link href="https://kendo.cdn.telerik.com/2021.2.511/styles/kendo.default.min.css" rel="stylesheet" />
+    <link href="https://kendo.cdn.telerik.com/2021.2.511/styles/kendo.bootstrap-v4.min.css" rel="stylesheet" type="text/css" />
+
+}
+
+@section Scripts {
+
+    <script src="http://ajax.aspnetcdn.com/ajax/jquery.validate/1.11.0/jquery.validate.min.js"></script>
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script>
+
+    <script src="https://kendo.cdn.telerik.com/2021.2.511/js/kendo.all.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script src="~/js/pagination/pagination.min.js"></script>
+    <script src="~/js/pagination/pagination.custom.js"></script>
+
+    <script>
+
+        $(document).ready(function () {
+            
+            prepareLogList(); 
+
+            if ('@ViewBag.Success') {
+
+                var alertMessage = '@ViewBag.Message';
+
+                if ('@ViewBag.Success' == 'True') {
+
+                    $('#alertContainer-success').text(alertMessage);
+                    $("#alertContainer-success").fadeIn(500);
+
+                    setTimeout(function () {
+                        $("#alertContainer-success").fadeOut();
+                    }, 5000);
+
+                } else {
+
+                    $('#alertContainer-danger').text(alertMessage);
+                    $("#alertContainer-danger").fadeIn(500);
+
+                    setTimeout(function () {
+                        $("#alertContainer-danger").fadeOut();
+                    }, 5000);
+                }
+            }
+
+
+            $("#itemNumber").kendoDropDownList({
+                filter: "contains",
+                valueTemplate: '#: ItemNumber #&nbsp;&nbsp;&nbsp;&nbsp; #: data.ItemDescription #',
+                template: '#: ItemNumber #&nbsp;&nbsp;&nbsp;&nbsp; #: data.ItemDescription #',
+                footerTemplate: 'Total #: instance.dataSource.total() # items found',
+                dataTextField: "ItemDescription",
+                dataValueField: "ItemNumber",
+                height: 300,
+                virtual: {
+                    itemHeight: 26,
+                    valueMapper: function (options) {
+                        $.ajax({
+                            url: "https://demos.telerik.com/kendo-ui/service/Orders/ValueMapper",
+                            type: "GET",
+                            dataType: "jsonp",
+                            data: convertValues(options.value),
+                            success: function (data) {
+                                options.success(data);
+                            }
+                        })
+                    }
+                },
+                dataSource: {
+                    transport: {
+                        read: {
+                            url: '@Url.Action("GetItems", "ItemInfo")',
+                            dataType: "json"
+                        }
+                    },
+                    pageSize: 20,
+                    //serverPaging: true,
+                    //serverFiltering: true
+                },
+                optionLabel: "Select an item ...",
+                filtering: function (ev) {
+                    var filterValue = ev.filter != undefined ? ev.filter.value : "";
+                    ev.preventDefault();
+
+                    this.dataSource.filter({
+                        logic: "or",
+                        filters: [
+                            {
+                                field: "ItemNumber",
+                                operator: "contains",
+                                value: filterValue
+                            },
+                            {
+                                field: "ItemDescription",
+                                operator: "contains",
+                                value: filterValue
+                            }
+                        ]
+                    });
+                },
+                change: function (e) {
+                    var selectedValue = this.value();
+                    checkItemInfo(selectedValue);
+                }
+            });
+
+            document.getElementById("delete-form-submit").addEventListener("click", function () {
+               
+                swal.fire({
+                    title: "Confirm deleting item info pdf file?",
+                    text: "Item: " + document.getElementById("itemNumber").value,
+                    icon: "question",
+                    showCancelButton: true,
+                    focusConfirm: true,
+                    allowEnterKey: true
+                }).then((name) => {
+                    if (!name.dismiss) {
+                        document.getElementById("delete-form").submit();
+                    }
+                    
+                })
+            });
+
+            $("#newInfoFileUrl").on("change", function (e) {
+                var fileName = $(this).val().split("\\").pop();
+                document.getElementById("newInfoFileUrlText").value = fileName;
+                document.getElementById("add-form-error").style.visibility = "hidden";
+            });
+
+            $("#toggle-log-section").on("click", function () {
+                toggleLogSection();
+            });
+
+        })
+
+        function toggleLogSection() {
+
+            var logSection = document.getElementById("log");
+            var toggleButton = document.getElementById("toggle-log-section");
+
+            if (logSection.style.display === "none") {
+                logSection.style.display = "block";
+                toggleButton.innerHTML = "Hide Log <i class='fa fa-chevron-up'></i>";
+            } else {
+                logSection.style.display = "none";
+                toggleButton.innerHTML = "Show Log <i class='fa fa-chevron-down'></i>";
+            }
+        }
+
+        function convertValues(value) {
+            var data = {};
+
+            value = $.isArray(value) ? value : [value];
+
+            for (var idx = 0; idx < value.length; idx++) {
+                data["values[" + idx + "]"] = value[idx];
+            }
+
+            return data;
+        }
+
+        function checkItemInfo(selectedItemNumber) {
+
+            if(!selectedItemNumber) {
+                document.getElementById("temp-msg-row").style.display = "block";
+                document.getElementById("item-exists-row").style.display = "none";
+                document.getElementById("item-no-exists-row").style.display = "none";
+            } else {
+
+                $.getJSON('@Url.Action("CheckItemFileInfo", "ItemInfo")?itemNumber=' + selectedItemNumber, function (result) {
+                    if (!result.error) {
+                        document.getElementById("temp-msg-row").style.display = "none";
+                        if (result.exists) {
+                            document.getElementById("item-exists-row").style.display = "block";
+                            document.getElementById("item-no-exists-row").style.display = "none";
+                            document.getElementById("file-exists-item").innerHTML = selectedItemNumber.trim();
+                            document.getElementById("file-exists-item").href = "https://webapp.wddcho.com/Items?ItemNumber=" + selectedItemNumber.trim();
+                            document.getElementById("toChangeItemInfoLogo").src = "../css/images/pdf-icon.png";
+                            document.getElementById("toChangeItemInfoPdf").href = "https://www.wddc.com/wddc_members/CS/Item Info/" + selectedItemNumber.trim() + ".pdf";
+                            document.forms["delete-form"]["deleteItemNumber"].value = selectedItemNumber.trim();
+
+                        } else {
+                            document.getElementById("item-exists-row").style.display = "none";
+                            document.getElementById("item-no-exists-row").style.display = "block";
+                            document.getElementById("no-file-item").innerHTML = selectedItemNumber.trim();
+                            document.getElementById("no-file-item").href = "https://webapp.wddcho.com/Items?ItemNumber=" + selectedItemNumber.trim();
+                        }
+                    } else {
+                        document.getElementById("temp-msg-row").style.display = "block";
+                        document.getElementById("item-exists-row").style.display = "none";
+                        document.getElementById("item-no-exists-row").style.display = "none";
+                        alert("Error! Contact System admin: " + result.error);
+                    }
+
+                });
+            }
+        }
+
+        function newInfoFileUrlClick() {
+            document.getElementById("newInfoFileUrl").click();
+        }
+
+        function validateAddForm() {
+
+            var newInfoFileUrl = document.forms["add-form"]["newInfoFileUrl"].value;
+            if (!newInfoFileUrl || newInfoFileUrl.length == 0 || newInfoFileUrl.trim() == "") {
+                document.getElementById("add-form-error").style.visibility = "visible";
+                return false;
+            }
+
+            document.forms["add-form"]["newItemNumber"].value = document.getElementById("itemNumber").value;
+
+            // var newExpiryDate = document.forms["add-form"]["newExpiryDate"].value;
+            // if (newExpiryDate == null || newExpiryDate.trim() == "") {
+            //     alert("Expiry Date must be filled out");
+            //     return false;
+            // }
+
+            return true;
+        }
+
+
+        function prepareLogList() {
+            setupPagination('log', 'log-list', '@Url.Action("Log", "ItemInfo")?referrerUrl=ItemInfo', ['Log', 'Username', 'Created'], 7);
+        }
+
+
+        // $("#newExpiryDate").kendoDatePicker({
+        //      format: "MMMM dd, yyyy",
+        //      value: new Date()
+        // });
+
+
+
+    </script>
+}
+
+<div class="wrapper wrapper-content animated fadeInRight">
+    <div class="row">
+        <div class="col-12 col-lg-12 col-sm-12 col-xl-12 content-center">
+            <div id="alertContainer">
+                <div class="alert alert-success content-center" id="alertContainer-success" style="display: none;"></div>
+                <div class="alert alert-danger content-center" id="alertContainer-danger" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="ibox">
+                <div class="ibox-content">
+                    <div class="row">
+                        <div class="col-lg-12 content-center">
+                             <h4>
+                                 This tool is to upload/delete item information pdf files on the website
+                             </h4>
+                             <a href="https://www.wddc.com/wddc_members/m_Item_Search.aspx" target="_blank"><img id="websiteImg" src="~/css/images/WDDC Product Search.png" class="img-shadow" alt="Visit WDDC Product Search"></a>
+                        </div>
+                    </div>
+                    <div class="row" style="margin-top: 50px;">
+                        <div class="col-lg-12">
+                            <div class="row">
+                                <div class="col-3 col-lg-3 col-sm-3 col-xl-3"></div>
+                                <div class="col-6 col-lg-6 col-sm-6 col-xl-6 content-center">
+                                    <div class="demo-section k-content">
+                                        <input id="itemNumber" style="width: 100%;" />
+                                    </div>
+                                </div>
+                                <div class="col-3 col-lg-3 col-sm-3 col-xl-3"></div>
+                            </div>
+                            <div class="row" id="temp-msg-row" style="margin-top: 50px;">
+                                <div class="col-12 col-lg-12 col-sm-12 col-xl-12 content-center">
+                                    Information of selected item will be displayed here ...
+                                </div>
+                            </div>
+                            <div class="row" id="item-exists-row" style="display:none; margin-top: 50px;">
+                                <div class="col-12 col-lg-12 col-sm-12 col-xl-12 content-center">
+                                    <div class="row">
+                                        <div class="col-12 col-lg-12 col-sm-12 col-xl-12">
+                                            <div class="logo-description">
+                                                <span>Click on the below logo to display the current info PDF file of item <a id="file-exists-item" href="#" target="_blank"></a></span>
+                                            </div>
+                                            <div>
+                                                <a href="https://www.wddc.com/wddc_members/CS/Item Info/Test.pdf" id="toChangeItemInfoPdf" target="_blank"><img id="toChangeItemInfoLogo" alt="Visit WDDC Item Information File"></a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-12 col-lg-12 col-sm-12 col-xl-12">
+                                            <form id="delete-form" name="delete-form" method="post" action="@Url.Action("DeleteItemInfoFile", "ItemInfo")" enctype="multipart/form-data">
+                                                <input type="hidden" id="deleteItemNumber" name="deleteItemNumber">
+                                                <div class="row form-row" style="padding-top: 20px;">
+                                                    <div class="col-lg-12">
+                                                        <div class="logo-description">
+                                                            <span>Do you want to delete the current file?</span>
+                                                        </div>
+                                                        <div id="delete-form-submit" class="k-button k-primary submit-btn">Delete</div>
+                                                    </div>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row" id="item-no-exists-row" style="display:none; margin-top: 50px;">
+                                <div class="col-12 col-lg-12 col-sm-12 col-xl-12 content-center">
+                                    <div class="row">
+                                        <div class="col-12 col-lg-12 col-sm-12 col-xl-12">
+                                            <div class="no-file-description">
+                                                <div>No info PDF file exists for item <a id="no-file-item" href="#" target="_blank"></a>. Use the below form to upload a new one:</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-lg-12 content-center">
+                                            <form id="add-form" name="add-form" method="post" action="@Url.Action("AddItemInfoFile", "ItemInfo")" enctype="multipart/form-data" onsubmit="return validateAddForm()">
+                                                <input type="hidden" id="newItemNumber" name="newItemNumber">
+                                                <div class="row form-row">
+                                                    <div class="col-lg-2"></div>
+                                                    <div class="col-lg-8">
+                                                        <div class="row" id="x1">
+                                                            <div class="col-lg-2 form-label-col" id="x2">
+                                                                <label for="newInfoFileUrlText" class="control-label control-label-center">PDF File:</label>
+                                                            </div>
+                                                            <div class="col-lg-10" style="text-align: left;">
+                                                                <div class="row">
+                                                                    <div class="col-lg-9">
+                                                                        <input id="newInfoFileUrlText" name="newInfoFileUrlText" class="form-control" type="text" value="" >
+                                                                        <small id="add-form-error" style="color: red; visibility: hidden;">You must choose a PDF file</small>
+                                                                    </div>
+                                                                    <div class="col-lg-3" style="text-align: left; padding-left: 0px;">
+                                                                        <input id="newInfoFileUrl" name="newInfoFileUrl" class="form-control" type="file" value="" style="display:none" >
+                                                                        <button type="button" class="btn btn-light" onclick="newInfoFileUrlClick();">Browse</button>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-lg-2"></div>
+                                                </div>
+                                                @* <div class="row form-row">
+                                                    <div class="col-lg-2"></div>
+                                                    <div class="col-lg-8">
+                                                        <div class="row">
+                                                            <div class="col-lg-2 form-label-col">
+                                                                <label for="newExpiryDate" class="control-label control-label-center">Expiry Date:</label>
+                                                            </div>
+                                                            <div class="col-lg-10" style="text-align: left;">
+                                                                <input id="newExpiryDate" name="newExpiryDate" style="width: 40%" />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-lg-2"></div>
+                                                </div> *@
+                                                <div class="row form-row" style="padding-top: 20px;">
+                                                    <div class="col-lg-12">
+                                                        <button id="add-form-submit" type="submit" class="k-button k-primary submit-btn">Upload</button>
+                                                    </div>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row" style="padding-bottom:100px;">
+                        <div class="col-6 col-lg-6 col-sm-6 col-xl-6">
+                            <div class="toggle-log">
+                                <button id="toggle-log-section" class="btn btn-secondary">Show Log <i class='fa fa-chevron-down'></i></button>
+                            </div>
+                            <div id="log" class="content-center" style="display: none;">
+                                <div class="bs-ObjectList-rows" id="log-list">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<style>
+
+    .content-center {
+        margin: 0px auto 0px auto;
+        text-align: center;
+    }
+
+    .wrapper-content {
+        padding: 10px 10px 20px;
+    }
+
+    .ibox-title {
+        padding: 15px 0px 15px;
+        color: #1565C0;
+        border: none;
+    }
+
+    .ibox-content {
+        padding: 7px 15px 15px 15px;
+    }
+
+    .k-button {
+        font-size: 1.5rem;
+    }
+
+    .k-calendar td.k-state-selected .k-link {
+        border-color: #005dc2;
+        background-color: #007bff;
+    }
+
+    .k-popup .k-group-header, .k-popup .k-header {
+        font-size: 1.3rem;
+    }
+
+    .breadcrumb {
+        display: none;
+    }
+
+    label {
+        margin-bottom: 0px;
+    }
+
+    .form-row {
+        margin-top: 20px;
+    }
+
+    .form-label-col {
+        display: flex;
+        padding-right: 0;
+        justify-content: flex-end;
+    }
+
+    .control-label {
+        color: #556375;
+        font-size: 1.3rem;
+    }
+
+    .control-label-center {
+        margin-top: auto;
+        margin-bottom: auto;
+    }
+
+    .form-control {
+        font-size: 1.3rem;
+        border-color: #d5d5d5;
+    }
+
+    .btn-light {
+        color: #212529;
+        background-color: #e3e6e8;
+        border-color: #dae0e5;
+        margin: 2px ;
+        font-size: 12px;
+    }
+
+        .btn-light:hover {
+            color: #212529;
+            background-color: #e2e6ea;
+            border-color: #dae0e5
+        }
+
+        .btn-light.focus, .btn-light:focus {
+            color: #212529;
+            background-color: #e2e6ea;
+            border-color: #dae0e5;
+            box-shadow: 0 0 0 .2rem rgba(216,217,219,.5)
+        }
+
+    /* .btn-primary.disabled, .btn-primary.disabled:hover, .btn-primary.disabled:focus, .btn-primary.disabled:active, .btn-primary.disabled.active, .btn-primary[disabled], .btn-primary[disabled]:hover, .btn-primary[disabled]:focus, .btn-primary[disabled]:active, .btn-primary.active[disabled], fieldset[disabled] .btn-primary, fieldset[disabled] .btn-primary:hover, fieldset[disabled] .btn-primary:focus, fieldset[disabled] .btn-primary:active, fieldset[disabled] .btn-primary.active {
+        color: #fff;
+        background-color: #6c757d;
+        border-color: #6c757d;
+    } */
+
+    #swal2-title {
+        font-size: 15px;
+    }
+
+    .swal2-popup {
+        padding: 1.25em;
+    }
+
+    /* .modal-lg {
+        width: 65%;
+    }
+
+    .modal-title {
+        color: #1565C0;
+        font-size: 14px;
+        font-weight: bold;
+    } */
+
+    .bs-ObjectList-row {
+        border-radius: 0.25rem;
+    }
+
+    .bs-ObjectList-row--header {
+        position: relative;
+        background-color: #E8E8E8;
+    }
+
+        .bs-ObjectList-row--header .bs-ObjectList-cell {
+            font-weight: bold;
+        }
+
+    .bs-ObjectList-row .bs-ObjectList-cell {
+        width: 20%;
+        text-align: center;
+    }
+
+        .bs-ObjectList-row .bs-ObjectList-cell:last-child {
+            width: 20%;
+            text-align: center;
+        }
+
+        .bs-ObjectList-row .bs-ObjectList-cell:first-child {
+            width: 60%;
+            text-align: left;
+            white-space: pre-wrap;
+        }
+
+    .bs-ObjectList-child, .bs-ObjectList-parent, .bs-ObjectList-row {
+        display: table-row;
+        transition: background-color .15s ease 0s;
+    }
+
+    .bs-ObjectList-cell {
+        display: table-cell;
+        position: relative;
+        padding: 9px 10px;
+        color: #525f7f;
+        font-weight: 400;
+        line-height: 22px;
+        vertical-align: top;
+        white-space: nowrap;
+    }
+
+    h4 {
+        color: darkblue;
+    }
+
+    .btn {
+        padding: 4px 12px;
+    }
+
+
+    #websiteImg {
+       box-shadow: 0 15px 35px rgba(50,50,93,.1), 0 5px 15px rgba(0,0,0,.07);
+       width: 370px;
+       height: 250px;
+    }
+
+    #item-exists-row img {
+       width: 81px;
+       height: 100px;
+       margin-bottom: 20px;
+    }
+
+    .k-dropdown, .k-textbox {
+        font-size: 14px;
+    }
+
+    .submit-btn {
+        font-size: 13px;
+    }
+
+    .k-footer {
+        margin-top: 20px;
+        font-weight: bold;
+        font-size: 12px;
+    }
+
+    #delete-form-row {
+        margin-top: 40px;
+    }
+
+    .logo-description, .no-file-description {
+        margin-bottom: 5px;
+    }
+
+    input[type=text]:disabled, .k-state-disabled {
+        color: grey;
+        opacity: 1;
+    }
+
+    .img-shadow {
+         box-shadow: 0 15px 35px rgba(50,50,93,.1), 0 5px 15px rgba(0,0,0,.07);
+         margin-bottom: 20px;
+    }
+
+    #newInfoFileUrlText {
+        height: auto;
+    }
+
+    #newInfoFileUrlText:focus {
+        border-color: #80bdff;
+        box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+    }
+
+    .toggle-log .btn-secondary {
+        color: #fff;
+        background-color: #9199a1;
+        border-color: #9199a1;
+        font-size: 12px;
+        width: 140px;
+        padding: 4px 12px;
+    }
+
+        .toggle-log .btn-secondary:hover {
+            background-color: #6c757d;
+            color: white;
+        }
+
+    .toggle-log {
+        padding-left: 15px;
+        margin-top: 100px;
+    }
+
+    .fa-chevron-up, .fa-chevron-down {
+        margin-left: 10px;
+    }
+
+</style>
