@@ -68,6 +68,20 @@ namespace Wddc.WebContentManager
 
             services.AddMvc();
             services.AddHttpContextAccessor();
+
+            services.AddRazorPages()
+                    .AddSessionStateTempDataProvider();
+            services.AddControllersWithViews()
+                    .AddSessionStateTempDataProvider();
+
+            services.AddDistributedMemoryCache();
+
+            services.AddSession(options =>
+            {
+                options.Cookie.Name = ".ContentManager.Session";
+                options.IdleTimeout = TimeSpan.FromSeconds(30);
+                options.Cookie.IsEssential = true;
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -88,6 +102,7 @@ namespace Wddc.WebContentManager
             app.UseStaticFiles();
             app.UseCookiePolicy();
             app.UseRouting();
+            app.UseSession();
             app.UseCors();
             app.UseAuthorization();
             app.UseEndpoints(endpoints =>
