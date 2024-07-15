@@ -151,6 +151,10 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                 }
             }
 
+            string bannerFileName = "", mobileBannerFileName = "";
+            bannerFileName = imageUrl != null ? Path.GetFileName(imageUrl.FileName) : "";
+            mobileBannerFileName = imageMobileUrl != null ? Path.GetFileName(imageMobileUrl.FileName) : "";
+
             if (imageUrl != null)
             {
                 if (imageUrl.ContentType != "image/jpg" && imageUrl.ContentType != "image/jpeg" && imageUrl.ContentType != "image/pjpeg" &&
@@ -182,8 +186,8 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                 }
                 catch (Exception ex)
                 {
-                    Log.Logger.Error($"Error uploading ClientVantage banner, folder {categoryToUpload} by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
-                    _logger.Error($"Error uploading ClientVantage banner, category {categoryToUpload}: {ex.Message.Substring(0, 300)}", ex, User, "WebOrdering");
+                    Log.Logger.Error($"Error uploading ClientVantage banner {bannerFileName}, folder {categoryToUpload} by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
+                    _logger.Error($"Error uploading ClientVantage banner {bannerFileName}, category {categoryToUpload}: {ex.Message.Substring(0, 300)}", ex, User, "WebOrdering");
                     return RedirectToAction("Index", new { response = "Failure", message = "Failure uploading ClientVantage banner: " + ex.Message.Substring(0, 300) });
                 }
             }
@@ -219,20 +223,20 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                 }
                 catch (Exception ex)
                 {
-                    Log.Logger.Error($"Error uploading ClientVantage mobile banner, folder {categoryToUpload} by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
-                    _logger.Error($"Error uploading ClientVantage mobile banner, category {categoryToUpload}: {ex.Message.Substring(0, 300)}", ex, User, "WebOrdering");
+                    Log.Logger.Error($"Error uploading ClientVantage mobile banner {mobileBannerFileName}, folder {categoryToUpload} by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
+                    _logger.Error($"Error uploading ClientVantage mobile banner {mobileBannerFileName}, category {categoryToUpload}: {ex.Message.Substring(0, 300)}", ex, User, "WebOrdering");
                     return RedirectToAction("Index", new { response = "Failure", message = "Failure uploading ClientVantage mobile banner: " + ex.Message.Substring(0, 300) });
                 }
             }
 
-            Log.Logger.Information($"{User.Identity.Name.Substring(7).ToLower()} uploaded ClientVantage banner, category {categoryToUpload} successfully");
-            _logger.Information($"Uploaded banner to ClientVantage banners library, category {categoryToUpload}, successfully", null, User, "WebOrdering");
+            Log.Logger.Information($"{User.Identity.Name.Substring(7).ToLower()} uploaded ClientVantage banner {bannerFileName} {mobileBannerFileName}, category {categoryToUpload} successfully");
+            _logger.Information($"Uploaded ClientVantage banner {bannerFileName} {mobileBannerFileName}, category {categoryToUpload}, successfully", null, User, "WebOrdering");
             return RedirectToAction("Index", new { response = "Success", message = "ClientVantage banner was uploaded successfully! " });
         }
 
 
         [HttpPost]
-        public async Task<ActionResult> DeleteCVBannerAsync(string categoryToDelete, string bannerName)
+        public ActionResult DeleteCVBanner(string categoryToDelete, string bannerName)
         {
             Log.Logger.Information(User.Identity.Name.Substring(7).ToLower() + " is deleting CV banner " + bannerName + ", category: " + categoryToDelete);
 
@@ -240,7 +244,7 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             string thumbnailImagePath = "\\\\WEBsrvr\\WDDCMembers\\WDDCWebPages\\wddc_members\\images\\Client Vantage\\" + categoryToDelete.Trim() + "\\small\\" + bannerName.Trim();
 
             FileInfo imageFile = new FileInfo(imagePath);
-            FileInfo thumbnailImageFile= new FileInfo(thumbnailImagePath);
+            FileInfo thumbnailImageFile = new FileInfo(thumbnailImagePath);
 
             try
             {
@@ -251,25 +255,25 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                 }
                 else
                 {
-                    Log.Logger.Error($"Error deleting ClientVantage banner, category {categoryToDelete} by {User.Identity.Name.Substring(7).ToLower()}: file not found");
-                    _logger.Error($"Error deleting ClientVantage banner, category {categoryToDelete}: file not found", null, User, "WebOrdering");
-                    return Json(new { success = false, message = "Failure deleting ClientVantage banner: file not found"});
+                    Log.Logger.Error($"Error deleting ClientVantage banner {bannerName}, category {categoryToDelete} by {User.Identity.Name.Substring(7).ToLower()}: file not found");
+                    _logger.Error($"Error deleting ClientVantage banner {bannerName}, category {categoryToDelete}: file not found", null, User, "WebOrdering");
+                    return Json(new { success = false, message = "Failure deleting ClientVantage banner: file not found" });
                 }
             }
             catch (IOException ex)
             {
-                Log.Logger.Error($"Error deleting ClientVantage banner, category {categoryToDelete} by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
-                _logger.Error($"Error deleting ClientVantage banner, category {categoryToDelete}: {ex.Message.Substring(0, 300)}", ex, User, "WebOrdering");
+                Log.Logger.Error($"Error deleting ClientVantage banner {bannerName}, category {categoryToDelete} by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
+                _logger.Error($"Error deleting ClientVantage banner {bannerName}, category {categoryToDelete}: {ex.Message.Substring(0, 300)}", ex, User, "WebOrdering");
                 return Json(new { success = false, message = "Failure deleting ClientVantage banner: " + ex.Message.Substring(0, 300) });
             }
 
-            Log.Logger.Information($"{User.Identity.Name.Substring(7).ToLower()} deleted ClientVantage banner, category {categoryToDelete} successfully");
-            _logger.Information($"Deleted banner from ClientVantage banners library, category {categoryToDelete}, successfully", null, User, "WebOrdering");
-            return Json(new { success = true, message = "ClientVantage banner was deleted successfully! "});
+            Log.Logger.Information($"{User.Identity.Name.Substring(7).ToLower()} deleted ClientVantage banner {bannerName}, category {categoryToDelete} successfully");
+            _logger.Information($"Deleted banner {bannerName} from ClientVantage banners library, category {categoryToDelete}, successfully", null, User, "WebOrdering");
+            return Json(new { success = true, message = "ClientVantage banner was deleted successfully! " });
         }
 
         [HttpPost]
-        public async Task<ActionResult> DeleteMobileCVBannerAsync(string categoryToDelete, string bannerName)
+        public ActionResult DeleteMobileCVBanner(string categoryToDelete, string bannerName)
         {
             Log.Logger.Information(User.Identity.Name.Substring(7).ToLower() + " is deleting CV mobile banner " + bannerName + ", category: " + categoryToDelete);
 
@@ -288,20 +292,20 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                 }
                 else
                 {
-                    Log.Logger.Error($"Error deleting ClientVantage mobile banner, category {categoryToDelete} by {User.Identity.Name.Substring(7).ToLower()}: file not found");
-                    _logger.Error($"Error deleting ClientVantage mobile banner, category {categoryToDelete}: file not found", null, User, "WebOrdering");
+                    Log.Logger.Error($"Error deleting ClientVantage mobile banner {bannerName}, category {categoryToDelete} by {User.Identity.Name.Substring(7).ToLower()}: file not found");
+                    _logger.Error($"Error deleting ClientVantage mobile banner {bannerName}, category {categoryToDelete}: file not found", null, User, "WebOrdering");
                     return Json(new { success = false, message = "Failure deleting ClientVantage mobile banner: file not found" });
                 }
             }
             catch (IOException ex)
             {
-                Log.Logger.Error($"Error deleting ClientVantage mobile banner, category {categoryToDelete} by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
-                _logger.Error($"Error deleting ClientVantage mobile banner, category {categoryToDelete}: {ex.Message.Substring(0, 300)}", ex, User, "WebOrdering");
+                Log.Logger.Error($"Error deleting ClientVantage mobile banner {bannerName}, category {categoryToDelete} by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
+                _logger.Error($"Error deleting ClientVantage mobile banner {bannerName}, category {categoryToDelete}: {ex.Message.Substring(0, 300)}", ex, User, "WebOrdering");
                 return Json(new { success = false, message = "Failure deleting ClientVantage mobile banner: " + ex.Message.Substring(0, 300) });
             }
 
-            Log.Logger.Information($"{User.Identity.Name.Substring(7).ToLower()} deleted ClientVantage mobile banner, category {categoryToDelete} successfully");
-            _logger.Information($"Deleted banner from ClientVantage mobile banners library, category {categoryToDelete}, successfully", null, User, "WebOrdering");
+            Log.Logger.Information($"{User.Identity.Name.Substring(7).ToLower()} deleted ClientVantage mobile banner {bannerName}, category {categoryToDelete} successfully");
+            _logger.Information($"Deleted banner from ClientVantage mobile banners library {bannerName}, category {categoryToDelete}, successfully", null, User, "WebOrdering");
             return Json(new { success = true, message = "ClientVantage mobile banner was deleted successfully! " });
         }
 
