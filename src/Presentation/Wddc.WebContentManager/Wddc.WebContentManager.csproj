@@ -57,6 +57,8 @@
     <Folder Include="OpenAPIs\" />
     <Folder Include="Protos\" />
     <Folder Include="wwwroot\css\Routing\" />
+    <Folder Include="wwwroot\img\ClientVantage_Banners_Temp\" />
+    <Folder Include="wwwroot\img\ClientVantage_Mobile_Banners_Temp\" />
     <Folder Include="wwwroot\js\Routing\" />
   </ItemGroup>
 

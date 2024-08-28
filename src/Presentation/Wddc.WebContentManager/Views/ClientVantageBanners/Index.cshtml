@@ -113,26 +113,29 @@
                     var newRow = document.createElement('div');
                     newRow.classList.add('img-row', 'content-center');
 
-                    var newColumn = '<div class="column" style="text-align:right;">' +
-                        '<img class="small-banner" src = "../img/ClientVantage_Banners_Temp/' + categoryToDeleteValue + '/' + bannerName + '" id="banner-' + bannerName + '">' +
-                        '<i class="fa fa-trash fa-2x" aria-hidden="true" onclick="deleteBanner(\'' + bannerName + '\', \' ' + categoryToDeleteValue + '\')"></i>' +
+                    var newColumn = '<div class="column">' +
+                        '<div><small>' + bannerName + '</small></div>' +
+                        '<div><img class="small-banner" src = "../img/ClientVantage_Banners_Temp/' + categoryToDeleteValue + '/' + bannerName + '" id="banner-' + bannerName + '"></div>' +
+                        '<div><i class="fa fa-trash fa-2x" aria-hidden="true" onclick="deleteBanner(\'' + bannerName + '\', \' ' + categoryToDeleteValue + '\')"></i></div>' +
                         '</div>';
 
                     if (i + 1 < results.length) {
                         bannerName = results[i + 1];
                         newColumn = newColumn +
                             '<div class="column">' +
-                            '<img class="small-banner" src = "../img/ClientVantage_Banners_Temp/' + categoryToDeleteValue + '/' + bannerName + '" id="banner-' + bannerName + '">' +
-                            '<i class="fa fa-trash fa-2x" aria-hidden="true" onclick="deleteBanner(\'' + bannerName + '\', \' ' + categoryToDeleteValue + '\')"></i>' +
+                            '<div><small>' + bannerName + '</small></div>' +
+                            '<div><img class="small-banner" src = "../img/ClientVantage_Banners_Temp/' + categoryToDeleteValue + '/' + bannerName + '" id="banner-' + bannerName + '"></div>' +
+                            '<div><i class="fa fa-trash fa-2x" aria-hidden="true" onclick="deleteBanner(\'' + bannerName + '\', \' ' + categoryToDeleteValue + '\')"></i></div>' +
                             '</div>';
                     }
 
                     if (i + 2 < results.length) {
                         bannerName = results[i + 2];
                         newColumn = newColumn +
-                            '<div class="column" style="text-align:left;">' +
-                            '<img class="small-banner" src = "../img/ClientVantage_Banners_Temp/' + categoryToDeleteValue + '/' + bannerName + '" id="banner-' + bannerName + '">' +
-                            '<i class="fa fa-trash fa-2x" aria-hidden="true" onclick="deleteBanner(\'' + bannerName + '\', \' ' + categoryToDeleteValue + '\')"></i>' +
+                            '<div class="column">' +
+                            '<div><small>' + bannerName + '</small></div>' +
+                            '<div><img class="small-banner" src = "../img/ClientVantage_Banners_Temp/' + categoryToDeleteValue + '/' + bannerName + '" id="banner-' + bannerName + '"></div>' +
+                            '<div><i class="fa fa-trash fa-2x" aria-hidden="true" onclick="deleteBanner(\'' + bannerName + '\', \' ' + categoryToDeleteValue + '\')"></i></div>' +
                             '</div>';
                     }
 
@@ -152,26 +155,29 @@
                         var newRow = document.createElement('div');
                         newRow.classList.add('img-row', 'content-center');
 
-                        var newColumn = '<div class="column" style="text-align:right;">' +
-                            '<img class="mobile-small-banner" src = "../img/ClientVantage_Mobile_Banners_Temp/' + categoryToDeleteValue + '/' + bannerName + '" id="banner-' + bannerName + '">' +
-                            '<i class="fa fa-trash fa-2x" aria-hidden="true" onclick="deleteMobileBanner(\'' + bannerName + '\', \' ' + categoryToDeleteValue + '\')"></i>' +
+                        var newColumn = '<div class="column">' +
+                            '<div><small>' + bannerName + '</small></div>' +
+                            '<div><img class="mobile-small-banner" src = "../img/ClientVantage_Mobile_Banners_Temp/' + categoryToDeleteValue + '/' + bannerName + '" id="banner-' + bannerName + '"></div>' +
+                            '<div><i class="fa fa-trash fa-2x" aria-hidden="true" onclick="deleteMobileBanner(\'' + bannerName + '\', \' ' + categoryToDeleteValue + '\')"></i></div>' +
                             '</div>';
 
                         if (i + 1 < mobileResults.length) {
                             bannerName = mobileResults[i + 1];
                             newColumn = newColumn +
                                 '<div class="column">' +
-                                '<img class="mobile-small-banner" src = "../img/ClientVantage_Mobile_Banners_Temp/' + categoryToDeleteValue + '/' + bannerName + '" id="banner-' + bannerName + '">' +
-                                '<i class="fa fa-trash fa-2x" aria-hidden="true" onclick="deleteMobileBanner(\'' + bannerName + '\', \' ' + categoryToDeleteValue + '\')"></i>' +
+                                '<div><small>' + bannerName + '</small></div>' +
+                                '<div><img class="mobile-small-banner" src = "../img/ClientVantage_Mobile_Banners_Temp/' + categoryToDeleteValue + '/' + bannerName + '" id="banner-' + bannerName + '"></div>' +
+                                '<div><i class="fa fa-trash fa-2x" aria-hidden="true" onclick="deleteMobileBanner(\'' + bannerName + '\', \' ' + categoryToDeleteValue + '\')"></i></div>' +
                                 '</div>';
                         }
 
                         if (i + 2 < mobileResults.length) {
                             bannerName = mobileResults[i + 2];
                             newColumn = newColumn +
-                                '<div class="column" style="text-align:left;">' +
-                                '<img class="mobile-small-banner" src = "../img/ClientVantage_Mobile_Banners_Temp/' + categoryToDeleteValue + '/' + bannerName + '" id="banner-' + bannerName + '">' +
-                                '<i class="fa fa-trash fa-2x" aria-hidden="true" onclick="deleteMobileBanner(\'' + bannerName + '\', \' ' + categoryToDeleteValue + '\')"></i>' +
+                                '<div class="column">' +
+                                '<div><small>' + bannerName + '</small></div>' +
+                                '<div><img class="mobile-small-banner" src = "../img/ClientVantage_Mobile_Banners_Temp/' + categoryToDeleteValue + '/' + bannerName + '" id="banner-' + bannerName + '"></div>' +
+                                '<div><i class="fa fa-trash fa-2x" aria-hidden="true" onclick="deleteMobileBanner(\'' + bannerName + '\', \' ' + categoryToDeleteValue + '\')"></i></div>' +
                                 '</div>';
                         }
 
@@ -311,7 +317,7 @@
                 <div class="ibox-content">
                     <div class="row">
                         <div class="col-lg-12 content-center">
-                            <h4>This tool is to upload and delete ClientVantage banners from the website under Clinic Resources</h4>
+                            <h4>This tool is to upload and delete ClientVantage banners on the website under Clinic Resources</h4>
                             <a href="https://www.wddc.com/wddc_members/m_Images_CV.aspx" target="_blank"><img id="websiteImg" class="img-shadow" src="~/css/images/WDDC ClientVantage Banners.png" alt="Visit WDDC ClientVantage Banners"></a>
                         </div>
                     </div>
@@ -413,14 +419,14 @@
                         </div>
                     </div>
                     <div class="row" style="margin-top: 120px;">
-                        <div class="col-lg-2"></div>
-                        <div class="col-lg-8 content-center">
+                        <div class="col-lg-1"></div>
+                        <div class="col-lg-10 content-center">
                             <div id="log" class="content-center">
                                 <div class="bs-ObjectList-rows" id="log-list">
                                 </div>
                             </div>
                         </div>
-                        <div class="col-lg-2"></div>
+                        <div class="col-lg-1"></div>
                     </div>
                 </div>
             </div>
@@ -542,7 +548,7 @@
         }
 
         .bs-ObjectList-row .bs-ObjectList-cell:first-child {
-            width: 60%;
+            /* width: 60%; */
             text-align: left;
             white-space: pre-wrap;
         }
@@ -576,8 +582,8 @@
     }
 
     .collapsible-col {
-        padding-left: 50px;
-        padding-right: 50px;
+        padding-left: 10px;
+        padding-right: 10px;
     }
 
     .collapsible-info {
@@ -712,8 +718,8 @@
 
     .fa-trash {
         color: #007bff;
-        margin-left: 15px;
-        position:relative;
+        /* margin-left: 15px;
+        position:relative; */
         -webkit-transition: transform .3s ease-out;
         transition: transform .3s ease-out;
     }

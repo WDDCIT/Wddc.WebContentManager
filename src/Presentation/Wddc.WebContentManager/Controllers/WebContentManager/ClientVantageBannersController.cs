@@ -229,8 +229,16 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                 }
             }
 
-            Log.Logger.Information($"{User.Identity.Name.Substring(7).ToLower()} uploaded ClientVantage banner {bannerFileName} {mobileBannerFileName}, category {categoryToUpload} successfully");
-            _logger.Information($"Uploaded ClientVantage banner {bannerFileName} {mobileBannerFileName}, category {categoryToUpload}, successfully", null, User, "WebOrdering");
+            string tempBannerLog;
+            if (imageUrl != null && imageMobileUrl != null)
+                tempBannerLog = "Banner (" + bannerFileName + "), Mobile Banner (" + mobileBannerFileName + ")";
+            else if (imageUrl != null)
+                tempBannerLog = "Banner (" + bannerFileName + ")";
+            else
+                tempBannerLog = "Mobile Banner (" + mobileBannerFileName + ")";
+
+            Log.Logger.Information($"{User.Identity.Name.Substring(7).ToLower()} uploaded ClientVantage banner: {bannerFileName}, mobile banner: {mobileBannerFileName}, category: {categoryToUpload} successfully");
+            _logger.Information($"Uploaded ClientVantage {tempBannerLog}, category: {categoryToUpload}, successfully", null, User, "WebOrdering");
             return RedirectToAction("Index", new { response = "Success", message = "ClientVantage banner was uploaded successfully! " });
         }
 
@@ -268,7 +276,7 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             }
 
             Log.Logger.Information($"{User.Identity.Name.Substring(7).ToLower()} deleted ClientVantage banner {bannerName}, category {categoryToDelete} successfully");
-            _logger.Information($"Deleted banner {bannerName} from ClientVantage banners library, category {categoryToDelete}, successfully", null, User, "WebOrdering");
+            _logger.Information($"Deleted ClientVantage Banner ({bannerName}), category: {categoryToDelete}, successfully", null, User, "WebOrdering");
             return Json(new { success = true, message = "ClientVantage banner was deleted successfully! " });
         }
 
@@ -305,7 +313,7 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             }
 
             Log.Logger.Information($"{User.Identity.Name.Substring(7).ToLower()} deleted ClientVantage mobile banner {bannerName}, category {categoryToDelete} successfully");
-            _logger.Information($"Deleted banner from ClientVantage mobile banners library {bannerName}, category {categoryToDelete}, successfully", null, User, "WebOrdering");
+            _logger.Information($"Deleted ClientVantage Mobile Banner ({bannerName}), category: {categoryToDelete}, successfully", null, User, "WebOrdering");
             return Json(new { success = true, message = "ClientVantage mobile banner was deleted successfully! " });
         }
 
@@ -318,7 +326,7 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             {
                 ResultStatus = ResultStatus.Success,
                 Results = results
-                    .Select(l => new { Text = l.ShortMessage.Length > 100 ? l.ShortMessage.Substring(0, 100) : l.ShortMessage, l.User, Created = l.CreatedOnUtc.ToLocalTime().ToString() }),
+                   .Select(l => new { Text = l.ShortMessage, l.User, Created = l.CreatedOnUtc.ToLocalTime().ToString() }),
                 TotalItemCount = results.TotalItemCount,
             };
             return Json(ajaxResult);
