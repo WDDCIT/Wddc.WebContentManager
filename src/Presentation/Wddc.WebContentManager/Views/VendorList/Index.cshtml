@@ -1,0 +1,527 @@
+﻿@{
+    ViewBag.Title = "Web Vendor List";
+}
+
+@section Styles {
+
+    <link href="https://kendo.cdn.telerik.com/2021.2.511/styles/kendo.bootstrap-v4.min.css" rel="stylesheet" type="text/css" />
+
+}
+
+@section Scripts {
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
+    <script src="http://ajax.aspnetcdn.com/ajax/jquery.validate/1.11.0/jquery.validate.min.js"></script>
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script>
+
+    <script src="https://kendo.cdn.telerik.com/2021.2.511/js/kendo.all.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/2.4.0/jszip.js"></script>
+
+    <script src="~/js/pagination/pagination.min.js"></script>
+    <script src="~/js/pagination/pagination.custom.js"></script>
+
+    <script>
+
+        var vendorListDataSource, vendorListGrid;
+
+        var today = new Date(), addressResult;
+        var dd = String(today.getDate()).padStart(2, '0');
+        var mm = String(today.getMonth() + 1).padStart(2, '0');
+        var yyyy = today.getFullYear();
+        today = mm + '/' + dd + '/' + yyyy;
+
+        $(document).ready(function () {
+
+            prepareLogList();
+
+            vendorListDataSource = new kendo.data.DataSource({
+                transport: {
+                    read: {
+                        url: '@Url.Action("GetWebVendorList", "VendorList")',
+                        dataType: "json"
+                    },
+                    update: {
+                        url: '@Url.Action("UpdateWebVendor", "VendorList")',
+                        dataType: "json"
+                    },
+                    create: {
+                        url: '@Url.Action("CreateWebVendor", "VendorList")',
+                        type: "POST",
+                        dataType: "json"
+                    },
+                    destroy: {
+                        url: '@Url.Action("DeleteWebVendor", "VendorList")',
+                        type: "POST",
+                        dataType: "json"
+                    },
+                },
+                schema: {
+                    model: {
+                        id: "Vendor_ID",
+                        fields: {
+                            Vendor_ID: { editable: true, type: "string", validation: { required: true } },
+                            Vendor_Short_Name: { editable: true, type: "string", validation: { required: true } },
+                            Vendor_Name: { editable: true, type: "string", validation: { required: true } },
+                            Vendor_Email: { editable: true, type: "string" },
+                            Vendor_CCEmail: { editable: true, type: "string" }
+                        }
+                    }
+                },
+                requestEnd: function (e) {
+                    if (e.type === "create" || e.type === "update" || e.type === "destroy") {
+
+                        if (e.type === "create") {
+
+                            if (e.response != null && e.response != 0) {
+
+                                var vendorShortName = e.response;
+
+                                Swal.fire({
+                                    title: 'Success!',
+                                    text: "Vendor: " + vendorShortName + " was added successfully!",
+                                    icon: 'success',
+                                    confirmButtonText: 'Ok',
+                                    timer: 5000, 
+                                    timerProgressBar: true 
+                                });
+
+                                var vendorGrid = $("#vendorListGrid").data("kendoGrid");
+                                vendorGrid.dataSource.read();
+                                vendorGrid.refresh();
+                                prepareLogList();
+
+                            } else {
+
+                                Swal.fire({
+                                    title: 'Error!',
+                                    text: "Failure adding the new vendor!",
+                                    icon: 'error',
+                                    confirmButtonText: 'Ok',
+                                    timer: 5000,
+                                    timerProgressBar: true
+                                });
+                            }
+                        }
+
+                        if (e.type === "destroy") {
+
+                            if (e.response != null && e.response != 0) {
+
+                                var vendorShortName = e.response;
+
+                                Swal.fire({
+                                    title: 'Success!',
+                                    text: "Vendor: " + vendorShortName + " was deleted successfully!",
+                                    icon: 'success',
+                                    confirmButtonText: 'Ok',
+                                    timer: 5000,
+                                    timerProgressBar: true
+                                });
+
+                                var vendorGrid = $("#vendorListGrid").data("kendoGrid");
+                                vendorGrid.dataSource.read();
+                                vendorGrid.refresh();
+                                prepareLogList();
+
+                            } else {
+
+                                Swal.fire({
+                                    title: 'Error!',
+                                    text: "Failure deleting vendor!",
+                                    icon: 'error',
+                                    confirmButtonText: 'Ok',
+                                    timer: 5000,
+                                    timerProgressBar: true
+                                });
+                            }
+                        }
+
+                        if (e.type === "update") {
+
+                            if (e.response != null && e.response != 0) {
+
+                                var vendorShortName = e.response;
+
+                                Swal.fire({
+                                    title: 'Success!',
+                                    text: "Vendor: " + vendorShortName + " was updated successfully!",
+                                    icon: 'success',
+                                    confirmButtonText: 'Ok',
+                                    timer: 5000,
+                                    timerProgressBar: true
+                                });
+
+                                var vendorGrid = $("#vendorListGrid").data("kendoGrid");
+                                vendorGrid.dataSource.read();
+                                vendorGrid.refresh();
+                                prepareLogList();
+
+                            } else {
+
+                                Swal.fire({
+                                    title: 'Error!',
+                                    text: "Failure updating vendor!",
+                                    icon: 'error',
+                                    confirmButtonText: 'Ok',
+                                    timer: 5000,
+                                    timerProgressBar: true
+                                });
+                            }
+                        }
+                    }
+                }
+            });
+
+            vendorListGrid = $("#vendorListGrid").kendoGrid({
+                dataSource: vendorListDataSource,
+                toolbar: ["Refresh", "excel", "create"],
+                excel: {
+                    fileName: "WDDC Vendor List_" + today + ".xlsx",
+                    proxyURL: "https://demos.telerik.com/kendo-ui/service/export",
+                    allPages: true
+                },
+                sortable: {
+                    mode: "multiple",
+                    allowUnsort: true,
+                    showIndexes: true
+                },
+                filterable: true,
+                resizable: false,
+                edit: function (e) {
+                    if (e.model.isNew()) {
+                        console.log("new")
+                        var addButtons = document.getElementsByClassName("k-grid-update");
+                        addButtons[0].innerHTML = '<span class="k-icon k-i-check"></span>Add';
+                        var windowTitles = document.getElementsByClassName("k-window-title");
+                        windowTitles[0].innerHTML = "Add New Vendor";
+                    }
+                },
+                //editable: "popup",
+                editable: {
+                    mode: "popup",
+                    // confirmation: false
+                    confirmation: true,
+                    confirmDelete: "Yes"
+                }, 
+                columns: [
+                    {
+                        field: "Vendor_ID",
+                        title: "Vendor ID",
+                        filterable: {
+                            multi: true,
+                            search: true
+                        },
+                        editable: isEditable,
+                        attributes: { class: "grid-cell", style: "text-align: center; color: black;" }
+                    },
+                    {
+                        field: "Vendor_Short_Name",
+                        title: "Vendor Short Name",
+                        filterable: {
+                            multi: true,
+                            search: true
+                        },
+                        attributes: { class: "grid-cell", style: "text-align: center; " }
+                    },
+                    {
+                        field: "Vendor_Name",
+                        title: "Vendor Name",
+                        filterable: {
+                            multi: true,
+                            search: true
+                        },
+                        attributes: { class: "grid-cell", style: "text-align: left; " }
+                    },
+                    {
+                        field: "Vendor_Email",
+                        title: "Vendor Email",
+                        filterable: {
+                            multi: true,
+                            search: true
+                        },
+                        attributes: { class: "grid-cell", style: "text-align: left;" }
+                    },
+                    {
+                        field: "Vendor_CCEmail",
+                        title: "Vendor CC Email",
+                        filterable: {
+                            multi: true,
+                            search: true
+                        },
+                        attributes: { class: "grid-cell", style: "text-align: left;" }
+                    },
+                    { command: ["edit", "destroy"], title: "&nbsp;", width: "200px" }
+                ]
+            }).data("kendoGrid");
+
+            vendorListGrid.bind("dataBound", grid_dataBound);
+            vendorListGrid.bind("save", grid_save);
+
+            vendorListGrid.autoFitColumn("Vendor_ID");
+            vendorListGrid.autoFitColumn("Vendor_Short_Name");
+
+            var refreshBtn = document.getElementsByClassName('k-grid-Refresh')[0];
+            refreshBtn.innerHTML = "<span class='k-icon k-i-reload'></span> Refresh";
+
+            $("#vendorListGrid").find(".k-grid-toolbar").on("click", ".k-grid-Refresh", function (e) {
+                e.preventDefault();
+                vendorListGrid.dataSource.read();
+                prepareLogList();
+            });
+
+            $("#toggle-log-section").on("click", function () {
+                toggleLogSection();
+            });
+
+            
+        })
+
+        function isEditable(e) {
+            return e.Vendor_ID == 0;
+        }
+
+
+        function grid_dataBound(e) {
+            document.getElementById("vendorListGridTotal").innerHTML = "Total: " + vendorListDataSource.total() + " out of " + vendorListDataSource.data().length;
+        }
+
+        function grid_save(e) {
+            e.sender.one("dataBound", function () {
+                e.sender.dataSource.read();
+                prepareLogList();
+            });
+        }
+
+        function prepareLogList() {
+            setupPagination('log', 'log-list', '@Url.Action("Log", "VendorList")?referrerUrl=VendorList', ['Log', 'Username', 'Created'], 7);
+        }
+
+        function toggleLogSection() {
+
+            var logSection = document.getElementById("log");
+            var toggleButton = document.getElementById("toggle-log-section");
+
+            if (logSection.style.display === "none") {
+                logSection.style.display = "block";
+                toggleButton.innerHTML = "Hide Log <i class='fa fa-chevron-up'></i>";
+            } else {
+                logSection.style.display = "none";
+                toggleButton.innerHTML = "Show Log <i class='fa fa-chevron-down'></i>";
+            }
+        }
+
+
+    </script>
+}
+
+<div class="wrapper wrapper-content animated fadeInRight">
+    <div class="row">
+        <div class="col-12 col-lg-12 col-sm-12 col-xl-12 content-center">
+            <div id="alertContainer">
+                <div class="alert alert-success content-center" id="alertContainer-success" style="display: none;"></div>
+                <div class="alert alert-danger content-center" id="alertContainer-danger" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="ibox">
+                <div class="ibox-content">
+                    <div class="row">
+                        <div class="col-lg-12">
+                            <div id="grid">
+                                <h4>This tool is to manage the vendor list on the website: <span id="link"><a href="https://www.wddc.com/wddc_members/m_VendorList.aspx" target="_blank">https://www.wddc.com/wddc_members/m_VendorList.aspx</a></span></h4>
+                                <h5 id="vendorListGridTotal"></h5>
+                                <div id="vendorListGrid"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12 col-lg-12 col-sm-12 col-xl-12">
+                            <div class="toggle-log">
+                                <button id="toggle-log-section" class="btn btn-secondary">Show Log <i class='fa fa-chevron-down'></i></button>
+                            </div>
+                            <div id="log" class="content-center" style="display: none;">
+                                <div class="bs-ObjectList-rows" id="log-list">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<style>
+
+    #vendorListGridTotal {
+        color: #708090;
+    }
+
+    #vendorListGrid .k-grid-content {
+        min-height: 100px;
+        max-height: 600px;
+    }
+
+    .content-center {
+        margin: 0px auto 0px auto;
+        text-align: center;
+    }
+
+    .wrapper-content {
+        padding: 10px 10px 20px;
+    }
+
+    .ibox-content {
+        padding: 7px 15px 15px 15px;
+    }
+
+    #grid {
+        margin: 0px auto;
+        width: 90%;
+    }
+
+        #grid h4 {
+            margin-bottom: 20px;
+        }
+
+        #grid h4 #link{
+                color: #1565C0;
+                text-decoration: underline;
+        }
+
+    .grid-cell {
+        font-size: 12px;
+    }
+
+    .k-header .k-link {
+        text-align: center;
+        font-weight: bold;
+        font-size: 11px;
+    }
+
+    .k-grid-excel, .k-grid-edit, .k-grid-add, .k-grid-delete, .k-grid-Refresh, .k-grid-DeleteSelected {
+        font-size: 12px;
+    }
+
+    .k-textbox {
+        font-size: 12px;
+    }
+
+    .k-grid-edit-row .k-edit-cell input {
+        font-size: 14px;
+    }
+
+    .k-numerictextbox .k-numeric-wrap {
+        font-size: 14px;
+    }
+
+    .k-edit-field.k-no-editor {
+        font-size: 12px;
+    }
+
+    .k-checkbox {
+        width: 15px;
+        height: 15px;
+    }
+
+    .k-datepicker, .k-timepicker {
+        font-size: 1.3rem;
+    }
+
+    .k-calendar {
+        font-size: 1.3rem;
+    }
+
+    #page-heading {
+        font-size: 20px;
+        font-weight: bold;
+        color: #1565C0;
+    }
+
+    .bs-ObjectList-row {
+        border-radius: 0.25rem;
+    }
+
+    .bs-ObjectList-row--header {
+        position: relative;
+        background-color: #E8E8E8;
+    }
+
+        .bs-ObjectList-row--header .bs-ObjectList-cell {
+            font-weight: bold;
+        }
+
+    .bs-ObjectList-row .bs-ObjectList-cell {
+        width: 20%;
+        text-align: center;
+    }
+
+        .bs-ObjectList-row .bs-ObjectList-cell:last-child {
+            width: 20%;
+            text-align: center;
+        }
+
+        .bs-ObjectList-row .bs-ObjectList-cell:first-child {
+            width: 60%;
+            text-align: left;
+            white-space: pre-wrap;
+        }
+
+    .bs-ObjectList-child, .bs-ObjectList-parent, .bs-ObjectList-row {
+        display: table-row;
+        transition: background-color .15s ease 0s;
+    }
+
+    .bs-ObjectList-cell {
+        display: table-cell;
+        position: relative;
+        padding: 9px 10px;
+        color: #525f7f;
+        font-weight: 400;
+        line-height: 22px;
+        vertical-align: top;
+        white-space: nowrap;
+    }
+
+    .k-edit-form-container {
+        width: 550px;
+        min-width: 550px;
+        border-color: inherit;
+        position: relative;
+    }
+
+    .k-window-title {
+        font-weight: bold;
+    }
+
+    .toggle-log .btn-secondary {
+        color: #fff;
+        background-color: #9199a1;
+        border-color: #9199a1;
+        font-size: 12px;
+        width: 140px;
+        padding: 4px 12px;
+    }
+
+        .toggle-log .btn-secondary:hover {
+            background-color: #6c757d;
+            color: white;
+        }
+
+    .toggle-log {
+        padding-left: 15px;
+        margin-top: 30px;
+    }
+
+    .fa-chevron-up, .fa-chevron-down {
+        margin-left: 10px;
+    }
+
+    #log-list {
+        margin-top: 10px;
+    }
+</style>

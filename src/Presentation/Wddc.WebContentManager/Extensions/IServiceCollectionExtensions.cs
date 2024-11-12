@@ -27,6 +27,7 @@ using Wddc.WebContentManager.Services.WebContent.Affinity;
 using Wddc.WebContentManager.Services.WebContent.Newsletter;
 using Wddc.WebContentManager.Services.WebContent.ClientVantageBanners;
 using Wddc.WebContentManager.Services.WebContent.GenericMessage;
+using Wddc.WebContentManager.Services.WebContent.Vendors;
 
 namespace Wddc.WebContentManager.Extensions
 {
@@ -70,6 +71,7 @@ namespace Wddc.WebContentManager.Extensions
             services.TryAddSingleton<IClientVantageBannersService, ClientVantageBannersService>();
             services.TryAddSingleton<IGenericMessageService, GenericMessageService>();
             services.TryAddSingleton<IItemInfoService, ItemInfoService>();
+            services.TryAddSingleton<IVendorListService, VendorListService>();
 
             //dependencies
             var typeFinder = new WebAppTypeFinder();
