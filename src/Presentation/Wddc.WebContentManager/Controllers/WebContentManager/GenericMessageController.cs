@@ -242,7 +242,7 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             message.Subject = message.Subject;
             message.GenericBody = message.GenericBody;
             message.CreateDate = message.CreateDate;
-            message.ExpiryDate = message.ExpiryDate;
+            message.ExpiryDate = DateTime.Now;
             message.Priority = message.Priority;
             message.Location = message.Location;
             message.Status = 1;

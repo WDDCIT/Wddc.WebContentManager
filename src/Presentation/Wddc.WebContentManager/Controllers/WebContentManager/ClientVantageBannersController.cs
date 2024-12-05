@@ -140,13 +140,13 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             {
                 if (imageUrl != null)
                 {
-                    if (Path.GetFileName(imageUrl.FileName).Contains('\''))
+                    if (Path.GetFileName(imageUrl.FileName).Contains('\'') || Path.GetFileName(imageUrl.FileName).Contains('&'))
                         return RedirectToAction("Index", new { response = "Failure", message = "Banner name cannot contain special characters ('). Please rename the file and try again" });
                 }
 
                 if (imageMobileUrl != null)
                 {
-                    if (Path.GetFileName(imageMobileUrl.FileName).Contains('\''))
+                    if (Path.GetFileName(imageMobileUrl.FileName).Contains('\'') || Path.GetFileName(imageUrl.FileName).Contains('&'))
                         return RedirectToAction("Index", new { response = "Failure", message = "Mobile Banner name cannot contain special characters ('). Please rename the file and try again" });
                 }
             }
