@@ -6,7 +6,7 @@
 
     <link href="https://kendo.cdn.telerik.com/2021.2.511/styles/kendo.default.min.css" rel="stylesheet" />
     <link href="https://kendo.cdn.telerik.com/2021.2.511/styles/kendo.bootstrap-v4.min.css" rel="stylesheet" type="text/css" />
-
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 }
 
 @section Scripts {
@@ -15,7 +15,7 @@
     <script src="http://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script>
 
     <script src="https://kendo.cdn.telerik.com/2021.2.511/js/kendo.all.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
 
     <script src="~/js/pagination/pagination.min.js"></script>
     <script src="~/js/pagination/pagination.custom.js"></script>
@@ -80,6 +80,22 @@
                     document.getElementById("mobile-search-results-row").style.visibility = "hidden";
                 },
                 height: "600",
+                dataBound: function () {
+                    
+                    var categoryValue = '@ViewBag.Category'; 
+
+                    if (categoryValue && categoryValue.trim() !== '') {
+                        var dropdown = this;
+                        dropdown.value(categoryValue.trim()); 
+                        selectCategoryToDelete();
+
+                        var deleteButton = Array.from(document.getElementsByClassName('collapsible-info')).find(button => button.textContent.trim() === 'Delete ClientVantage Banners');
+                             
+                        if (deleteButton) {
+                            deleteButton.click(); 
+                        }
+                    }
+                }
             });
 
         })
@@ -211,14 +227,38 @@
                 var spinner = startSpinner("spinningWheel"); 
                 $.post('@Url.Action("DeleteCVBanner", "ClientVantageBanners")?categoryToDelete=' + categoryToDelete + '&bannerName=' + bannerName, (result) => {
                     if (result.success) {
-                        alert("ClientVantage banner was deleted successfully! ");
-                        window.location.href = "@Url.Action("Index", "ClientVantageBanners")";
+
+                        //alert("ClientVantage banner was deleted successfully! ");
+                        //window.location.href = "@Url.Action("Index", "ClientVantageBanners")";
+
+                        Swal.fire({
+                             icon: 'success',
+                             title: 'Success',
+                             html: 'ClientVantage banner was deleted successfully!',
+                             confirmButtonText: 'OK'
+                        }).then(() => {
+                             // var spinner = startSpinner("loadingIndicator");
+                             window.location.href = "@Url.Action("Index", "ClientVantageBanners")?category=" + categoryToDelete;
+                        });
+
                     } else {
-                        alert(result.message);
+                        //alert(result.message);
+                        Swal.fire({
+                             icon: 'error',
+                             title: 'Failure deleting ClientVantage banner',
+                             text: result.message || 'Unknown error',
+                             confirmButtonText: 'OK'
+                        });
                         prepareLogList();
                     }
                 }).fail((xhr, textStatus, errorThrown) => {
-                    alert("Failure deleting ClientVantage banner: " + `${textStatus} : ${errorThrown}`);
+                    //alert("Failure deleting ClientVantage banner: " + `${textStatus} : ${errorThrown}`);
+                    Swal.fire({
+                         icon: 'error',
+                         title: 'Failure deleting ClientVantage banner',
+                         text: jqXHR.responseText || 'Unknown error',
+                         confirmButtonText: 'OK'
+                    });
                     prepareLogList();
                 });
             }
