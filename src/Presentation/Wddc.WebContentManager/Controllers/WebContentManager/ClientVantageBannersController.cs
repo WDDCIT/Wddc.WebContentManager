@@ -146,10 +146,10 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             {
                 if (imageUrl != null)
                 {
-                    if (Path.GetFileName(imageUrl.FileName).Contains('\'') || Path.GetFileName(imageUrl.FileName).Contains('&'))
+                    if (Path.GetFileName(imageUrl.FileName).Contains('\'') || Path.GetFileName(imageUrl.FileName).Contains('&') || Path.GetFileName(imageUrl.FileName).Contains('%'))
                     {
                         TempData["response"] = "Failure";
-                        TempData["message"] = "Banner name cannot contain special characters ('). Please rename the file and try again";
+                        TempData["message"] = "Banner name cannot contain special characters. Please rename the file and try again";
                         return RedirectToAction("Index");
                     }
     
@@ -157,7 +157,7 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
 
                 if (imageMobileUrl != null)
                 {
-                    if (Path.GetFileName(imageMobileUrl.FileName).Contains('\'') || Path.GetFileName(imageUrl.FileName).Contains('&'))
+                    if (Path.GetFileName(imageMobileUrl.FileName).Contains('\'') || Path.GetFileName(imageUrl.FileName).Contains('&') || Path.GetFileName(imageUrl.FileName).Contains('%'))
                     {
                         TempData["response"] = "Failure";
                         TempData["message"] = "Mobile Banner name cannot contain special characters ('). Please rename the file and try again";
