@@ -531,12 +531,21 @@
         for (var i = 0; i < coll.length; i++) {
             coll[i].addEventListener("click", function () {
 
-                this.classList.toggle("active");
+                // Get the content panel for the clicked button
                 var content = this.nextElementSibling;
-                if (content.style.maxHeight) {
-                    content.style.maxHeight = null;
-                } else {
-                    // Set maxHeight to scrollHeight for smooth animation
+                var isCurrentlyOpen = this.classList.contains("active");
+
+                // Close all collapsible sections first
+                var allCollapsibles = document.getElementsByClassName("collapsible-info");
+                for (var j = 0; j < allCollapsibles.length; j++) {
+                    allCollapsibles[j].classList.remove("active");
+                    var panel = allCollapsibles[j].nextElementSibling;
+                    panel.style.maxHeight = null;
+                }
+
+                // If the clicked section was not open, open it
+                if (!isCurrentlyOpen) {
+                    this.classList.add("active");
                     content.style.maxHeight = content.scrollHeight + "px";
                 }
             });
@@ -782,10 +791,10 @@
                     </div>
                     <div class="row" style="margin-top: 100px;">
                         <div class="col-lg-12 content-center">
-                            <button type="button" class="k-button k-info log-toggle-btn" id="log-toggle-btn" onclick="toggleLog()">Show Log</button>
+                            <button type="button" class="k-button k-info log-toggle-btn" id="log-toggle-btn" onclick="toggleLog()">Hide Log</button>
                         </div>
                     </div>
-                    <div id="log-content" style="display:none; margin-top: 30px;">
+                    <div id="log-content" style="display:block; margin-top: 30px;">
                         <div class="row">
                             <div class="col-lg-1"></div>
                             <div class="col-lg-10 content-center">
