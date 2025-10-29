@@ -530,13 +530,56 @@
 
         for (var i = 0; i < coll.length; i++) {
             coll[i].addEventListener("click", function () {
-
-                this.classList.toggle("active");
-                var content = this.nextElementSibling;
-                if (content.style.maxHeight) {
-                    content.style.maxHeight = null;
+                var clickedButton = this;
+                var clickedContent = this.nextElementSibling;
+                var isCurrentlyOpen = clickedButton.classList.contains("active");
+        
+                // Close all other collapsibles first
+                var allButtons = document.getElementsByClassName("collapsible-info");
+                for (var j = 0; j < allButtons.length; j++) {
+                    if (allButtons[j] !== clickedButton && allButtons[j].classList.contains("active")) {
+                        var otherButton = allButtons[j];
+                        var otherContent = allButtons[j].nextElementSibling;
+                
+                        otherButton.classList.remove("active");
+                
+                        // Capture in closure for collapse animation
+                        (function(content) {
+                            // Set to actual height first
+                            content.style.maxHeight = content.scrollHeight + "px";
+                    
+                            // Force browser to acknowledge the height change
+                            setTimeout(function() {
+                                content.style.maxHeight = "0px";
+                            }, 10);
+                        })(otherContent);
+                    }
+                }
+        
+                // Now handle the clicked button
+                if (isCurrentlyOpen) {
+                    // Collapsing the clicked section
+                    clickedButton.classList.remove("active");
+            
+                    // Set to actual height first
+                    clickedContent.style.maxHeight = clickedContent.scrollHeight + "px";
+            
+                    // Small delay to trigger transition
+                    setTimeout(function() {
+                        clickedContent.style.maxHeight = "0px";
+                    }, 10);
                 } else {
-                    content.style.maxHeight = "1000000px";   
+                    // Expanding the clicked section
+                    clickedButton.classList.add("active");
+                    clickedContent.style.maxHeight = clickedContent.scrollHeight + "px";
+            
+                    // After transition completes, set to large value for dynamic content
+                    clickedContent.addEventListener('transitionend', function handler() {
+                        if (clickedContent.style.maxHeight !== "0px") {
+                            clickedContent.style.maxHeight = "10000px";
+                        }
+                        clickedContent.removeEventListener('transitionend', handler);
+                    });
                 }
             });
         }
@@ -558,7 +601,7 @@
                 <div class="ibox-content">
                     <div class="row">
                         <div class="col-lg-12 content-center">
-                            <h4>This tool is to upload, edit, and delete ClientVantage banners on VantageSuite website</h4>
+                            <h4>This tool is to upload, edit, and delete ClientVantage banners on <span style="color: red;">VantageSuite</span> website</h4>
                         </div>
                     </div>
                     <div class="row banners-action" style="margin-top: 50px;">
@@ -1119,6 +1162,24 @@
         margin-top: 0 !important;
         padding-top: 0;
         padding-bottom: 0;
+    }
+
+   .content {
+        padding: 5px 18px;
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.5s ease-in-out, padding 0.5s ease-in-out;
+        background-color: #f1f1f1;
+    }
+
+    .banners-action .content {
+        padding-top: 0;
+        padding-bottom: 0;
+    }
+
+    .banners-action .active + .content {
+        padding-top: 5px;
+        padding-bottom: 18px;
     }
 
 
