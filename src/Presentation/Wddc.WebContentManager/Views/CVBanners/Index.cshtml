@@ -9,7 +9,7 @@
 
 }
 
-@section Scripts {
+@section Scripts { gdfgfg
 
     <script src="http://ajax.aspnetcdn.com/ajax/jquery.validate/1.11.0/jquery.validate.min.js"></script>
     <script src="http://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script>
@@ -23,8 +23,8 @@
     <script>
 
         $(document).ready(function () {
-
-            prepareLogList();
+            
+            prepareLogList(); 
 
             if('@ViewBag.response') {
                 if ('@ViewBag.response' == "Success") {
@@ -161,7 +161,7 @@
                     else {
                         searchBannersToUpdate();
                     }
-
+                        
                 }
             });
 
@@ -453,19 +453,6 @@
             }
         }
 
-        function toggleLog() {
-            var logContent = document.getElementById("log-content");
-            var logButton = document.getElementById("log-toggle-btn");
-
-            if (logContent.style.display === "none" || logContent.style.display === "") {
-                logContent.style.display = "block";
-                logButton.textContent = "Hide Log";
-            } else {
-                logContent.style.display = "none";
-                logButton.textContent = "Show Log";
-            }
-        }
-
         document.forms["upload-form"]["bannerImage"].addEventListener('change', function (e) {
             if (e.target.files[0]) {
                 document.forms["upload-form"]["bannerImageDisplay"].src = URL.createObjectURL(e.target.files[0])
@@ -483,7 +470,7 @@
                 document.forms["update-form"]["bannerImageDisplay"].src = URL.createObjectURL(e.target.files[0])
             }
         });
-
+      
         document.forms["update-form"]["bannerImageMobile"].addEventListener('change', function (e) {
             if (e.target.files[0]) {
                 document.forms["update-form"]["bannerImageMobileDisplay"].src = URL.createObjectURL(e.target.files[0])
@@ -492,6 +479,19 @@
 
         function prepareLogList() {
             setupPagination('log', 'log-list', '@Url.Action("Log", "CVBanners")?referrerUrl=CVBanners', ['Log', 'Username', 'Created'], 7);
+        }
+
+        function toggleLog() {
+            var logSection = document.getElementById("log-section");
+            var toggleBtn = document.getElementById("toggle-log-btn");
+    
+            if (logSection.classList.contains('hidden')) {
+                logSection.classList.remove('hidden');
+                toggleBtn.textContent = "Hide Log";
+            } else {
+                logSection.classList.add('hidden');
+                toggleBtn.textContent = "Show Log";
+            }
         }
 
         function startSpinner(targetId) {
@@ -531,22 +531,12 @@
         for (var i = 0; i < coll.length; i++) {
             coll[i].addEventListener("click", function () {
 
-                // Get the content panel for the clicked button
+                this.classList.toggle("active");
                 var content = this.nextElementSibling;
-                var isCurrentlyOpen = this.classList.contains("active");
-
-                // Close all collapsible sections first
-                var allCollapsibles = document.getElementsByClassName("collapsible-info");
-                for (var j = 0; j < allCollapsibles.length; j++) {
-                    allCollapsibles[j].classList.remove("active");
-                    var panel = allCollapsibles[j].nextElementSibling;
-                    panel.style.maxHeight = null;
-                }
-
-                // If the clicked section was not open, open it
-                if (!isCurrentlyOpen) {
-                    this.classList.add("active");
-                    content.style.maxHeight = content.scrollHeight + "px";
+                if (content.style.maxHeight) {
+                    content.style.maxHeight = null;
+                } else {
+                    content.style.maxHeight = "1000000px";   
                 }
             });
         }
@@ -575,52 +565,52 @@
                         <div class="col-12 col-lg-12 col-sm-12 col-xl-12 collapsible-col content-center">
                             <button type="button" class="collapsible-info">Upload ClientVantage Banner</button>
                             <div class="content">
-                                <form id="upload-form" class="content-center w-60" name="upload-form" method="post" action="@Url.Action("UploadCVBanner", "CVBanners")" enctype="multipart/form-data" style="padding-top: 5px; padding-bottom: 50px;">
+                                    <form id="upload-form" class="content-center w-60" name="upload-form" method="post" action="@Url.Action("UploadCVBanner", "CVBanners")" enctype="multipart/form-data" style="padding-top: 5px; padding-bottom: 50px;">
                                     <div class="row form-row">
-                                        <div class="col-lg-2 form-label-col">
-                                            <label for="categoryId" class="control-label control-label-center">Category:</label>
-                                        </div>
-                                        <div class="col-lg-10">
-                                            <input id="categoryId" name="categoryId" style="width: 100%;" />
-                                        </div>
+                                         <div class="col-lg-2 form-label-col">
+                                             <label for="categoryId" class="control-label control-label-center">Category:</label>
+                                         </div>
+                                         <div class="col-lg-10">
+                                                <input id="categoryId" name="categoryId" style="width: 100%;" />
+                                         </div>
                                     </div>
                                     <div class="row form-row">
                                         <div class="col-lg-2 form-label-col">
-                                            <label for="bannerName" class="control-label control-label-center">Banner Name:</label>
-                                        </div>
-                                        <div class="col-lg-10">
-                                            <input id="bannerName" name="bannerName" style="width: 100%;" />
-                                        </div>
+                                             <label for="bannerName" class="control-label control-label-center">Banner Name:</label>
+                                         </div>
+                                         <div class="col-lg-10">
+                                              <input id="bannerName" name="bannerName" style="width: 100%;" />
+                                         </div>
                                     </div>
                                     <div class="row form-row">
-                                        <div class="col-lg-2 form-label-col">
-                                        </div>
-                                        <div class="col-lg-10" style="text-align: left;">
-                                            <img src="../img/no-banner.png" class="small-banner" id="bannerImageDisplay">
-                                        </div>
+                                         <div class="col-lg-2 form-label-col">
+                                         </div>
+                                         <div class="col-lg-10" style="text-align: left;">
+                                                <img src="../img/no-banner.png"  class="small-banner" id="bannerImageDisplay">
+                                         </div>
                                     </div>
                                     <div class="row form-row">
-                                        <div class="col-lg-2 form-label-col">
-                                            <label for="bannerImage" class="control-label control-label-center">Banner:</label>
-                                        </div>
-                                        <div class="col-lg-10">
-                                            <input class="form-control form-control-sm" id="bannerImage" name="bannerImage" type="file" accept="image/*">
-                                        </div>
+                                         <div class="col-lg-2 form-label-col">
+                                                <label for="bannerImage" class="control-label control-label-center">Banner:</label>
+                                         </div>
+                                         <div class="col-lg-10">
+                                                <input class="form-control form-control-sm" id="bannerImage" name="bannerImage" type="file" accept="image/*">
+                                         </div>
                                     </div>
                                     <div class="row form-row">
-                                        <div class="col-lg-2 form-label-col">
-                                        </div>
-                                        <div class="col-lg-10" style="text-align: left;">
-                                            <img src="../img/no-mobile-banner.png" class="mobile-small-banner" id="bannerImageMobileDisplay">
-                                        </div>
+                                         <div class="col-lg-2 form-label-col">
+                                         </div>
+                                         <div class="col-lg-10" style="text-align: left;">
+                                                <img src="../img/no-mobile-banner.png" class="mobile-small-banner" id="bannerImageMobileDisplay">
+                                         </div>
                                     </div>
                                     <div class="row form-row">
-                                        <div class="col-lg-2 form-label-col">
-                                            <label for="bannerImageMobile" class="control-label control-label-center">Mobile Banner:</label>
-                                        </div>
-                                        <div class="col-lg-10">
-                                            <input class="form-control form-control-sm" id="bannerImageMobile" name="bannerImageMobile" type="file" accept="image/*">
-                                        </div>
+                                         <div class="col-lg-2 form-label-col">
+                                             <label for="bannerImageMobile" class="control-label control-label-center">Mobile Banner:</label>
+                                         </div>
+                                         <div class="col-lg-10">
+                                                <input class="form-control form-control-sm" id="bannerImageMobile" name="bannerImageMobile" type="file" accept="image/*">
+                                         </div>
                                     </div>
                                     <div class="row form-row" style="padding-top: 20px;">
                                         <div class="col-lg-12 content-center">
@@ -639,108 +629,108 @@
                                 <form id="update-form" class="content-center" name="update-form" method="post" action="@Url.Action("UpdateCVBanner", "CVBanners")" enctype="multipart/form-data" style="padding-top: 5px; padding-bottom: 50px;">
                                     <input type="hidden" id="bannerId" name="bannerId">
                                     <div class="row form-row">
-                                        <div class="col-lg-3"></div>
-                                        <div class="col-lg-6">
-                                            <div class="row form-row">
-                                                <div class="col-lg-2 form-label-col">
-                                                    <label for="selectedCategoryId" class="control-label control-label-center">Search by Category:</label>
-                                                </div>
-                                                <div class="col-lg-10">
-                                                    <input id="selectedCategoryId" name="selectedCategoryId" style="width: 100%;" />
-                                                </div>
-                                            </div>
-                                            <div class="row form-row">
-                                                <div class="col-lg-12">
-                                                    <div id="spinningWheelSearchUpdate"></div>
-                                                    <div class="k-button k-primary submit-btn" onclick="searchBannersToUpdate()">Search</div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-3"></div>
+                                         <div class="col-lg-3"></div>
+                                         <div class="col-lg-6">
+                                              <div class="row form-row">
+                                                  <div class="col-lg-2 form-label-col">
+                                                      <label for="selectedCategoryId" class="control-label control-label-center">Search by Category:</label>
+                                                  </div>
+                                                  <div class="col-lg-10">
+                                                      <input id="selectedCategoryId" name="selectedCategoryId" style="width: 100%;" />
+                                                  </div>
+                                              </div>
+                                              <div class="row form-row">
+                                                  <div class="col-lg-12">
+                                                      <div id="spinningWheelSearchUpdate"></div>
+                                                      <div class="k-button k-primary submit-btn" onclick="searchBannersToUpdate()">Search</div>
+                                                  </div>
+                                              </div>
+                                         </div>
+                                         <div class="col-lg-3"></div>
                                     </div>
                                     <div class="row" id="search-results-update-row" style="visibility:hidden;">
-                                        <div class="col-12 col-lg-12 col-sm-12 col-xl-12">
-                                            <div class="row">
-                                                <div class="col-lg-3"></div>
-                                                <div class="col-lg-6">
-                                                    <input id="selectedBannerId" name="selectedBannerId" style="width: 100%;" />
-                                                </div>
-                                                <div class="col-lg-3"></div>
-                                            </div>
-                                            <div class="row">
-                                                <div class="col-12 col-lg-12 col-sm-12 col-xl-12 content-center" id="banners-update-list"></div>
-                                            </div>
-                                        </div>
+                                         <div class="col-12 col-lg-12 col-sm-12 col-xl-12">
+                                             <div class="row">
+                                                 <div class="col-lg-3"></div>
+                                                 <div class="col-lg-6">
+                                                      <input id="selectedBannerId" name="selectedBannerId" style="width: 100%;" />
+                                                 </div>
+                                                 <div class="col-lg-3"></div>  
+                                              </div>
+                                              <div class="row">
+                                                    <div class="col-12 col-lg-12 col-sm-12 col-xl-12 content-center" id="banners-update-list"></div>
+                                              </div>
+                                         </div>
                                     </div>
                                     <div class="row form-row" id="banner-toUpdate-row" style="display:none;">
-                                        <div class="col-lg-3"></div>
-                                        <div class="col-lg-6">
-                                            <div class="row form-row">
-                                                <div class="col-lg-12">
-                                                    <h5>Fill out this form to update the above selected banner:</h5>
-                                                </div>
+                                         <div class="col-lg-3"></div>
+                                         <div class="col-lg-6" >
+                                              <div class="row form-row">
+                                                  <div class="col-lg-12">
+                                                      <h5>Fill out this form to update the above selected banner:</h5>
+                                                  </div>
+                                              </div>
+                                              <div class="row form-row">
+                                                    <div class="col-lg-12" style=" background-color: #E8E8E8; padding-bottom: 10px;">
+                                                        <div class="row form-row">
+                                                            <div class="col-lg-2 form-label-col">
+                                                                <label for="categoryId" class="control-label control-label-center">Category:</label>
+                                                            </div>
+                                                            <div class="col-lg-10">
+                                                                <input id="categoryId" name="categoryId" style="width: 100%;" />
+                                                            </div>
+                                                        </div>
+                                                        <div class="row form-row">
+                                                            <div class="col-lg-2 form-label-col">
+                                                                <label for="bannerName" class="control-label control-label-center">Banner Name:</label>
+                                                            </div>
+                                                            <div class="col-lg-10">
+                                                                <input id="bannerName" name="bannerName" style="width: 100%;" />
+                                                            </div>
+                                                        </div>
+                                                        <div class="row form-row">
+                                                            <div class="col-lg-2 form-label-col">
+                                                                <label class="control-label control-label-center">Banner:</label>
+                                                            </div>
+                                                            <div class="col-lg-10" style="text-align: left;">
+                                                                <img class="small-banner" id="bannerImageDisplay">
+                                                            </div>
+                                                        </div>
+                                                        <div class="row form-row">
+                                                            <div class="col-lg-2 form-label-col">
+                                                                <label for="bannerImage" class="control-label control-label-center">New Banner:</label>
+                                                            </div>
+                                                            <div class="col-lg-10">
+                                                                <input class="form-control form-control-sm" id="bannerImage" name="bannerImage" type="file" accept="image/*">
+                                                            </div>
+                                                        </div>
+                                                        <div class="row form-row">
+                                                            <div class="col-lg-2 form-label-col">
+                                                                <label class="control-label control-label-center">Mobile Banner:</label>
+                                                            </div>
+                                                            <div class="col-lg-10" style="text-align: left;">
+                                                                <img src="../img/no-mobile-banner.png" class="mobile-small-banner" id="bannerImageMobileDisplay">
+                                                            </div>
+                                                        </div>
+                                                        <div class="row form-row">
+                                                            <div class="col-lg-2 form-label-col">
+                                                                <label for="bannerImageMobile" class="control-label control-label-center">New Mobile Banner:</label>
+                                                            </div>
+                                                            <div class="col-lg-10">
+                                                                <input class="form-control form-control-sm" id="bannerImageMobile" name="bannerImageMobile" type="file" accept="image/*">
+                                                            </div>
+                                                        </div>
+                                                        <div class="row form-row" style="padding-top: 20px;">
+                                                            <div class="col-lg-12 content-center">
+                                                                <div id="spinningWheelUpdate"></div>
+                                                                <button type="submit" class="k-button k-primary submit-btn" onClick="this.form.submit(); this.disabled=true; startSpinner('spinningWheelUpdate')">Update</button>
+                                                                <div class="k-button k-primary submit-btn" onClick="cancelUpdate();">Cancel</div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                              </div>
                                             </div>
-                                            <div class="row form-row">
-                                                <div class="col-lg-12" style=" background-color: #E8E8E8; padding-bottom: 10px;">
-                                                    <div class="row form-row">
-                                                        <div class="col-lg-2 form-label-col">
-                                                            <label for="categoryId" class="control-label control-label-center">Category:</label>
-                                                        </div>
-                                                        <div class="col-lg-10">
-                                                            <input id="categoryId" name="categoryId" style="width: 100%;" />
-                                                        </div>
-                                                    </div>
-                                                    <div class="row form-row">
-                                                        <div class="col-lg-2 form-label-col">
-                                                            <label for="bannerName" class="control-label control-label-center">Banner Name:</label>
-                                                        </div>
-                                                        <div class="col-lg-10">
-                                                            <input id="bannerName" name="bannerName" style="width: 100%;" />
-                                                        </div>
-                                                    </div>
-                                                    <div class="row form-row">
-                                                        <div class="col-lg-2 form-label-col">
-                                                            <label class="control-label control-label-center">Banner:</label>
-                                                        </div>
-                                                        <div class="col-lg-10" style="text-align: left;">
-                                                            <img class="small-banner" id="bannerImageDisplay">
-                                                        </div>
-                                                    </div>
-                                                    <div class="row form-row">
-                                                        <div class="col-lg-2 form-label-col">
-                                                            <label for="bannerImage" class="control-label control-label-center">New Banner:</label>
-                                                        </div>
-                                                        <div class="col-lg-10">
-                                                            <input class="form-control form-control-sm" id="bannerImage" name="bannerImage" type="file" accept="image/*">
-                                                        </div>
-                                                    </div>
-                                                    <div class="row form-row">
-                                                        <div class="col-lg-2 form-label-col">
-                                                            <label class="control-label control-label-center">Mobile Banner:</label>
-                                                        </div>
-                                                        <div class="col-lg-10" style="text-align: left;">
-                                                            <img src="../img/no-mobile-banner.png" class="mobile-small-banner" id="bannerImageMobileDisplay">
-                                                        </div>
-                                                    </div>
-                                                    <div class="row form-row">
-                                                        <div class="col-lg-2 form-label-col">
-                                                            <label for="bannerImageMobile" class="control-label control-label-center">New Mobile Banner:</label>
-                                                        </div>
-                                                        <div class="col-lg-10">
-                                                            <input class="form-control form-control-sm" id="bannerImageMobile" name="bannerImageMobile" type="file" accept="image/*">
-                                                        </div>
-                                                    </div>
-                                                    <div class="row form-row" style="padding-top: 20px;">
-                                                        <div class="col-lg-12 content-center">
-                                                            <div id="spinningWheelUpdate"></div>
-                                                            <button type="submit" class="k-button k-primary submit-btn" onClick="this.form.submit(); this.disabled=true; startSpinner('spinningWheelUpdate')">Update</button>
-                                                            <div class="k-button k-primary submit-btn" onClick="cancelUpdate();">Cancel</div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-3"></div>
+                                         <div class="col-lg-3"></div>
                                     </div>
                                 </form>
                             </div>
@@ -752,59 +742,57 @@
                             <div class="content">
                                 <form id="delete-form" class="content-center" name="delete-form" method="post" action="@Url.Action("DeleteCVBanner", "CVBanners")" enctype="multipart/form-data" style="padding-top: 5px; padding-bottom: 50px;">
                                     <div class="row form-row">
-                                        <div class="col-lg-3"></div>
-                                        <div class="col-lg-6">
-                                            <div class="row form-row">
-                                                <div class="col-lg-2 form-label-col">
-                                                    <label for="selectedCategoryId" class="control-label control-label-center">Search by Category:</label>
-                                                </div>
-                                                <div class="col-lg-10">
-                                                    <input id="selectedCategoryId" name="selectedCategoryId" style="width: 100%;" />
-                                                </div>
-                                            </div>
-                                            <div class="row form-row">
-                                                <div class="col-lg-12">
-                                                    <div id="spinningWheelSearchDelete"></div>
-                                                    <div class="k-button k-primary submit-btn" onclick="searchBannersToDelete()">Search</div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-3"></div>
+                                         <div class="col-lg-3"></div>
+                                         <div class="col-lg-6">
+                                              <div class="row form-row">
+                                                  <div class="col-lg-2 form-label-col">
+                                                      <label for="selectedCategoryId" class="control-label control-label-center">Search by Category:</label>
+                                                  </div>
+                                                  <div class="col-lg-10">
+                                                      <input id="selectedCategoryId" name="selectedCategoryId" style="width: 100%;" />
+                                                  </div>
+                                              </div>
+                                              <div class="row form-row">
+                                                  <div class="col-lg-12">
+                                                      <div id="spinningWheelSearchDelete"></div>
+                                                      <div class="k-button k-primary submit-btn" onclick="searchBannersToDelete()">Search</div>
+                                                  </div>
+                                              </div>
+                                         </div>
+                                         <div class="col-lg-3"></div>
                                     </div>
                                     <div class="row" id="search-results-delete-row" style="visibility:hidden;">
-                                        <div class="col-12 col-lg-12 col-sm-12 col-xl-12">
-                                            <div class="row">
-                                                <div class="col-lg-3"></div>
-                                                <div class="col-lg-6">
-                                                    <input id="selectedBannerId" name="selectedBannerId" style="width: 100%;" />
-                                                </div>
-                                                <div class="col-lg-3"></div>
-                                            </div>
-                                            <div class="row">
-                                                <div class="col-12 col-lg-12 col-sm-12 col-xl-12 content-center" id="banners-delete-list"></div>
-                                            </div>
-                                        </div>
+                                         <div class="col-12 col-lg-12 col-sm-12 col-xl-12">
+                                             <div class="row">
+                                                 <div class="col-lg-3"></div>
+                                                 <div class="col-lg-6">
+                                                        <input id="selectedBannerId" name="selectedBannerId" style="width: 100%;" />
+                                                 </div>
+                                                 <div class="col-lg-3"></div>  
+                                              </div>
+                                              <div class="row">
+                                                    <div class="col-12 col-lg-12 col-sm-12 col-xl-12 content-center" id="banners-delete-list"></div>
+                                              </div>
+                                         </div>
                                     </div>
                                 </form>
                             </div>
                         </div>
                     </div>
-                    <div class="row" style="margin-top: 100px;">
+                    <div class="row" style="margin-top: 120px;">
                         <div class="col-lg-12 content-center">
-                            <button type="button" class="k-button k-info log-toggle-btn" id="log-toggle-btn" onclick="toggleLog()">Hide Log</button>
+                            <button type="button" id="toggle-log-btn" class="k-button k-primary" style="font-size: 11px; padding: 5px 15px;" onclick="toggleLog()">Hide Log</button>
                         </div>
                     </div>
-                    <div id="log-content" style="display:block; margin-top: 30px;">
-                        <div class="row">
-                            <div class="col-lg-1"></div>
-                            <div class="col-lg-10 content-center">
-                                <div id="log" class="log-container">
-                                    <div class="bs-ObjectList-rows" id="log-list">
-                                    </div>
+                    <div class="row" id="log-section">
+                        <div class="col-lg-1"></div>
+                        <div class="col-lg-10 content-center">
+                            <div id="log" class="content-center">
+                                <div class="bs-ObjectList-rows" id="log-list">
                                 </div>
                             </div>
-                            <div class="col-lg-1"></div>
                         </div>
+                        <div class="col-lg-1"></div>
                     </div>
                 </div>
             </div>
@@ -873,41 +861,6 @@
     .form-control {
         font-size: 1.3rem;
         border-color: #ddd;
-    }
-
-    .log-toggle-btn {
-        padding: 8px 30px;
-        font-size: 1.2rem;
-        background-color: #2e6da4; /* Changed from #17a2b8 */
-        border-color: #2e6da4; /* Changed from #17a2b8 */
-        color: white;
-        border-radius: 4px;
-        cursor: pointer;
-        transition: background-color 0.3s ease;
-    }
-
-        .log-toggle-btn:hover {
-            background-color: #337ab7; /* Changed from #138496 */
-            border-color: #337ab7; /* Changed from #117a8b */
-            color: white;
-        }
-
-        .k-button.k-state-focused.log-toggle-btn,
-        .log-toggle-btn.k-state-focused,
-        .log-toggle-btn:focus,
-        .log-toggle-btn:focus:hover {
-            border-color: #337ab7 !important; /* same hover blue as .collapsible-info */
-            box-shadow: none !important; /* remove the red glow */
-            outline: none !important;
-        }
-
-    .log-container {
-        width: 100%;
-        margin: 0 auto;
-        padding: 20px;
-        background-color: #f9f9f9;
-        border: 1px solid #ddd;
-        border-radius: 5px;
     }
 
     .bs-ObjectList-row {
@@ -980,17 +933,17 @@
         font-size: 15px;
     }
 
-        .banners-action .active, .collapsible-info:hover {
-            background-color: #337ab7;
-        }
+    .banners-action .active, .collapsible-info:hover {
+        background-color: #337ab7;
+    }
 
-        .collapsible-info:after {
-            content: '\002B';
-            color: white;
-            font-weight: bold;
-            float: right;
-            margin-left: 5px;
-        }
+    .collapsible-info:after {
+        content: '\002B';
+        color: white;
+        font-weight: bold;
+        float: right;
+        margin-left: 5px;
+    }
 
     .banners-action .active:after {
         content: "\2212";
@@ -1004,7 +957,7 @@
         padding: 5px 18px;
         max-height: 0;
         overflow: hidden;
-        transition: max-height 0.5s ease-in-out;
+        transition: max-height 0.2s ease-out;
         background-color: #f1f1f1;
     }
 
@@ -1053,49 +1006,49 @@
         text-align: right;
     }
 
-    .img-row {
-        display: -ms-flexbox; /* IE10 */
-        display: flex;
-        -ms-flex-wrap: wrap; /* IE10 */
-        flex-wrap: wrap;
-        padding-bottom: 30px;
-    }
+   .img-row {
+       display: -ms-flexbox; /* IE10 */
+       display: flex;
+       -ms-flex-wrap: wrap; /* IE10 */
+       flex-wrap: wrap;
+       padding-bottom: 30px;
+   }
 
-    .img-row-delete {
-        display: -ms-flexbox; /* IE10 */
-        display: flex;
-        -ms-flex-wrap: wrap; /* IE10 */
-        flex-wrap: wrap;
-        padding-top: 15px;
-        padding-bottom: 40px;
-        border-top: 1px Solid #E0E0E0;
-    }
+   .img-row-delete {
+       display: -ms-flexbox; /* IE10 */
+       display: flex;
+       -ms-flex-wrap: wrap; /* IE10 */
+       flex-wrap: wrap;
+       padding-top: 15px;
+       padding-bottom: 40px;
+       border-top: 1px Solid #E0E0E0;
+   }
 
-    .column {
-        -ms-flex: 33%; /* IE10 */
-        flex: 33%;
-        max-width: 33%;
-        padding: 8px;
-    }
+   .column {
+       -ms-flex: 33%; /* IE10 */
+       flex: 33%;
+       max-width: 33%;
+       padding: 8px;
+   }
 
-    .small-banner, .mobile-small-banner, .small-banner-grid, .mobile-small-banner-grid {
+   .small-banner, .mobile-small-banner, .small-banner-grid, .mobile-small-banner-grid {
         margin: 8px;
-        position: relative;
+        position:relative;
         -webkit-transition: transform .4s ease-out;
         transition: transform .4s ease-out;
+   }
+
+    .small-banner:hover, .small-banner:active, .mobile-small-banner:hover, .mobile-small-banner:active {
+       -webkit-transform: scale(2);
+        transform: scale(2);
+        z-index:10;
     }
 
-        .small-banner:hover, .small-banner:active, .mobile-small-banner:hover, .mobile-small-banner:active {
-            -webkit-transform: scale(2);
-            transform: scale(2);
-            z-index: 10;
-        }
-
-        .small-banner-grid:hover, .small-banner-grid:active, .mobile-small-banner-grid:hover, .mobile-small-banner-grid:active {
-            -webkit-transform: scale(1.5);
-            transform: scale(1.5);
-            z-index: 10;
-        }
+    .small-banner-grid:hover, .small-banner-grid:active, .mobile-small-banner-grid:hover, .mobile-small-banner-grid:active {
+       -webkit-transform: scale(1.5);
+        transform: scale(1.5);
+        z-index:10;
+    }
 
     .w-60 {
         width: 60%;
@@ -1104,123 +1057,69 @@
     .fa-trash, .fa-edit {
         color: #007bff;
         margin-left: 15px;
-        position: relative;
+        position:relative;
         -webkit-transition: transform .3s ease-out;
         transition: transform .3s ease-out;
     }
 
-        .fa-trash:hover, .fa-trash:active, .fa-edit:hover, .fa-edit:active {
-            cursor: pointer;
-            -webkit-transform: scale(2);
-            transform: scale(2);
-            z-index: 10;
+     .fa-trash:hover, .fa-trash:active, .fa-edit:hover, .fa-edit:active {
+         cursor: pointer;
+         -webkit-transform: scale(2);
+         transform: scale(2);
+         z-index:10;
+     }
+
+     #banners-update-list{
+         margin-top: 30px;
+         padding-top: 20px;
+         padding-bottom: 20px;
+         overflow-y: scroll;
+         height: 400px;
+         border: 1px Solid #E0E0E0;
+     }
+
+     #banners-delete-list{
+         margin-top: 30px;
+         padding-bottom: 20px;
+         overflow-y: scroll;
+         height: 600px;
+         border: 1px Solid #E0E0E0;
+     }
+
+     #banner-toUpdate-row {
+         margin-top: 90px;
+     }
+
+     .select-btn {
+         font-size: 10px;
+     }
+
+
+        .col-md-4 {
+            flex: 0 0 auto;
+            width: 33.33333333%;
         }
 
-    #banners-update-list {
-        margin-top: 30px;
-        padding-top: 20px;
-        padding-bottom: 20px;
-        overflow-y: scroll;
-        height: 400px;
-        border: 1px Solid #E0E0E0;
-    }
-
-    #banners-delete-list {
-        margin-top: 30px;
-        padding-bottom: 20px;
-        overflow-y: scroll;
-        height: 600px;
-        border: 1px Solid #E0E0E0;
-    }
-
-    #banner-toUpdate-row {
-        margin-top: 90px;
-    }
-
-    .select-btn {
-        font-size: 10px;
-    }
-
-
-    .col-md-4 {
-        flex: 0 0 auto;
-        width: 33.33333333%;
-    }
-
-    #log {
+    .bs-ObjectList-rows {
+        display: table;
         width: 100%;
-        box-sizing: border-box;
     }
 
-    .bs-ObjectList-rows {
-        display: table; /* parent for table-rows */
-        width: 100%; /* expand to full available width */
-        table-layout: fixed; /* respect percentage column widths */
+    #log-section {
+        margin-top: 20px;
+        transition: all 0.4s ease-in-out;
+        opacity: 1;
+        max-height: 2000px;
+        overflow: hidden;
     }
 
-    /* keep existing column %s but ensure they are applied */
-    .bs-ObjectList-row .bs-ObjectList-cell:first-child {
-        width: 60%;
+    #log-section.hidden {
+        opacity: 0;
+        max-height: 0;
+        margin-top: 0 !important;
+        padding-top: 0;
+        padding-bottom: 0;
     }
 
-    .bs-ObjectList-row .bs-ObjectList-cell {
-        width: 20%;
-    }
 
-    /* Remove visible borders / shadows around the log list */
-    #log,
-    .log-container,
-    .bs-ObjectList-rows {
-        border: none !important;
-        box-shadow: none !important;
-        background-color: transparent !important; /* optional — keeps background neutral */
-    }
-
-        /* Remove any cell outline or focus ring applied by Kendo */
-        .bs-ObjectList-rows .bs-ObjectList-row,
-        .bs-ObjectList-rows .bs-ObjectList-row--header,
-        .bs-ObjectList-rows .bs-ObjectList-cell {
-            border: none !important;
-            box-shadow: none !important;
-        }
-
-        /* override Kendo focus styling that showed a red border */
-        .k-button.k-state-focused.log-toggle-btn,
-        .log-toggle-btn.k-state-focused,
-        .log-toggle-btn:focus,
-        .log-toggle-btn:focus:hover,
-        #log:focus,
-        .bs-ObjectList-rows:focus {
-            box-shadow: none !important;
-            outline: none !important;
-            border: none !important;
-        }
-
-
-    .collapsible-info {
-        background-color: #2e6da4;
-        color: white;
-        cursor: pointer;
-        padding: 8px 20px 8px 20px;
-        width: 60%;
-        border: none;
-        text-align: left;
-        outline: none;
-        font-size: 15px;
-        transition: background-color 0.3s ease; /* Add this line */
-    }
-
-        .collapsible-info:after {
-            content: '\002B';
-            color: white;
-            font-weight: bold;
-            float: right;
-            margin-left: 5px;
-            transition: transform 0.3s ease; /* Add this line for icon rotation */
-        }
-
-    .banners-action .active:after {
-        content: "\2212";
-        transform: rotate(180deg); /* Optional: rotate the icon when active */
-    }
 </style>
