@@ -10,6 +10,16 @@
     <Optimize>false</Optimize>
   </PropertyGroup>
 
+  <!-- Exclude bundled files from Static Web Asset validation -->
+  <ItemGroup>
+    <Content Remove="wwwroot\css\site.min.css" />
+    <Content Remove="wwwroot\js\site.min.js" />
+    <Content Remove="wwwroot\js\dataTables.min.js" />
+    <None Include="wwwroot\css\site.min.css" />
+    <None Include="wwwroot\js\site.min.js" />
+    <None Include="wwwroot\js\dataTables.min.js" />
+  </ItemGroup>
+
   <ItemGroup>
     <COMReference Include="{d37e2a3e-8545-3a39-9f4f-31827c9124ab}">
       <WrapperTool>tlbimp</WrapperTool>
@@ -18,7 +28,6 @@
       <Guid>d37e2a3e-8545-3a39-9f4f-31827c9124ab</Guid>
     </COMReference>
   </ItemGroup>
-
 
   <ItemGroup>
     <PackageReference Include="BuildBundlerMinifier" Version="3.2.449" />
@@ -40,17 +49,14 @@
     <PackageReference Include="Telerik.UI.for.AspNet.Core" Version="2021.1.224" />
   </ItemGroup>
 
-
   <ItemGroup>
     <ProjectReference Include="..\..\Libraries\Wddc.WebContentManager.Core\Wddc.WebContentManager.Core.csproj" />
     <ProjectReference Include="..\..\Libraries\Wddc.WebContentManager.Services\Wddc.WebContentManager.Services.csproj" />
   </ItemGroup>
 
-
   <ItemGroup>
     <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
   </ItemGroup>
-
 
   <ItemGroup>
     <Folder Include="Factories\" />
@@ -62,11 +68,9 @@
     <Folder Include="wwwroot\js\Routing\" />
   </ItemGroup>
 
-
   <ItemGroup>
     <WCFMetadata Include="Connected Services" />
   </ItemGroup>
-
 
   <ItemGroup>
     <Content Update="wwwroot\css\font-awesome-bundle.min.css">
@@ -82,7 +86,6 @@
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>
   </ItemGroup>
-
 
   <ProjectExtensions><VisualStudio><UserProperties wwwroot_4css_4purchasing_4bootstrap_1min_1css_1map__JsonSchema="" /></VisualStudio></ProjectExtensions>
 

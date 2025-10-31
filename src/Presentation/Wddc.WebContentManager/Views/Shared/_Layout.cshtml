@@ -13,22 +13,26 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/spin.js/2.3.2/spin.min.js"></script>
 
     <environment include="Production">
-
+        <!-- Bundled CSS -->
         <link href="~/css/site.min.css" rel="stylesheet" />
-        @*<link href="~/css/font-awesome/css/font-awesome.min.css" rel="stylesheet" />*@
-        <link href="~/css/dataTablesStyles.min.css" rel="stylesheet" />
-        <link href="~/css/dataPickerStyles.min.css" rel="stylesheet" />
-        <link href="~/css/touchSpinStyles.min.css" rel="stylesheet" />
-        <link href="~/css/select2Styles.min.css" rel="stylesheet" />
-        <link href="~/css/dropZoneStyles.min.css" rel="stylesheet" />
 
+        <!-- Individual CSS files (not bundled) -->
+        <link href="~/css/plugins/dataTables/datatables.bootstrap.min.css" rel="stylesheet" />
+        <link href="~/css/plugins/dataTables/FixedHeader-3.1.3/fixedHeader.bootstrap.min.css" rel="stylesheet" />
+        <link href="~/css/plugins/dataTables/FixedColumns-3.2.4/fixedColumns.bootstrap.min.css" rel="stylesheet" />
+        <link href="~/css/plugins/dataTables/Buttons-1.5.1/buttons.bootstrap.min.css" rel="stylesheet" />
+        <link href="~/css/plugins/dataTables/select.bootstrap.min.css" rel="stylesheet" />
+        <link href="~/css/plugins/datapicker/datepicker3.css" rel="stylesheet" />
+        <link href="~/css/plugins/touchspin/jquery.bootstrap-touchspin.min.css" rel="stylesheet" />
+        <link href="~/css/plugins/select2/select2.min.css" rel="stylesheet" />
+        <link href="~/css/plugins/dropzone/basic.css" rel="stylesheet" />
+        <link href="~/css/plugins/dropzone/dropzone.css" rel="stylesheet" />
     </environment>
-    <environment include="Development">
 
+    <environment include="Development">
         <link href="~/css/plugins/iCheck/custom.css" rel="stylesheet" />
         <link href="~/css/plugins/toastr/toastr.min.css" rel="stylesheet" />
         <link href="~/css/jquery-ui.css" rel="stylesheet" type="text/css" />
-        <!-- Primary Inspinia style -->
         <link href="~/css/bootstrap.css" rel="stylesheet" />
         <link href="~/css/animate.css" rel="stylesheet" />
         <link href="~/css/style.css" rel="stylesheet" />
@@ -49,7 +53,6 @@
 
         <link href="~/css/plugins/dropzone/basic.css" rel="stylesheet" />
         <link href="~/css/plugins/dropzone/dropzone.css" rel="stylesheet" />
-
     </environment>
 
     @RenderSection("Styles", required: false)
@@ -64,7 +67,7 @@
 
             <!-- Top Navbar -->
             @await Html.PartialAsync("_TopNavbar")
-            
+
             @await Html.PartialAsync("_Breadcrumb")
             <!-- Main view  -->
             @RenderBody()
@@ -81,29 +84,19 @@
     <!-- End wrapper-->
     <!-- Section for main scripts render -->
     <environment include="Production">
-        <script src="~/js/jquery-3.3.1.js"></script>
-        @*<script src="~/js/site.min.js"></script>*@
-
-        <script src="~/js/jquery-2.1.1.js"></script>
-        <script src="~/js/respond.js"></script>
-        <script src="~/js/bootstrap.js"></script>
-        <script src="~/js/plugins/slimscroll/jquery.slimscroll.js"></script>
-        <script src="~/js/plugins/metisMenu/metisMenu.min.js"></script>
-        <script src="~/js/plugins/pace/pace.min.js"></script>
-        <script src="~/js/inspinia.js"></script>
-        <script src="~/js/plugins/iCheck/icheck.min.js"></script>
-        <script src="~/js/plugins/toastr/toastr.min.js"></script>
-
+        <!-- Bundled JS -->
+        <script src="~/js/site.min.js"></script>
         <script src="~/js/dataTables.min.js"></script>
-        <script src="~/js/sweetAlert2.min.js"></script>
-        <script src="~/js/dataPicker.min.js"></script>
-        <script src="~/js/select2.min.js"></script>
-        <script src="~/js/touchSpin.min.js"></script>
-        <script src="~/js/dropZone.min.js"></script>
-    </environment>
-    <environment include="Development">
-        <script src="~/js/jquery-3.3.1.js"></script>
 
+        <!-- Individual JS files (not bundled) -->
+        <script src="~/js/plugins/sweetalert2/sweetalert2.all.min.js"></script>
+        <script src="~/js/plugins/datapicker/bootstrap-datepicker.js"></script>
+        <script src="~/js/plugins/select2/select2.full.min.js"></script>
+        <script src="~/js/plugins/touchspin/jquery.bootstrap-touchspin.min.js"></script>
+        <script src="~/js/plugins/dropzone/dropzone.js"></script>
+    </environment>
+
+    <environment include="Development">
         <script src="~/js/jquery-2.1.1.js"></script>
         <script src="~/js/respond.js"></script>
         <script src="~/js/bootstrap.js"></script>

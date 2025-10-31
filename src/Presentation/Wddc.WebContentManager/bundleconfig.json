@@ -20,7 +20,6 @@
   {
     "outputFileName": "wwwroot/js/site.min.js",
     "inputFiles": [
-      //"wwwroot/js/jquery-3.3.1.js",
       "wwwroot/js/jquery-2.1.1.js",
       "wwwroot/js/respond.js",
       "wwwroot/js/bootstrap.js",
@@ -30,38 +29,6 @@
       "wwwroot/js/inspinia.js",
       "wwwroot/js/plugins/iCheck/icheck.min.js",
       "wwwroot/js/plugins/toastr/toastr.min.js"
-    ]
-  },
-  {
-    "outputFileName": "wwwroot/css/dataTablesStyles.min.css",
-    "inputFiles": [
-      "wwwroot/css/plugins/dataTables/datatables.bootstrap.min.css",
-      "wwwroot/css/plugins/dataTables/FixedHeader-3.1.3/fixedHeader.bootstrap.min.css",
-      "wwwroot/css/plugins/dataTables/FixedColumns-3.2.4/fixedColumns.bootstrap.min.css",
-      "wwwroot/css/plugins/dataTables/Buttons-1.5.1/buttons.bootstrap.min.css",
-      "wwwroot/css/plugins/dataTables/select.bootstrap.min.css"
-    ],
-    "minify": {
-      "enabled": true,
-      "renameLocals": true
-    },
-    "sourceMap": false
-  },
-  {
-    "outputFileName": "wwwroot/css/dataPickerStyles.min.css",
-    "inputFiles": [
-      "wwwroot/css/plugins/datapicker/datepicker3.css"
-    ],
-    "minify": {
-      "enabled": true,
-      "renameLocals": true
-    },
-    "sourceMap": false
-  },
-  {
-    "outputFileName": "wwwroot/js/dataPicker.min.js",
-    "inputFiles": [
-      "wwwroot/js/plugins/datapicker/bootstrap-datepicker.js"
     ]
   },
   {
@@ -79,76 +46,5 @@
       "wwwroot/js/plugins/dataTables/FixedColumns-3.2.4/dataTables.fixedColumns.min.js",
       "wwwroot/js/plugins/dataTables/init.js"
     ]
-  },
-  {
-    "outputFileName": "wwwroot/js/sweetAlert2.min.js",
-    "inputFiles": [
-      "wwwroot/js/plugins/sweetalert2/sweetalert2.all.min.js"
-    ]
-  },
-  {
-    "outputFileName": "wwwroot/css/touchSpinStyles.min.css",
-    "inputFiles": [
-      "wwwroot/css/plugins/touchspin/jquery.bootstrap-touchspin.min.css"
-    ],
-    "minify": {
-      "enabled": true,
-      "renameLocals": true
-    },
-    "sourceMap": false
-  },
-  {
-    "outputFileName": "wwwroot/css/select2Styles.min.css",
-    "inputFiles": [
-      "wwwroot/css/plugins/select2/select2.min.css"
-    ],
-    "minify": {
-      "enabled": true,
-      "renameLocals": true
-    },
-    "sourceMap": false
-  },
-  {
-    "outputFileName": "wwwroot/js/select2.min.js",
-    "inputFiles": [
-      "wwwroot/js/plugins/select2/select2.full.min.js"
-    ]
-  },
-  {
-    "outputFileName": "wwwroot/js/touchSpin.min.js",
-    "inputFiles": [
-      "wwwroot/js/plugins/touchspin/jquery.bootstrap-touchspin.min.js"
-    ]
-  },
-  {
-    "outputFileName": "wwwroot/css/dropZoneStyles.min.css",
-    "inputFiles": [
-      "wwwroot/css/plugins/dropzone/basic.css",
-      "wwwroot/css/plugins/dropzone/dropzone.css"
-    ],
-    "minify": {
-      "enabled": true,
-      "renameLocals": true
-    },
-    "sourceMap": false
-  },
-  {
-    "outputFileName": "wwwroot/js/dropZone.min.js",
-    "inputFiles": [
-      "wwwroot/js/plugins/dropzone/dropzone.js"
-    ]
-  },
-  {
-    "outputFileName": "wwwroot/css/redactor/redactor.min.css",
-    "inputFiles": [
-      "wwwroot/css/redactor/redactor.css",
-      "wwwroot/css/redactor/redactor-iframe.css"
-    ],
-    "minify": {
-      "enabled": true,
-      "renameLocals": true
-    },
-    "sourceMap": false
   }
-
 ]
