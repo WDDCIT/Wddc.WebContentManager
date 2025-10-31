@@ -1,0 +1,1186 @@
+﻿@{
+    ViewBag.Title = "ClientVantage Banners";
+}
+
+@section Styles {
+
+    <link href="https://kendo.cdn.telerik.com/2021.2.511/styles/kendo.default.min.css" rel="stylesheet" />
+    <link href="https://kendo.cdn.telerik.com/2021.2.511/styles/kendo.bootstrap-v4.min.css" rel="stylesheet" type="text/css" />
+
+}
+
+@section Scripts { gdfgfg
+
+    <script src="http://ajax.aspnetcdn.com/ajax/jquery.validate/1.11.0/jquery.validate.min.js"></script>
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script>
+
+    <script src="https://kendo.cdn.telerik.com/2021.2.511/js/kendo.all.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script src="~/js/pagination/pagination.min.js"></script>
+    <script src="~/js/pagination/pagination.custom.js"></script>
+
+    <script>
+
+        $(document).ready(function () {
+            
+            prepareLogList(); 
+
+            if('@ViewBag.response') {
+                if ('@ViewBag.response' == "Success") {
+                    document.getElementById("danger-alert").style.display = "none";
+                    document.getElementById("success-alert").style.display = "inline-block";
+                    var alertText = '<strong>Success! </strong>';
+                    alertText += '@ViewBag.Message';
+                    $("#success-alert").html(alertText);
+                    $("#success-alert").fadeTo(8000, 500).slideUp(500, function() {
+                        $("#success-alert").slideUp(500);
+                    });
+                }
+                else {
+                    document.getElementById("success-alert").style.display = "none";
+                    document.getElementById("danger-alert").style.display = "inline-block";
+                    var alertText = '<strong>Failure! </strong>';
+                    alertText += '@ViewBag.Message';
+                    $("#danger-alert").html(alertText);
+                    $("#danger-alert").fadeTo(8000, 500).slideUp(500, function() {
+                        $("#danger-alert").slideUp(500);
+                    });
+                }
+            } else {
+                document.getElementById("success-alert").style.display = "none";
+                document.getElementById("danger-alert").style.display = "none";
+            }
+
+            $("#upload-form #categoryId").kendoDropDownList({
+                dataSource: {
+                    transport: {
+                        read: {
+                            url: '@Url.Action("GetCategories", "CVBanners")',
+                            dataType: "json"
+                        }
+                    }
+                },
+                dataTextField: "Name",
+                dataValueField: "Id",
+                filter: "contains",
+            });
+
+            $("#upload-form #bannerName").kendoTextBox({
+                maxLength: 100,
+                placeholder: "Enter banner name ..."
+            });
+
+            $("#update-form #selectedCategoryId").kendoDropDownList({
+                dataSource: {
+                    transport: {
+                        read: {
+                            url: '@Url.Action("GetCategories", "CVBanners")',
+                            dataType: "json"
+                        }
+                    }
+                },
+                dataTextField: "Name",
+                dataValueField: "Id",
+                filter: "contains",
+                open: function (e) {
+                    document.getElementById("banner-toUpdate-row").style.display  = "none";
+                    document.getElementById("search-results-update-row").style.visibility = "hidden";
+                }
+            });
+
+            $("#delete-form #selectedCategoryId").kendoDropDownList({
+                dataSource: {
+                    transport: {
+                        read: {
+                            url: '@Url.Action("GetCategories", "CVBanners")',
+                            dataType: "json"
+                        }
+                    }
+                },
+                dataTextField: "Name",
+                dataValueField: "Id",
+                filter: "contains",
+                open: function (e) {
+                    document.getElementById("search-results-delete-row").style.visibility = "hidden";
+                }
+            });
+
+
+            $("#update-form #categoryId").kendoDropDownList({
+                dataSource: {
+                    transport: {
+                        read: {
+                            url: '@Url.Action("GetCategories", "CVBanners")',
+                            dataType: "json"
+                        }
+                    }
+                },
+                dataTextField: "Name",
+                dataValueField: "Id",
+                filter: "contains",
+            });
+
+            $("#update-form #bannerName").kendoTextBox({
+                    maxLength: 100,
+            });
+        })
+
+
+        function searchBannersToUpdate() {
+
+            var spinner = startSpinner("spinningWheelSearchUpdate");
+
+            const element = $('#update-collapsible-row');
+            $('html, body').animate({
+                scrollTop: $(element).offset().top
+            }, 900);
+
+            document.getElementById("search-results-update-row").style.visibility = "hidden";
+            document.getElementById("banner-toUpdate-row").style.display = "none";
+
+            var selectedCategoryId = $("#update-form #selectedCategoryId").data("kendoDropDownList").value();
+
+            $("#update-form #selectedBannerId").kendoDropDownList({
+                  dataSource: {
+                       transport: {
+                           read: {
+                            url: '@Url.Action("GetBannersOfCategory", "CVBanners")?categoryId=' + selectedCategoryId,
+                               dataType: "json"
+                           }
+                       }
+                  },
+                optionLabel: "Filter by banner name ...",
+                filter: "contains",
+                dataTextField: "Name",
+                dataValueField: "Id",
+                change: function (e) {
+                    if (this.value()) {
+                        searchBannerToUpdate(this.value());
+                    }
+                    else {
+                        searchBannersToUpdate();
+                    }
+                        
+                }
+            });
+
+
+            var bannersList = document.getElementById("banners-update-list");
+            bannersList.innerHTML = '';
+
+            $.getJSON('@Url.Action("GetBannersOfCategory", "CVBanners")?categoryId=' + selectedCategoryId, function (results) {
+
+                //document.getElementById("search-results").innerHTML = "(" + results.length + " banners found)";
+
+                for (var i = 0; i < results.length; i = i+3) {
+
+                    var bannerFileName = results[i].Filename;
+                    var bannerId = results[i].Id;
+                    var bannerName = results[i].Name;
+
+                    var newRow = document.createElement('div');
+                    newRow.classList.add('row', 'img-row', 'content-center');
+
+                    var newColumn = '';
+
+                    newColumn = newColumn +
+                        '<div class="col-md-4" style="text-align:center;">' +
+                        '<div>' + bannerName + '</div>' +
+                        '<div><img class="small-banner-grid" src = "../img/banners/' + bannerFileName + '" id="banner-' + bannerId + '"></div>' +
+                        '<div id="spinningWheelSelectBanner-' + bannerId + '"></div>' +
+                        '<div class="k-button k-primary select-btn" onclick="selectBannerToUpdate(\'' + bannerId + '\')">Select</div>' +
+                        '</div>';
+
+                    if (i + 1 < results.length) {
+                        bannerFileName = results[i + 1].Filename;
+                        bannerId = results[i + 1].Id;
+                        bannerName = results[i + 1].Name;
+
+                        newColumn = newColumn +
+                            '<div class="col-md-4">' +
+                            '<div>' + bannerName + '</div>' +
+                            '<div><img class="small-banner-grid" src = "../img/banners/' + bannerFileName + '" id="banner-' + bannerId + '"></div>' +
+                            '<div id="spinningWheelSelectBanner-' + bannerId + '"></div>' +
+                            '<div class="k-button k-primary select-btn" onclick="selectBannerToUpdate(\'' + bannerId + '\')">Select</div>' +
+                            '</div>';
+                    }
+
+                    if (i + 2 < results.length) {
+                        bannerFileName = results[i + 2].Filename;
+                        bannerId = results[i + 2].Id;
+                        bannerName = results[i + 2].Name;
+
+                        newColumn = newColumn +
+                            '<div class="col-md-4" style="text-align:center;">' +
+                            '<div>' + bannerName + '</div>' +
+                            '<div><img class="small-banner-grid" src = "../img/banners/' + bannerFileName + '" id="banner-' + bannerId + '"></div>' +
+                            '<div id="spinningWheelSelectBanner-' + bannerId + '"></div>' +
+                            '<div class="k-button k-primary select-btn" onclick="selectBannerToUpdate(\'' + bannerId + '\')">Select</div>' +
+                            '</div>';
+                    }
+
+                    //newColumn = newColumn + '<div class="col-lg-1"></div>';
+                    newRow.innerHTML = newColumn;
+                    bannersList.appendChild(newRow);
+
+                }
+
+                document.getElementById("search-results-update-row").style.visibility = "visible";
+
+                stopSpinner(spinner, "spinningWheelSearchUpdate");
+            });
+        }
+
+        function searchBannerToUpdate(bannerId) {
+
+            var spinner = startSpinner("spinningWheelSearchUpdate");
+
+            document.getElementById("search-results-update-row").style.visibility = "hidden";
+            document.getElementById("banner-toUpdate-row").style.display = "none";
+
+            var bannersList = document.getElementById("banners-update-list");
+            bannersList.innerHTML = '';
+
+            $.getJSON('@Url.Action("GetBannerById", "CVBanners")?Id=' + bannerId, function (results) {
+
+                var bannerFileName = results.Filename;
+                var bannerName = results.Name;
+
+                var newRow = document.createElement('div');
+                newRow.classList.add('row', 'img-row', 'content-center');
+
+                var newColumn = '<div class="col-lg-1"></div>' +
+                                '<div class="col-lg-3"></div>';
+
+                newColumn = newColumn +
+                    '<div class="col-lg-4" style="text-align:center;">' +
+                    '<div>' + bannerName + '</div>' +
+                    '<div><img class="small-banner-grid" src = "../img/banners/' + bannerFileName + '" id="banner-' + bannerId + '"></div>' +
+                    '<div id="spinningWheelSelectBanner-' + bannerId + '"></div>' +
+                    '<div class="k-button k-primary select-btn" onclick="selectBannerToUpdate(\'' + bannerId + '\')">Select</div>' +
+                    '</div>';
+
+                newRow.innerHTML = newColumn;
+                bannersList.appendChild(newRow);
+
+                document.getElementById("search-results-update-row").style.visibility = "visible";
+
+                stopSpinner(spinner, "spinningWheelSearchUpdate");
+            });
+        }
+
+        function selectBannerToUpdate(bannerId) {
+
+            var spinner = startSpinner("spinningWheelSelectBanner-" + bannerId);
+
+            document.getElementById("banner-toUpdate-row").style.display = "none";
+
+            $.get('@Url.Action("GetBannerById", "CVBanners")?Id=' + bannerId, (result) => {
+
+                document.forms["update-form"]["bannerId"].value = bannerId;
+
+                $("#update-form #categoryId").data("kendoDropDownList").value($("#update-form #selectedCategoryId").data("kendoDropDownList").value());
+
+                $("#update-form #bannerName").data("kendoTextBox").value(result.Name);
+
+                document.forms["update-form"]["bannerImageDisplay"].src = "../img/banners/" + result.Filename;
+
+                if (result.HasMobileVersion == true) {
+                    document.forms["update-form"]["bannerImageMobileDisplay"].src = "../img/banners/mobile/" + result.MobileFilename;
+                }
+                else {
+                    document.forms["update-form"]["bannerImageMobileDisplay"].src = "../img/no-mobile-banner.png";
+                }
+
+                document.getElementById("banner-toUpdate-row").style.display = "block";
+
+                const element = $('#banner-toUpdate-row');
+                $('html, body').animate({
+                    scrollTop: $(element).offset().top
+                }, 900);
+
+                stopSpinner(spinner, "spinningWheelSelectBanner-" + bannerId);
+
+            });
+        }
+
+        function searchBannersToDelete() {
+
+            var spinner = startSpinner("spinningWheelSearchDelete");
+
+            const element = $('#delete-collapsible-row');
+            $('html, body').animate({
+                scrollTop: $(element).offset().top
+            }, 900);
+
+            document.getElementById("search-results-delete-row").style.visibility = "hidden";
+
+            var selectedCategoryId = $("#delete-form #selectedCategoryId").data("kendoDropDownList").value();
+
+            $("#delete-form #selectedBannerId").kendoDropDownList({
+                dataSource: {
+                    transport: {
+                        read: {
+                            url: '@Url.Action("GetBannersOfCategory", "CVBanners")?categoryId=' + selectedCategoryId,
+                            dataType: "json"
+                        }
+                    }
+                },
+                optionLabel: "Filter by banner name ...",
+                filter: "contains",
+                dataTextField: "Name",
+                dataValueField: "Id",
+                change: function (e) {
+                    if (this.value()) {
+                        searchBannerToDelete(this.value());
+                    }
+                    else {
+                        searchBannersToDelete();
+                    }
+                }
+            });
+
+            var bannersList = document.getElementById("banners-delete-list");
+            bannersList.innerHTML = '';
+
+            $.getJSON('@Url.Action("GetBannersOfCategory", "CVBanners")?categoryId=' + selectedCategoryId, function (results) {
+
+                for (var i = 0; i < results.length; i++) {
+
+                    var bannerFileName = results[i].Filename;
+                    var bannerMobileFileName = results[i].MobileFilename;
+                    var bannerId = results[i].Id;
+                    var bannerName = results[i].Name;
+
+                    var newRow = document.createElement('div');
+                    newRow.classList.add('row', 'img-row-delete', 'content-center');
+
+                    newRow.innerHTML ='<div class="col-lg-12" style="text-align:center;">' +
+                        '<div>' + bannerName + '</div>' +
+                        '<div>'+
+                        '<img class="small-banner-grid" src = "../img/banners/' + bannerFileName + '" id="banner-' + bannerId + '">'+
+                        '<img class="mobile-small-banner-grid" src = "../img/banners/mobile/' + bannerMobileFileName + '" id="mobile-banner-' + bannerId + '">' +
+                        '</div>' +
+                        '<div id="spinningWheelDeleteBanner-' + bannerId + '"></div>' +
+                        '<div class="k-button k-primary select-btn" onclick="deleteBanner(\'' + bannerName + '\', \'' + bannerId + '\')">Delete</div>' +
+                        '</div>';
+
+                    bannersList.appendChild(newRow);
+                }
+
+                document.getElementById("search-results-delete-row").style.visibility = "visible";
+                stopSpinner(spinner, "spinningWheelSearchDelete");
+            });
+        }
+
+        function searchBannerToDelete(bannerId) {
+
+            var spinner = startSpinner("spinningWheelSearchDelete");
+
+            document.getElementById("search-results-delete-row").style.visibility = "hidden";
+
+            var bannersList = document.getElementById("banners-delete-list");
+            bannersList.innerHTML = '';
+
+            $.getJSON('@Url.Action("GetBannerById", "CVBanners")?Id=' + bannerId, function (results) {
+
+
+                var bannerFileName = results.Filename;
+                var bannerMobileFileName = results.MobileFilename;
+                var bannerName = results.Name;
+
+                var newRow = document.createElement('div');
+                newRow.classList.add('row', 'img-row-delete', 'content-center');
+
+                newRow.innerHTML = '<div class="col-lg-12" style="text-align:center;">' +
+                    '<div>' + bannerName + '</div>' +
+                    '<div>' +
+                    '<img class="small-banner-grid" src = "../img/banners/' + bannerFileName + '" id="banner-' + bannerId + '">' +
+                    '<img class="mobile-small-banner-grid" src = "../img/banners/mobile/' + bannerMobileFileName + '" id="mobile-banner-' + bannerId + '">' +
+                    '</div>' +
+                    '<div id="spinningWheelDeleteBanner-' + bannerId + '"></div>' +
+                    '<div class="k-button k-primary select-btn" onclick="deleteBanner(\'' + bannerName + '\', \'' + bannerId + '\')">Delete</div>' +
+                    '</div>';
+
+                bannersList.appendChild(newRow);
+
+                document.getElementById("search-results-delete-row").style.visibility = "visible";
+
+                stopSpinner(spinner, "spinningWheelSearchDelete");
+            });
+
+        }
+
+        function cancelUpdate() {
+
+            var spinner = startSpinner('spinningWheelUpdate');
+
+            const element = $('#update-collapsible-row');
+            $('html, body').animate({
+                scrollTop: $(element).offset().top
+            }, 900);
+
+            stopSpinner(spinner, 'spinningWheelUpdate');
+            document.getElementById("banner-toUpdate-row").style.display = "none";
+        }
+
+        function deleteBanner(bannerName, bannerId) {
+
+            var spinner = startSpinner('spinningWheelDeleteBanner-' + bannerId);
+
+            var confirmDelete = confirm("Confirm deleting ClientVantage banner image: " + bannerName + "?");
+
+            if (confirmDelete == true) {
+
+                $.post('@Url.Action("DeleteCVBanner", "CVBanners")?bannerId=' + bannerId, (result) => {
+                    if (result.success) {
+                        alert("ClientVantage banner: " + bannerName + ", was deleted successfully! ");
+                        window.location.href = "@Url.Action("Index", "CVBanners")";
+                    } else {
+                        alert(result.message);
+                        prepareLogList();
+                        stopSpinner(spinner, "spinningWheelDeleteBanner-" + bannerId);
+                    }
+                }).fail((xhr, textStatus, errorThrown) => {
+                    alert("Failure deleting ClientVantage banner: " + `${textStatus} : ${errorThrown}`);
+                    prepareLogList();
+                    stopSpinner(spinner, "spinningWheelDeleteBanner-" + bannerId);
+                });
+            }
+            else {
+                stopSpinner(spinner, "spinningWheelDeleteBanner-" + bannerId);
+            }
+        }
+
+        document.forms["upload-form"]["bannerImage"].addEventListener('change', function (e) {
+            if (e.target.files[0]) {
+                document.forms["upload-form"]["bannerImageDisplay"].src = URL.createObjectURL(e.target.files[0])
+            }
+        });
+
+        document.forms["upload-form"]["bannerImageMobile"].addEventListener('change', function (e) {
+            if (e.target.files[0]) {
+                document.forms["upload-form"]["bannerImageMobileDisplay"].src = URL.createObjectURL(e.target.files[0])
+            }
+        });
+
+        document.forms["update-form"]["bannerImage"].addEventListener('change', function (e) {
+            if (e.target.files[0]) {
+                document.forms["update-form"]["bannerImageDisplay"].src = URL.createObjectURL(e.target.files[0])
+            }
+        });
+      
+        document.forms["update-form"]["bannerImageMobile"].addEventListener('change', function (e) {
+            if (e.target.files[0]) {
+                document.forms["update-form"]["bannerImageMobileDisplay"].src = URL.createObjectURL(e.target.files[0])
+            }
+        });
+
+        function prepareLogList() {
+            setupPagination('log', 'log-list', '@Url.Action("Log", "CVBanners")?referrerUrl=CVBanners', ['Log', 'Username', 'Created'], 7);
+        }
+
+        function toggleLog() {
+            var logSection = document.getElementById("log-section");
+            var toggleBtn = document.getElementById("toggle-log-btn");
+    
+            if (logSection.classList.contains('hidden')) {
+                logSection.classList.remove('hidden');
+                toggleBtn.textContent = "Hide Log";
+            } else {
+                logSection.classList.add('hidden');
+                toggleBtn.textContent = "Show Log";
+            }
+        }
+
+        function startSpinner(targetId) {
+            var opts = {
+                lines: 30, // The number of lines to draw
+                length: 5, // The length of each line
+                width: 10, // The line thickness
+                radius: 20, // The radius of the inner circle
+                scale: 1, // Scales overall size of the spinner
+                corners: 1, // Corner roundness (0..1)
+                color: '#A0A0A0',
+                fadeColor: 'transparent', // CSS color or array of colors
+                speed: 1, // Rounds per second
+                rotate: 0, // The rotation offset
+                animation: 'spinner-line-fade-quick', // The CSS animation name for the lines
+                direction: 1, // 1: clockwise, -1: counterclockwise
+                zIndex: 2e9, // The z-index (defaults to 2000000000)
+                className: 'spinner', // The CSS class to assign to the spinner
+                top: '50%', // Top position relative to parent
+                left: '50%', // Left position relative to parent
+                shadow: '0 0 1px transparent', // Box-shadow for the lines
+                position: 'absolute' // Element positioning
+                //position: 'fixed' // Element positioning
+            };
+
+            var target = document.getElementById(targetId);
+            var spinner = new Spinner(opts).spin(target);
+            return spinner;
+        }
+
+        function stopSpinner(spinner, targetId) {
+            spinner.stop();
+        }
+
+        var coll = document.getElementsByClassName("collapsible-info");
+
+        for (var i = 0; i < coll.length; i++) {
+            coll[i].addEventListener("click", function () {
+                var clickedButton = this;
+                var clickedContent = this.nextElementSibling;
+                var isCurrentlyOpen = clickedButton.classList.contains("active");
+        
+                // Close all other collapsibles first
+                var allButtons = document.getElementsByClassName("collapsible-info");
+                for (var j = 0; j < allButtons.length; j++) {
+                    if (allButtons[j] !== clickedButton && allButtons[j].classList.contains("active")) {
+                        var otherButton = allButtons[j];
+                        var otherContent = allButtons[j].nextElementSibling;
+                
+                        otherButton.classList.remove("active");
+                
+                        // Capture in closure for collapse animation
+                        (function(content) {
+                            // Set to actual height first
+                            content.style.maxHeight = content.scrollHeight + "px";
+                    
+                            // Force browser to acknowledge the height change
+                            setTimeout(function() {
+                                content.style.maxHeight = "0px";
+                            }, 10);
+                        })(otherContent);
+                    }
+                }
+        
+                // Now handle the clicked button
+                if (isCurrentlyOpen) {
+                    // Collapsing the clicked section
+                    clickedButton.classList.remove("active");
+            
+                    // Set to actual height first
+                    clickedContent.style.maxHeight = clickedContent.scrollHeight + "px";
+            
+                    // Small delay to trigger transition
+                    setTimeout(function() {
+                        clickedContent.style.maxHeight = "0px";
+                    }, 10);
+                } else {
+                    // Expanding the clicked section
+                    clickedButton.classList.add("active");
+                    clickedContent.style.maxHeight = clickedContent.scrollHeight + "px";
+            
+                    // After transition completes, set to large value for dynamic content
+                    clickedContent.addEventListener('transitionend', function handler() {
+                        if (clickedContent.style.maxHeight !== "0px") {
+                            clickedContent.style.maxHeight = "10000px";
+                        }
+                        clickedContent.removeEventListener('transitionend', handler);
+                    });
+                }
+            });
+        }
+
+
+    </script>
+}
+
+<div class="wrapper wrapper-content animated fadeInRight">
+    <div class="row">
+        <div class="col-12 col-lg-12 col-sm-12 col-xl-12 content-center">
+            <div class="alert alert-success" id="success-alert" style="display:none"></div>
+            <div class="alert alert-danger" id="danger-alert" style="display:none"></div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="ibox">
+                <div class="ibox-content">
+                    <div class="row">
+                        <div class="col-lg-12 content-center">
+                            <h4>This tool is to upload, edit, and delete ClientVantage banners on <span style="color: red;">VantageSuite</span> website</h4>
+                        </div>
+                    </div>
+                    <div class="row banners-action" style="margin-top: 50px;">
+                        <div class="col-12 col-lg-12 col-sm-12 col-xl-12 collapsible-col content-center">
+                            <button type="button" class="collapsible-info">Upload ClientVantage Banner</button>
+                            <div class="content">
+                                    <form id="upload-form" class="content-center w-60" name="upload-form" method="post" action="@Url.Action("UploadCVBanner", "CVBanners")" enctype="multipart/form-data" style="padding-top: 5px; padding-bottom: 50px;">
+                                    <div class="row form-row">
+                                         <div class="col-lg-2 form-label-col">
+                                             <label for="categoryId" class="control-label control-label-center">Category:</label>
+                                         </div>
+                                         <div class="col-lg-10">
+                                                <input id="categoryId" name="categoryId" style="width: 100%;" />
+                                         </div>
+                                    </div>
+                                    <div class="row form-row">
+                                        <div class="col-lg-2 form-label-col">
+                                             <label for="bannerName" class="control-label control-label-center">Banner Name:</label>
+                                         </div>
+                                         <div class="col-lg-10">
+                                              <input id="bannerName" name="bannerName" style="width: 100%;" />
+                                         </div>
+                                    </div>
+                                    <div class="row form-row">
+                                         <div class="col-lg-2 form-label-col">
+                                         </div>
+                                         <div class="col-lg-10" style="text-align: left;">
+                                                <img src="../img/no-banner.png"  class="small-banner" id="bannerImageDisplay">
+                                         </div>
+                                    </div>
+                                    <div class="row form-row">
+                                         <div class="col-lg-2 form-label-col">
+                                                <label for="bannerImage" class="control-label control-label-center">Banner:</label>
+                                         </div>
+                                         <div class="col-lg-10">
+                                                <input class="form-control form-control-sm" id="bannerImage" name="bannerImage" type="file" accept="image/*">
+                                         </div>
+                                    </div>
+                                    <div class="row form-row">
+                                         <div class="col-lg-2 form-label-col">
+                                         </div>
+                                         <div class="col-lg-10" style="text-align: left;">
+                                                <img src="../img/no-mobile-banner.png" class="mobile-small-banner" id="bannerImageMobileDisplay">
+                                         </div>
+                                    </div>
+                                    <div class="row form-row">
+                                         <div class="col-lg-2 form-label-col">
+                                             <label for="bannerImageMobile" class="control-label control-label-center">Mobile Banner:</label>
+                                         </div>
+                                         <div class="col-lg-10">
+                                                <input class="form-control form-control-sm" id="bannerImageMobile" name="bannerImageMobile" type="file" accept="image/*">
+                                         </div>
+                                    </div>
+                                    <div class="row form-row" style="padding-top: 20px;">
+                                        <div class="col-lg-12 content-center">
+                                            <div id="spinningWheelUpload"></div>
+                                            <button type="submit" class="k-button k-primary submit-btn" onClick="this.form.submit(); this.disabled=true; startSpinner('spinningWheelUpload')">Upload</button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row banners-action" style="margin-top: 50px;" id="update-collapsible-row">
+                        <div class="col-12 col-lg-12 col-sm-12 col-xl-12 collapsible-col content-center">
+                            <button type="button" class="collapsible-info">Update ClientVantage Banner</button>
+                            <div class="content">
+                                <form id="update-form" class="content-center" name="update-form" method="post" action="@Url.Action("UpdateCVBanner", "CVBanners")" enctype="multipart/form-data" style="padding-top: 5px; padding-bottom: 50px;">
+                                    <input type="hidden" id="bannerId" name="bannerId">
+                                    <div class="row form-row">
+                                         <div class="col-lg-3"></div>
+                                         <div class="col-lg-6">
+                                              <div class="row form-row">
+                                                  <div class="col-lg-2 form-label-col">
+                                                      <label for="selectedCategoryId" class="control-label control-label-center">Search by Category:</label>
+                                                  </div>
+                                                  <div class="col-lg-10">
+                                                      <input id="selectedCategoryId" name="selectedCategoryId" style="width: 100%;" />
+                                                  </div>
+                                              </div>
+                                              <div class="row form-row">
+                                                  <div class="col-lg-12">
+                                                      <div id="spinningWheelSearchUpdate"></div>
+                                                      <div class="k-button k-primary submit-btn" onclick="searchBannersToUpdate()">Search</div>
+                                                  </div>
+                                              </div>
+                                         </div>
+                                         <div class="col-lg-3"></div>
+                                    </div>
+                                    <div class="row" id="search-results-update-row" style="visibility:hidden;">
+                                         <div class="col-12 col-lg-12 col-sm-12 col-xl-12">
+                                             <div class="row">
+                                                 <div class="col-lg-3"></div>
+                                                 <div class="col-lg-6">
+                                                      <input id="selectedBannerId" name="selectedBannerId" style="width: 100%;" />
+                                                 </div>
+                                                 <div class="col-lg-3"></div>  
+                                              </div>
+                                              <div class="row">
+                                                    <div class="col-12 col-lg-12 col-sm-12 col-xl-12 content-center" id="banners-update-list"></div>
+                                              </div>
+                                         </div>
+                                    </div>
+                                    <div class="row form-row" id="banner-toUpdate-row" style="display:none;">
+                                         <div class="col-lg-3"></div>
+                                         <div class="col-lg-6" >
+                                              <div class="row form-row">
+                                                  <div class="col-lg-12">
+                                                      <h5>Fill out this form to update the above selected banner:</h5>
+                                                  </div>
+                                              </div>
+                                              <div class="row form-row">
+                                                    <div class="col-lg-12" style=" background-color: #E8E8E8; padding-bottom: 10px;">
+                                                        <div class="row form-row">
+                                                            <div class="col-lg-2 form-label-col">
+                                                                <label for="categoryId" class="control-label control-label-center">Category:</label>
+                                                            </div>
+                                                            <div class="col-lg-10">
+                                                                <input id="categoryId" name="categoryId" style="width: 100%;" />
+                                                            </div>
+                                                        </div>
+                                                        <div class="row form-row">
+                                                            <div class="col-lg-2 form-label-col">
+                                                                <label for="bannerName" class="control-label control-label-center">Banner Name:</label>
+                                                            </div>
+                                                            <div class="col-lg-10">
+                                                                <input id="bannerName" name="bannerName" style="width: 100%;" />
+                                                            </div>
+                                                        </div>
+                                                        <div class="row form-row">
+                                                            <div class="col-lg-2 form-label-col">
+                                                                <label class="control-label control-label-center">Banner:</label>
+                                                            </div>
+                                                            <div class="col-lg-10" style="text-align: left;">
+                                                                <img class="small-banner" id="bannerImageDisplay">
+                                                            </div>
+                                                        </div>
+                                                        <div class="row form-row">
+                                                            <div class="col-lg-2 form-label-col">
+                                                                <label for="bannerImage" class="control-label control-label-center">New Banner:</label>
+                                                            </div>
+                                                            <div class="col-lg-10">
+                                                                <input class="form-control form-control-sm" id="bannerImage" name="bannerImage" type="file" accept="image/*">
+                                                            </div>
+                                                        </div>
+                                                        <div class="row form-row">
+                                                            <div class="col-lg-2 form-label-col">
+                                                                <label class="control-label control-label-center">Mobile Banner:</label>
+                                                            </div>
+                                                            <div class="col-lg-10" style="text-align: left;">
+                                                                <img src="../img/no-mobile-banner.png" class="mobile-small-banner" id="bannerImageMobileDisplay">
+                                                            </div>
+                                                        </div>
+                                                        <div class="row form-row">
+                                                            <div class="col-lg-2 form-label-col">
+                                                                <label for="bannerImageMobile" class="control-label control-label-center">New Mobile Banner:</label>
+                                                            </div>
+                                                            <div class="col-lg-10">
+                                                                <input class="form-control form-control-sm" id="bannerImageMobile" name="bannerImageMobile" type="file" accept="image/*">
+                                                            </div>
+                                                        </div>
+                                                        <div class="row form-row" style="padding-top: 20px;">
+                                                            <div class="col-lg-12 content-center">
+                                                                <div id="spinningWheelUpdate"></div>
+                                                                <button type="submit" class="k-button k-primary submit-btn" onClick="this.form.submit(); this.disabled=true; startSpinner('spinningWheelUpdate')">Update</button>
+                                                                <div class="k-button k-primary submit-btn" onClick="cancelUpdate();">Cancel</div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                              </div>
+                                            </div>
+                                         <div class="col-lg-3"></div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row banners-action" style="margin-top: 50px;" id="delete-collapsible-row">
+                        <div class="col-12 col-lg-12 col-sm-12 col-xl-12 collapsible-col content-center">
+                            <button type="button" class="collapsible-info">Delete ClientVantage Banner</button>
+                            <div class="content">
+                                <form id="delete-form" class="content-center" name="delete-form" method="post" action="@Url.Action("DeleteCVBanner", "CVBanners")" enctype="multipart/form-data" style="padding-top: 5px; padding-bottom: 50px;">
+                                    <div class="row form-row">
+                                         <div class="col-lg-3"></div>
+                                         <div class="col-lg-6">
+                                              <div class="row form-row">
+                                                  <div class="col-lg-2 form-label-col">
+                                                      <label for="selectedCategoryId" class="control-label control-label-center">Search by Category:</label>
+                                                  </div>
+                                                  <div class="col-lg-10">
+                                                      <input id="selectedCategoryId" name="selectedCategoryId" style="width: 100%;" />
+                                                  </div>
+                                              </div>
+                                              <div class="row form-row">
+                                                  <div class="col-lg-12">
+                                                      <div id="spinningWheelSearchDelete"></div>
+                                                      <div class="k-button k-primary submit-btn" onclick="searchBannersToDelete()">Search</div>
+                                                  </div>
+                                              </div>
+                                         </div>
+                                         <div class="col-lg-3"></div>
+                                    </div>
+                                    <div class="row" id="search-results-delete-row" style="visibility:hidden;">
+                                         <div class="col-12 col-lg-12 col-sm-12 col-xl-12">
+                                             <div class="row">
+                                                 <div class="col-lg-3"></div>
+                                                 <div class="col-lg-6">
+                                                        <input id="selectedBannerId" name="selectedBannerId" style="width: 100%;" />
+                                                 </div>
+                                                 <div class="col-lg-3"></div>  
+                                              </div>
+                                              <div class="row">
+                                                    <div class="col-12 col-lg-12 col-sm-12 col-xl-12 content-center" id="banners-delete-list"></div>
+                                              </div>
+                                         </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row" style="margin-top: 120px;">
+                        <div class="col-lg-12 content-center">
+                            <button type="button" id="toggle-log-btn" class="k-button k-primary" style="font-size: 11px; padding: 5px 15px;" onclick="toggleLog()">Hide Log</button>
+                        </div>
+                    </div>
+                    <div class="row" id="log-section">
+                        <div class="col-lg-1"></div>
+                        <div class="col-lg-10 content-center">
+                            <div id="log" class="content-center">
+                                <div class="bs-ObjectList-rows" id="log-list">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-1"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<style>
+
+    .content-center {
+        margin: 0px auto 0px auto;
+        text-align: center;
+    }
+
+    .wrapper-content {
+        padding: 10px 10px 20px;
+    }
+
+    .ibox-title {
+        padding: 15px 0px 15px;
+        color: #1565C0;
+        border: none;
+    }
+
+    .ibox-content {
+        padding: 7px 15px 15px 15px;
+    }
+
+    .k-button {
+        font-size: 1.5rem;
+    }
+
+    .breadcrumb {
+        display: none;
+    }
+
+    label {
+        margin-bottom: 0px;
+    }
+
+    .form-row {
+        margin-top: 20px;
+        vertical-align: central;
+        display: flex;
+    }
+
+    .form-label-col {
+        display: flex;
+        padding-right: 0;
+        justify-content: flex-end;
+    }
+
+    .control-label {
+        color: #556375;
+        font-size: 1.3rem;
+    }
+
+    .control-label-center {
+        display: flex;
+        margin-top: auto;
+        margin-bottom: auto;
+    }
+
+    .form-control {
+        font-size: 1.3rem;
+        border-color: #ddd;
+    }
+
+    .bs-ObjectList-row {
+        border-radius: 0.25rem;
+    }
+
+    .bs-ObjectList-row--header {
+        position: relative;
+        background-color: #E8E8E8;
+    }
+
+        .bs-ObjectList-row--header .bs-ObjectList-cell {
+            font-weight: bold;
+        }
+
+    .bs-ObjectList-row .bs-ObjectList-cell {
+        width: 20%;
+        text-align: center;
+    }
+
+        .bs-ObjectList-row .bs-ObjectList-cell:last-child {
+            width: 20%;
+            text-align: center;
+        }
+
+        .bs-ObjectList-row .bs-ObjectList-cell:first-child {
+            width: 60%;
+            text-align: left;
+            white-space: pre-wrap;
+        }
+
+    .bs-ObjectList-child, .bs-ObjectList-parent, .bs-ObjectList-row {
+        display: table-row;
+        transition: background-color .15s ease 0s;
+    }
+
+    .bs-ObjectList-cell {
+        display: table-cell;
+        position: relative;
+        padding: 9px 10px;
+        color: #525f7f;
+        font-weight: 400;
+        line-height: 22px;
+        vertical-align: top;
+        white-space: nowrap;
+    }
+
+    h4 {
+        color: darkblue;
+    }
+
+    .btn {
+        padding: 4px 12px;
+    }
+
+    .collapsible-col {
+        padding-left: 5px;
+        padding-right: 5px;
+    }
+
+    .collapsible-info {
+        background-color: #2e6da4;
+        color: white;
+        cursor: pointer;
+        padding: 8px 20px 8px 20px;
+        width: 60%;
+        border: none;
+        text-align: left;
+        outline: none;
+        font-size: 15px;
+    }
+
+    .banners-action .active, .collapsible-info:hover {
+        background-color: #337ab7;
+    }
+
+    .collapsible-info:after {
+        content: '\002B';
+        color: white;
+        font-weight: bold;
+        float: right;
+        margin-left: 5px;
+    }
+
+    .banners-action .active:after {
+        content: "\2212";
+    }
+
+    .banners-action p5 {
+        font-weight: bold;
+    }
+
+    .content {
+        padding: 5px 18px;
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.2s ease-out;
+        background-color: #f1f1f1;
+    }
+
+    #search-results-update-row, #search-results-delete-row {
+        margin-top: 70px;
+        color: dimgrey;
+    }
+
+    .k-dropdown, .k-textbox {
+        font-size: 12px;
+    }
+
+    .submit-btn {
+        margin-top: 10px;
+        margin: 10px;
+        font-size: 13px;
+    }
+
+    .k-footer {
+        margin-top: 20px;
+        font-weight: bold;
+        font-size: 12px;
+    }
+
+    .search-btn {
+        margin-top: 40px;
+    }
+
+    .small-banner, .small-banner-grid {
+        border-color: #CCCCCC;
+        border-width: 1px;
+        border-style: Solid;
+        height: 75px;
+        width: 300px;
+    }
+
+    .mobile-small-banner, .mobile-small-banner-grid {
+        border-color: #CCCCCC;
+        border-width: 1px;
+        border-style: Solid;
+        width: 150px;
+        height: 125px;
+    }
+
+    .banner-img-col {
+        text-align: right;
+    }
+
+   .img-row {
+       display: -ms-flexbox; /* IE10 */
+       display: flex;
+       -ms-flex-wrap: wrap; /* IE10 */
+       flex-wrap: wrap;
+       padding-bottom: 30px;
+   }
+
+   .img-row-delete {
+       display: -ms-flexbox; /* IE10 */
+       display: flex;
+       -ms-flex-wrap: wrap; /* IE10 */
+       flex-wrap: wrap;
+       padding-top: 15px;
+       padding-bottom: 40px;
+       border-top: 1px Solid #E0E0E0;
+   }
+
+   .column {
+       -ms-flex: 33%; /* IE10 */
+       flex: 33%;
+       max-width: 33%;
+       padding: 8px;
+   }
+
+   .small-banner, .mobile-small-banner, .small-banner-grid, .mobile-small-banner-grid {
+        margin: 8px;
+        position:relative;
+        -webkit-transition: transform .4s ease-out;
+        transition: transform .4s ease-out;
+   }
+
+    .small-banner:hover, .small-banner:active, .mobile-small-banner:hover, .mobile-small-banner:active {
+       -webkit-transform: scale(2);
+        transform: scale(2);
+        z-index:10;
+    }
+
+    .small-banner-grid:hover, .small-banner-grid:active, .mobile-small-banner-grid:hover, .mobile-small-banner-grid:active {
+       -webkit-transform: scale(1.5);
+        transform: scale(1.5);
+        z-index:10;
+    }
+
+    .w-60 {
+        width: 60%;
+    }
+
+    .fa-trash, .fa-edit {
+        color: #007bff;
+        margin-left: 15px;
+        position:relative;
+        -webkit-transition: transform .3s ease-out;
+        transition: transform .3s ease-out;
+    }
+
+     .fa-trash:hover, .fa-trash:active, .fa-edit:hover, .fa-edit:active {
+         cursor: pointer;
+         -webkit-transform: scale(2);
+         transform: scale(2);
+         z-index:10;
+     }
+
+     #banners-update-list{
+         margin-top: 30px;
+         padding-top: 20px;
+         padding-bottom: 20px;
+         overflow-y: scroll;
+         height: 400px;
+         border: 1px Solid #E0E0E0;
+     }
+
+     #banners-delete-list{
+         margin-top: 30px;
+         padding-bottom: 20px;
+         overflow-y: scroll;
+         height: 600px;
+         border: 1px Solid #E0E0E0;
+     }
+
+     #banner-toUpdate-row {
+         margin-top: 90px;
+     }
+
+     .select-btn {
+         font-size: 10px;
+     }
+
+
+        .col-md-4 {
+            flex: 0 0 auto;
+            width: 33.33333333%;
+        }
+
+    .bs-ObjectList-rows {
+        display: table;
+        width: 100%;
+    }
+
+    #log-section {
+        margin-top: 20px;
+        transition: all 0.4s ease-in-out;
+        opacity: 1;
+        max-height: 2000px;
+        overflow: hidden;
+    }
+
+    #log-section.hidden {
+        opacity: 0;
+        max-height: 0;
+        margin-top: 0 !important;
+        padding-top: 0;
+        padding-bottom: 0;
+    }
+
+   .content {
+        padding: 5px 18px;
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.5s ease-in-out, padding 0.5s ease-in-out;
+        background-color: #f1f1f1;
+    }
+
+    .banners-action .content {
+        padding-top: 0;
+        padding-bottom: 0;
+    }
+
+    .banners-action .active + .content {
+        padding-top: 5px;
+        padding-bottom: 18px;
+    }
+
+
+</style>
