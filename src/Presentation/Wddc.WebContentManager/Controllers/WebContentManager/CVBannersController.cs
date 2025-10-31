@@ -612,12 +612,12 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                         imageMobileFile.Delete();
                         thumbnailImageMobileFile.Delete();
                     }
-                    else
-                    {
-                        Log.Logger.Error($"Error deleting ClientVantage mobile banner {banner.MobileFilename} by {User.Identity.Name.Substring(7).ToLower()}: file not found");
-                        _logger.Error($"Error deleting ClientVantage mobile banner {banner.MobileFilename}: file not found", null, User, "WebOrdering");
-                        return Json(new { success = false, message = "Failure deleting ClientVantage mobile banner: " + banner.MobileFilename + ", file not found" });
-                    }
+                    //else
+                    //{
+                    //    Log.Logger.Error($"Error deleting ClientVantage mobile banner {banner.MobileFilename} by {User.Identity.Name.Substring(7).ToLower()}: file not found");
+                    //    _logger.Error($"Error deleting ClientVantage mobile banner {banner.MobileFilename}: file not found", null, User, "WebOrdering");
+                    //    return Json(new { success = false, message = "Failure deleting ClientVantage mobile banner: " + banner.MobileFilename + ", file not found" });
+                    //}
                 }
                 catch (IOException ex)
                 {
