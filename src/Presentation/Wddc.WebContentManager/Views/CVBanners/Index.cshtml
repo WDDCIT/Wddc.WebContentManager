@@ -20,12 +20,15 @@
         $(document).ready(function () {
             prepareLogList();
 
-            // Handle success/error alerts
-            if ('@ViewBag.response') {
-                if ('@ViewBag.response' == "Success") {
-                    showAlert('success', '@ViewBag.Message');
+            // UPDATED: Handle success/error alerts from TempData (one-time only)
+            var alertType = '@TempData["AlertType"]';
+            var alertMessage = '@TempData["AlertMessage"]';
+        
+            if (alertType && alertMessage) {
+                if (alertType === "Success") {
+                    showAlert('success', alertMessage);
                 } else {
-                    showAlert('error', '@ViewBag.Message');
+                    showAlert('error', alertMessage);
                 }
             }
 

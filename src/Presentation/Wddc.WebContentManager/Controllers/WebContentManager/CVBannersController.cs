@@ -45,15 +45,14 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             _hostingEnvironment = hostingEnvironment;
         }
 
-        public ActionResult Index(string response, string message)
+        public ActionResult Index()
         {
             string tempPath = Path.Combine(this._hostingEnvironment.WebRootPath, "img\\banners");
 
             if (Directory.Exists(tempPath))
                 Directory.Delete(tempPath, true);
 
-            ViewBag.response = response;
-            ViewBag.Message = message;
+            // TempData is automatically available to the view
             return View();
         }
 
@@ -148,25 +147,31 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
         [HttpPost]
         public async Task<ActionResult> UploadCVBannerAsync(int categoryId, string bannerName, IFormFile bannerImage, IFormFile bannerImageMobile)
         {
-            if (string.IsNullOrEmpty(bannerName))
+            if (string.IsNullOrWhiteSpace(bannerName))
             {
-                return RedirectToAction("Index", new { response = "Failure", message = "Banner name must be filled out!" });
+                TempData["AlertType"] = "Failure";
+                TempData["AlertMessage"] = "Banner name must be filled out!";
+                return RedirectToAction("Index");
             }
 
             if (bannerImage == null)
             {
-                return RedirectToAction("Index", new { response = "Failure", message = "You must select a banner to upload!" });
+                TempData["AlertType"] = "Failure";
+                TempData["AlertMessage"] = "You must select a banner to upload!";
+                return RedirectToAction("Index");
             }
 
             List<Banner> banners = await _clientVantageBannersService.GetBanners();
-            if (banners.Where(_ => _.Name.Trim() == bannerName.Trim()).Count() > 0)
+            if (banners.Any(b => b.Name.Trim().Equals(bannerName.Trim(), StringComparison.OrdinalIgnoreCase)))
             {
-                return RedirectToAction("Index", new { response = "Failure", message = "Banner name selected already exists! Type in a different one" });
+                TempData["AlertType"] = "Failure";
+                TempData["AlertMessage"] = "Banner name already exists! Please choose a different name.";
+                return RedirectToAction("Index");
             }
 
             List<Setting> settings = await _clientVantageBannersService.GetSettings();
             List<Category> categories = await _clientVantageBannersService.GetCategories();
-            string catgory = categories.SingleOrDefault(_ => _.Id == categoryId).Name;
+            string category = categories.SingleOrDefault(c => c.Id == categoryId)?.Name ?? "Unknown";
 
             char[] invalidList = Path.GetInvalidFileNameChars();
 
@@ -181,86 +186,99 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             string bannerFileName = bannerName.Trim();
             string mobileBannerFileName = bannerName.Trim() + "-mobile";
 
-            Banner banner = new Banner();
-            banner.Name = bannerName;
-            banner.Active = true;
-            banner.IsNew = true;
-
-            Banner_Category_Mapping bannerCategoryMapping = new Banner_Category_Mapping();
-            bannerCategoryMapping.CategoryId = categoryId;
-
-            if (bannerImage != null)
+            Banner banner = new Banner
             {
-                if (bannerImage.ContentType != "image/jpg" && bannerImage.ContentType != "image/jpeg" && bannerImage.ContentType != "image/pjpeg" &&
-                    bannerImage.ContentType != "image/gif" && bannerImage.ContentType != "image/x-png" && bannerImage.ContentType != "image/png")
-                    return RedirectToAction("Index", new { response = "Failure", message = "File uploaded must be an image type (jpg, jpeg, pjpeg, gif, png)" });
+                Name = bannerName,
+                Active = true,
+                IsNew = true
+            };
 
-                var path = settings.SingleOrDefault(_ => _.Name == "banner.path").Value;
-                var thumbnailPath = settings.SingleOrDefault(_ => _.Name == "banner.path.thumbnails").Value;
+            Banner_Category_Mapping bannerCategoryMapping = new Banner_Category_Mapping
+            {
+                CategoryId = categoryId
+            };
 
-                string imageUrlExt = Path.GetExtension(bannerImage.FileName);
-
-                string imagePath = Path.Combine(@path, bannerFileName + imageUrlExt);
-                string thumbnailImagePath = Path.Combine(@thumbnailPath, bannerFileName + imageUrlExt);
-
-                if (!Directory.Exists(path))
-                    Directory.CreateDirectory(path);
-
-                if (!Directory.Exists(thumbnailPath))
-                    Directory.CreateDirectory(thumbnailPath);
-
-                try
-                {
-                    using (var stream = new FileStream(imagePath, FileMode.Create))
-                    {
-                        await bannerImage.CopyToAsync(stream);
-                    }
-
-                    using var image = Image.Load(bannerImage.OpenReadStream());
-                    image.Mutate(x => x.Resize(300, 75));
-                    image.Save(thumbnailImagePath);
-
-                    banner.Filename = bannerFileName + imageUrlExt;
-                }
-                catch (Exception ex)
-                {
-                    Log.Logger.Error($"Error uploading ClientVantage banner {bannerFileName} by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
-                    _logger.Error($"Error uploading ClientVantage banner {bannerFileName}: {ex.Message.Substring(0, 300)}", ex, User, "WebOrdering");
-                    return RedirectToAction("Index", new { response = "Failure", message = "Failure uploading ClientVantage banner: " + bannerFileName + ": " + ex.Message.Substring(0, 300) });
-                }
+            // Validate and upload main banner image
+            if (bannerImage.ContentType != "image/jpg" && bannerImage.ContentType != "image/jpeg" &&
+                bannerImage.ContentType != "image/pjpeg" && bannerImage.ContentType != "image/gif" &&
+                bannerImage.ContentType != "image/x-png" && bannerImage.ContentType != "image/png")
+            {
+                TempData["AlertType"] = "Failure";
+                TempData["AlertMessage"] = "Banner file must be an image type (jpg, jpeg, png, gif)";
+                return RedirectToAction("Index");
             }
 
+            var path = settings.SingleOrDefault(s => s.Name == "banner.path")?.Value;
+            var thumbnailPath = settings.SingleOrDefault(s => s.Name == "banner.path.thumbnails")?.Value;
+
+            string imageUrlExt = Path.GetExtension(bannerImage.FileName);
+            string imagePath = Path.Combine(@path, bannerFileName + imageUrlExt);
+            string thumbnailImagePath = Path.Combine(@thumbnailPath, bannerFileName + imageUrlExt);
+
+            if (!Directory.Exists(path))
+                Directory.CreateDirectory(path);
+
+            if (!Directory.Exists(thumbnailPath))
+                Directory.CreateDirectory(thumbnailPath);
+
+            try
+            {
+                using (var stream = new FileStream(imagePath, FileMode.Create))
+                {
+                    await bannerImage.CopyToAsync(stream);
+                }
+
+                using var image = Image.Load(bannerImage.OpenReadStream());
+                image.Mutate(x => x.Resize(300, 75));
+                image.Save(thumbnailImagePath);
+
+                banner.Filename = bannerFileName + imageUrlExt;
+            }
+            catch (Exception ex)
+            {
+                Log.Logger.Error($"Error uploading ClientVantage banner {bannerFileName} by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
+                _logger.Error($"Error uploading ClientVantage banner {bannerFileName}: {ex.Message}", ex, User, "WebOrdering");
+
+                TempData["AlertType"] = "Failure";
+                TempData["AlertMessage"] = $"Failed to upload banner '{bannerFileName}': {ex.Message}";
+                return RedirectToAction("Index");
+            }
+
+            // Handle mobile banner if provided
             if (bannerImageMobile != null)
             {
-                if (bannerImageMobile.ContentType != "image/jpg" && bannerImageMobile.ContentType != "image/jpeg" && bannerImageMobile.ContentType != "image/pjpeg" &&
-                    bannerImageMobile.ContentType != "image/gif" && bannerImageMobile.ContentType != "image/x-png" && bannerImageMobile.ContentType != "image/png")
-                    return RedirectToAction("Index", new { response = "Failure", message = "File uploaded must be an image type (jpg, jpeg, pjpeg, gif, png)" });
+                if (bannerImageMobile.ContentType != "image/jpg" && bannerImageMobile.ContentType != "image/jpeg" &&
+                    bannerImageMobile.ContentType != "image/pjpeg" && bannerImageMobile.ContentType != "image/gif" &&
+                    bannerImageMobile.ContentType != "image/x-png" && bannerImageMobile.ContentType != "image/png")
+                {
+                    TempData["AlertType"] = "Failure";
+                    TempData["AlertMessage"] = "Mobile banner file must be an image type (jpg, jpeg, png, gif)";
+                    return RedirectToAction("Index");
+                }
 
-                var path = settings.SingleOrDefault(_ => _.Name == "banner.path.mobile").Value;
-                var thumbnailPath = settings.SingleOrDefault(_ => _.Name == "banner.path.mobile.thumbnails").Value;
+                var mobilePath = settings.SingleOrDefault(s => s.Name == "banner.path.mobile")?.Value;
+                var mobileThumbnailPath = settings.SingleOrDefault(s => s.Name == "banner.path.mobile.thumbnails")?.Value;
 
                 string imageMobileUrlExt = Path.GetExtension(bannerImageMobile.FileName);
+                string mobileImagePath = Path.Combine(@mobilePath, mobileBannerFileName + imageMobileUrlExt);
+                string mobileThumbnailImagePath = Path.Combine(@mobileThumbnailPath, mobileBannerFileName + imageMobileUrlExt);
 
-                string imagePath = Path.Combine(@path, mobileBannerFileName + imageMobileUrlExt);
-                string thumbnailImagePath = Path.Combine(@thumbnailPath, mobileBannerFileName + imageMobileUrlExt);
+                if (!Directory.Exists(mobilePath))
+                    Directory.CreateDirectory(mobilePath);
 
-                if (!Directory.Exists(path))
-                    Directory.CreateDirectory(path);
-
-                if (!Directory.Exists(thumbnailPath))
-                    Directory.CreateDirectory(thumbnailPath);
+                if (!Directory.Exists(mobileThumbnailPath))
+                    Directory.CreateDirectory(mobileThumbnailPath);
 
                 try
                 {
-                    using (var stream = new FileStream(imagePath, FileMode.Create))
+                    using (var stream = new FileStream(mobileImagePath, FileMode.Create))
                     {
                         await bannerImageMobile.CopyToAsync(stream);
                     }
 
                     using var image = Image.Load(bannerImageMobile.OpenReadStream());
-                    //image.Mutate(x => x.Resize(200, 167));
                     image.Mutate(x => x.Resize(175, 146));
-                    image.Save(thumbnailImagePath);
+                    image.Save(mobileThumbnailImagePath);
 
                     banner.HasMobileVersion = true;
                     banner.MobileFilename = mobileBannerFileName + imageMobileUrlExt;
@@ -268,8 +286,11 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                 catch (Exception ex)
                 {
                     Log.Logger.Error($"Error uploading ClientVantage mobile banner {mobileBannerFileName} by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
-                    _logger.Error($"Error uploading ClientVantage mobile banner {mobileBannerFileName}: {ex.Message.Substring(0, 300)}", ex, User, "WebOrdering");
-                    return RedirectToAction("Index", new { response = "Failure", message = "Failure uploading ClientVantage mobile banner: " + mobileBannerFileName + ": " + ex.Message.Substring(0, 300) });
+                    _logger.Error($"Error uploading ClientVantage mobile banner {mobileBannerFileName}: {ex.Message}", ex, User, "WebOrdering");
+
+                    TempData["AlertType"] = "Failure";
+                    TempData["AlertMessage"] = $"Failed to upload mobile banner '{mobileBannerFileName}': {ex.Message}";
+                    return RedirectToAction("Index");
                 }
             }
             else
@@ -278,6 +299,7 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                 banner.MobileFilename = null;
             }
 
+            // Save to database
             try
             {
                 banner = await _clientVantageBannersService.AddBanner(banner);
@@ -287,21 +309,29 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             catch (Exception ex)
             {
                 Log.Logger.Error($"Error inserting record for ClientVantage banner {bannerName} by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
-                _logger.Error($"Error inserting record for ClientVantage banner {bannerName}: {ex.Message.Substring(0, 300)}", ex, User, "WebOrdering");
-                return RedirectToAction("Index", new { response = "Failure", message = "Failure inserting record for ClientVantage banner: " + bannerName + ": " + ex.Message.Substring(0, 300) });
+                _logger.Error($"Error inserting record for ClientVantage banner {bannerName}: {ex.Message}", ex, User, "WebOrdering");
+
+                TempData["AlertType"] = "Failure";
+                TempData["AlertMessage"] = $"Failed to save banner '{bannerName}' to database: {ex.Message}";
+                return RedirectToAction("Index");
             }
 
             Log.Logger.Information($"{User.Identity.Name.Substring(7).ToLower()} uploaded ClientVantage banner {bannerName} successfully");
-            _logger.Information($"Uploaded banner: {bannerName}, category {catgory}, successfully", null, User, "WebOrdering");
-            return RedirectToAction("Index", new { response = "Success", message = "ClientVantage banner: " + bannerName + " was uploaded successfully! " });
+            _logger.Information($"Uploaded banner: {bannerName}, category {category}, successfully", null, User, "WebOrdering");
+
+            TempData["AlertType"] = "Success";
+            TempData["AlertMessage"] = $"ClientVantage banner '{bannerName}' was uploaded successfully!";
+            return RedirectToAction("Index");
         }
 
         [HttpPost]
         public async Task<ActionResult> UpdateCVBannerAsync(int selectedCategoryId, int selectedBannerId, int bannerId, int categoryId, string bannerName, IFormFile bannerImage, IFormFile bannerImageMobile)
         {
-            if (string.IsNullOrEmpty(bannerName))
+            if (string.IsNullOrWhiteSpace(bannerName))
             {
-                return RedirectToAction("Index", new { response = "Failure", message = "Banner name must be filled out!" });
+                TempData["AlertType"] = "Failure";
+                TempData["AlertMessage"] = "Banner name must be filled out!";
+                return RedirectToAction("Index");
             }
 
             Banner banner = await _clientVantageBannersService.GetBannerById(bannerId);
@@ -322,23 +352,29 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             string bannerFileName = bannerName.Trim();
             string mobileBannerFileName = bannerName.Trim() + "-mobile";
 
-            var bannerPath = settings.SingleOrDefault(_ => _.Name == "banner.path").Value;
-            var bannerPathThumbnails = settings.SingleOrDefault(_ => _.Name == "banner.path.thumbnails").Value;
-            var bannerPathMobile = settings.SingleOrDefault(_ => _.Name == "banner.path.mobile").Value;
-            var bannerPathMobileThumbnails = settings.SingleOrDefault(_ => _.Name == "banner.path.mobile.thumbnails").Value;
+            var bannerPath = settings.SingleOrDefault(s => s.Name == "banner.path")?.Value;
+            var bannerPathThumbnails = settings.SingleOrDefault(s => s.Name == "banner.path.thumbnails")?.Value;
+            var bannerPathMobile = settings.SingleOrDefault(s => s.Name == "banner.path.mobile")?.Value;
+            var bannerPathMobileThumbnails = settings.SingleOrDefault(s => s.Name == "banner.path.mobile.thumbnails")?.Value;
 
+            // Handle main banner image update
             if (bannerImage != null)
             {
-                if (bannerImage.ContentType != "image/jpg" && bannerImage.ContentType != "image/jpeg" && bannerImage.ContentType != "image/pjpeg" &&
-                    bannerImage.ContentType != "image/gif" && bannerImage.ContentType != "image/x-png" && bannerImage.ContentType != "image/png")
-                    return RedirectToAction("Index", new { response = "Failure", message = "File uploaded must be an image type (jpg, jpeg, pjpeg, gif, png)" });
+                if (bannerImage.ContentType != "image/jpg" && bannerImage.ContentType != "image/jpeg" &&
+                    bannerImage.ContentType != "image/pjpeg" && bannerImage.ContentType != "image/gif" &&
+                    bannerImage.ContentType != "image/x-png" && bannerImage.ContentType != "image/png")
+                {
+                    TempData["AlertType"] = "Failure";
+                    TempData["AlertMessage"] = "Banner file must be an image type (jpg, jpeg, png, gif)";
+                    return RedirectToAction("Index");
+                }
 
                 string imageUrlExt = Path.GetExtension(bannerImage.FileName);
-
                 string imagePath = Path.Combine(@bannerPath, bannerFileName + imageUrlExt);
                 string thumbnailImagePath = Path.Combine(@bannerPathThumbnails, bannerFileName + imageUrlExt);
 
-                if (!string.IsNullOrEmpty(banner.MobileFilename))
+                // Delete old banner if exists
+                if (!string.IsNullOrEmpty(banner.Filename))
                 {
                     string imagePathOld = Path.Combine(@bannerPath, banner.Filename);
                     string thumbnailImagePathOld = Path.Combine(@bannerPathThumbnails, banner.Filename);
@@ -353,13 +389,15 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
 
                         if (thumbnailImageFileOld.Exists)
                             thumbnailImageFileOld.Delete();
-
                     }
                     catch (Exception ex)
                     {
-                        Log.Logger.Error($"Error deleting ClientVantage banner {imagePathOld} by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
-                        _logger.Error($"Error deleting ClientVantage banner {imagePathOld}: {ex.Message.Substring(0, 300)}", ex, User, "WebOrdering");
-                        return RedirectToAction("Index", new { response = "Failure", message = "Failure deleting ClientVantage banner: " + imagePathOld + ": " + ex.Message.Substring(0, 300) });
+                        Log.Logger.Error($"Error deleting old ClientVantage banner {imagePathOld} by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
+                        _logger.Error($"Error deleting old ClientVantage banner {imagePathOld}: {ex.Message}", ex, User, "WebOrdering");
+
+                        TempData["AlertType"] = "Failure";
+                        TempData["AlertMessage"] = $"Failed to delete old banner file: {ex.Message}";
+                        return RedirectToAction("Index");
                     }
                 }
 
@@ -379,12 +417,16 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                 catch (Exception ex)
                 {
                     Log.Logger.Error($"Error uploading ClientVantage banner {bannerFileName} by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
-                    _logger.Error($"Error uploading ClientVantage banner {bannerFileName}: {ex.Message.Substring(0, 300)}", ex, User, "WebOrdering");
-                    return RedirectToAction("Index", new { response = "Failure", message = "Failure uploading ClientVantage banner: " + bannerFileName + ": " + ex.Message.Substring(0, 300) });
+                    _logger.Error($"Error uploading ClientVantage banner {bannerFileName}: {ex.Message}", ex, User, "WebOrdering");
+
+                    TempData["AlertType"] = "Failure";
+                    TempData["AlertMessage"] = $"Failed to upload banner '{bannerFileName}': {ex.Message}";
+                    return RedirectToAction("Index");
                 }
             }
             else
             {
+                // Rename existing banner if name changed
                 if (banner.Name.Trim() != bannerName.Trim() && !string.IsNullOrEmpty(banner.Filename))
                 {
                     string imagePathOld = Path.Combine(@bannerPath, banner.Filename);
@@ -407,29 +449,38 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                             thumbnailImageFileOld.MoveTo(thumbnailImagePathRename);
 
                         banner.Filename = bannerName.Trim() + imageExt;
-
                     }
                     catch (Exception ex)
                     {
                         Log.Logger.Error($"Error renaming ClientVantage banner {imagePathOld} by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
-                        _logger.Error($"Error renaming ClientVantage banner {imagePathOld}: {ex.Message.Substring(0, 300)}", ex, User, "WebOrdering");
-                        return RedirectToAction("Index", new { response = "Failure", message = "Failure renaming ClientVantage banner: " + imagePathOld + ": " + ex.Message.Substring(0, 300) });
+                        _logger.Error($"Error renaming ClientVantage banner {imagePathOld}: {ex.Message}", ex, User, "WebOrdering");
+
+                        TempData["AlertType"] = "Failure";
+                        TempData["AlertMessage"] = $"Failed to rename banner file: {ex.Message}";
+                        return RedirectToAction("Index");
                     }
                 }
             }
 
+            // Handle mobile banner image update
             if (bannerImageMobile != null)
             {
-                if (bannerImageMobile.ContentType != "image/jpg" && bannerImageMobile.ContentType != "image/jpeg" && bannerImageMobile.ContentType != "image/pjpeg" &&
-                    bannerImageMobile.ContentType != "image/gif" && bannerImageMobile.ContentType != "image/x-png" && bannerImageMobile.ContentType != "image/png")
-                    return RedirectToAction("Index", new { response = "Failure", message = "File uploaded must be an image type (jpg, jpeg, pjpeg, gif, png)" });
+                if (bannerImageMobile.ContentType != "image/jpg" && bannerImageMobile.ContentType != "image/jpeg" &&
+                    bannerImageMobile.ContentType != "image/pjpeg" && bannerImageMobile.ContentType != "image/gif" &&
+                    bannerImageMobile.ContentType != "image/x-png" && bannerImageMobile.ContentType != "image/png")
+                {
+                    TempData["AlertType"] = "Failure";
+                    TempData["AlertMessage"] = "Mobile banner file must be an image type (jpg, jpeg, png, gif)";
+                    return RedirectToAction("Index");
+                }
 
                 string imageMobileUrlExt = Path.GetExtension(bannerImageMobile.FileName);
-
                 string imagePath = Path.Combine(@bannerPathMobile, mobileBannerFileName + imageMobileUrlExt);
                 string thumbnailImagePath = Path.Combine(@bannerPathMobileThumbnails, mobileBannerFileName + imageMobileUrlExt);
 
-                if (!string.IsNullOrEmpty(banner.MobileFilename)) {
+                // Delete old mobile banner if exists
+                if (!string.IsNullOrEmpty(banner.MobileFilename))
+                {
                     string imagePathOld = Path.Combine(@bannerPathMobile, banner.MobileFilename);
                     string thumbnailImagePathOld = Path.Combine(@bannerPathMobileThumbnails, banner.MobileFilename);
 
@@ -443,13 +494,15 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
 
                         if (thumbnailImageFileOld.Exists)
                             thumbnailImageFileOld.Delete();
-
                     }
                     catch (Exception ex)
                     {
-                        Log.Logger.Error($"Error deleting ClientVantage banner {imagePathOld} by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
-                        _logger.Error($"Error deleting ClientVantage banner {imagePathOld}: {ex.Message.Substring(0, 300)}", ex, User, "WebOrdering");
-                        return RedirectToAction("Index", new { response = "Failure", message = "Failure deleting ClientVantage banner: " + imagePathOld + ": " + ex.Message.Substring(0, 300) });
+                        Log.Logger.Error($"Error deleting old ClientVantage mobile banner {imagePathOld} by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
+                        _logger.Error($"Error deleting old ClientVantage mobile banner {imagePathOld}: {ex.Message}", ex, User, "WebOrdering");
+
+                        TempData["AlertType"] = "Failure";
+                        TempData["AlertMessage"] = $"Failed to delete old mobile banner file: {ex.Message}";
+                        return RedirectToAction("Index");
                     }
                 }
 
@@ -461,7 +514,6 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                     }
 
                     using var image = Image.Load(bannerImageMobile.OpenReadStream());
-                    //image.Mutate(x => x.Resize(200, 167));
                     image.Mutate(x => x.Resize(175, 146));
                     image.Save(thumbnailImagePath);
 
@@ -471,12 +523,16 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                 catch (Exception ex)
                 {
                     Log.Logger.Error($"Error uploading ClientVantage mobile banner {mobileBannerFileName} by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
-                    _logger.Error($"Error uploading ClientVantage mobile banner {mobileBannerFileName}: {ex.Message.Substring(0, 300)}", ex, User, "WebOrdering");
-                    return RedirectToAction("Index", new { response = "Failure", message = "Failure uploading ClientVantage mobile banner: " + mobileBannerFileName + ": " + ex.Message.Substring(0, 300) });
+                    _logger.Error($"Error uploading ClientVantage mobile banner {mobileBannerFileName}: {ex.Message}", ex, User, "WebOrdering");
+
+                    TempData["AlertType"] = "Failure";
+                    TempData["AlertMessage"] = $"Failed to upload mobile banner '{mobileBannerFileName}': {ex.Message}";
+                    return RedirectToAction("Index");
                 }
             }
             else
             {
+                // Rename existing mobile banner if name changed
                 if (banner.Name.Trim() != bannerName.Trim() && !string.IsNullOrEmpty(banner.MobileFilename))
                 {
                     string imagePathOld = Path.Combine(@bannerPathMobile, banner.MobileFilename);
@@ -499,17 +555,20 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                             thumbnailImageFileOld.MoveTo(thumbnailImagePathRename);
 
                         banner.MobileFilename = bannerName.Trim() + "-mobile" + imageExt;
-
                     }
                     catch (Exception ex)
                     {
                         Log.Logger.Error($"Error renaming ClientVantage mobile banner {imagePathOld} by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
-                        _logger.Error($"Error renaming ClientVantage mobile banner {imagePathOld}: {ex.Message.Substring(0, 300)}", ex, User, "WebOrdering");
-                        return RedirectToAction("Index", new { response = "Failure", message = "Failure renaming ClientVantage mobile banner: " + imagePathOld + ": " + ex.Message.Substring(0, 300) });
+                        _logger.Error($"Error renaming ClientVantage mobile banner {imagePathOld}: {ex.Message}", ex, User, "WebOrdering");
+
+                        TempData["AlertType"] = "Failure";
+                        TempData["AlertMessage"] = $"Failed to rename mobile banner file: {ex.Message}";
+                        return RedirectToAction("Index");
                     }
                 }
             }
 
+            // Update banner in database
             try
             {
                 banner.Name = bannerName;
@@ -518,6 +577,7 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
 
                 await _clientVantageBannersService.UpdateBanner(banner, bannerId);
 
+                // Update category mapping if changed
                 if (categoryId != selectedCategoryId)
                 {
                     Banner_Category_Mapping bannerCategoryMapping = await _clientVantageBannersService.GetBannerCategoryMappingByBannerId(bannerId);
@@ -525,23 +585,31 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                     {
                         await _clientVantageBannersService.DeleteBannerCategoryMapping(bannerCategoryMapping);
 
-                        bannerCategoryMapping = new Banner_Category_Mapping();
-                        bannerCategoryMapping.BannerId = bannerId;
-                        bannerCategoryMapping.CategoryId = categoryId;
-                        bannerCategoryMapping = await _clientVantageBannersService.AddBannerCategoryMapping(bannerCategoryMapping);
+                        bannerCategoryMapping = new Banner_Category_Mapping
+                        {
+                            BannerId = bannerId,
+                            CategoryId = categoryId
+                        };
+                        await _clientVantageBannersService.AddBannerCategoryMapping(bannerCategoryMapping);
                     }
                 }
             }
             catch (Exception ex)
             {
-                Log.Logger.Error($"Error updating record for Banner Category Mapping by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
-                _logger.Error($"Error updating record for Banner Category Mapping: {ex.Message.Substring(0, 300)}", ex, User, "WebOrdering");
-                return RedirectToAction("Index", new { response = "Failure", message = "Failure updating record for Banner Category Mapping: " + ex.Message.Substring(0, 300) });
+                Log.Logger.Error($"Error updating record for ClientVantage banner {bannerName} by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
+                _logger.Error($"Error updating record for ClientVantage banner {bannerName}: {ex.Message}", ex, User, "WebOrdering");
+
+                TempData["AlertType"] = "Failure";
+                TempData["AlertMessage"] = $"Failed to update banner '{bannerName}' in database: {ex.Message}";
+                return RedirectToAction("Index");
             }
 
             Log.Logger.Information($"{User.Identity.Name.Substring(7).ToLower()} updated ClientVantage banner {bannerName} successfully");
             _logger.Information($"Updated banner: {bannerName} successfully", null, User, "WebOrdering");
-            return RedirectToAction("Index", new { response = "Success", message = "ClientVantage banner: " + bannerName + " was updated successfully! " });
+
+            TempData["AlertType"] = "Success";
+            TempData["AlertMessage"] = $"ClientVantage banner '{bannerName}' was updated successfully!";
+            return RedirectToAction("Index");
         }
 
         [HttpPost]
@@ -632,42 +700,6 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             return Json(new { success = true, message = "ClientVantage banner: " + banner.Name + " was deleted successfully! " });
         }
 
-        //[HttpPost]
-        //public async Task<ActionResult> DeleteCVBannerAsync(string categoryToDelete, string bannerName)
-        //{
-        //    Log.Logger.Information(User.Identity.Name.Substring(7).ToLower() + " is deleting CV banner " + bannerName + ", category: " + categoryToDelete);
-
-        //    string imagePath = "\\\\WEBsrvr\\WDDCMembers\\WDDCWebPages\\wddc_members\\images\\Client Vantage\\" + categoryToDelete.Trim() + "\\" + bannerName.Trim();
-        //    string thumbnailImagePath = "\\\\WEBsrvr\\WDDCMembers\\WDDCWebPages\\wddc_members\\images\\Client Vantage\\" + categoryToDelete.Trim() + "\\small\\" + bannerName.Trim();
-
-        //    FileInfo imageFile = new FileInfo(imagePath);
-        //    FileInfo thumbnailImageFile= new FileInfo(thumbnailImagePath);
-
-        //    try
-        //    {
-        //        if (imageFile.Exists && thumbnailImageFile.Exists)
-        //        {
-        //            imageFile.Delete();
-        //            thumbnailImageFile.Delete();
-        //        }
-        //        else
-        //        {
-        //            Log.Logger.Error($"Error deleting ClientVantage banner, category {categoryToDelete} by {User.Identity.Name.Substring(7).ToLower()}: file not found");
-        //            _logger.Error($"Error deleting ClientVantage banner, category {categoryToDelete}: file not found", null, User, "WebOrdering");
-        //            return Json(new { success = false, message = "Failure deleting ClientVantage banner: file not found"});
-        //        }
-        //    }
-        //    catch (IOException ex)
-        //    {
-        //        Log.Logger.Error($"Error deleting ClientVantage banner, category {categoryToDelete} by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
-        //        _logger.Error($"Error deleting ClientVantage banner, category {categoryToDelete}: {ex.Message.Substring(0, 300)}", ex, User, "WebOrdering");
-        //        return Json(new { success = false, message = "Failure deleting ClientVantage banner: " + ex.Message.Substring(0, 300) });
-        //    }
-
-        //    Log.Logger.Information($"{User.Identity.Name.Substring(7).ToLower()} deleted ClientVantage banner, category {categoryToDelete} successfully");
-        //    _logger.Information($"Deleted banner from ClientVantage banners library, category {categoryToDelete}, successfully", null, User, "WebOrdering");
-        //    return Json(new { success = true, message = "ClientVantage banner was deleted successfully! "});
-        //}
 
         [HttpPost]
         public async Task<ActionResult> DeleteMobileCVBannerAsync(string categoryToDelete, string bannerName)
