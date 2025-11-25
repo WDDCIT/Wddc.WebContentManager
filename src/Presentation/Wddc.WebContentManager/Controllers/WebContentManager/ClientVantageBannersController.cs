@@ -37,11 +37,11 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
 
         public ActionResult Index(string category)
         {
-            var response = TempData["response"] as string;
-            var message = TempData["message"] as string;
+            //var response = TempData["response"] as string;
+            //var message = TempData["message"] as string;
 
-            ViewBag.response = response;
-            ViewBag.Message = message;
+            //ViewBag.response = response;
+            //ViewBag.Message = message;
             ViewBag.Category = category;
             return View();
         }
@@ -138,45 +138,48 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
 
             if (imageUrl == null && imageMobileUrl == null)
             {
-                TempData["response"] = "Failure";
-                TempData["message"] = "No banner image was selected";
+                TempData["AlertType"] = "error";
+                TempData["AlertMessage"] = "No banner image was selected";
                 return RedirectToAction("Index");
             }
-            else
-            {
-                if (imageUrl != null)
-                {
-                    if (Path.GetFileName(imageUrl.FileName).Contains('\'') || Path.GetFileName(imageUrl.FileName).Contains('&') || Path.GetFileName(imageUrl.FileName).Contains('%'))
-                    {
-                        TempData["response"] = "Failure";
-                        TempData["message"] = "Banner name cannot contain special characters. Please rename the file and try again";
-                        return RedirectToAction("Index");
-                    }
-    
-                }
 
-                if (imageMobileUrl != null)
+            // Validate special characters
+            if (imageUrl != null)
+            {
+                if (Path.GetFileName(imageUrl.FileName).Contains('\'') ||
+                    Path.GetFileName(imageUrl.FileName).Contains('&') ||
+                    Path.GetFileName(imageUrl.FileName).Contains('%'))
                 {
-                    if (Path.GetFileName(imageMobileUrl.FileName).Contains('\'') || Path.GetFileName(imageUrl.FileName).Contains('&') || Path.GetFileName(imageUrl.FileName).Contains('%'))
-                    {
-                        TempData["response"] = "Failure";
-                        TempData["message"] = "Mobile Banner name cannot contain special characters ('). Please rename the file and try again";
-                        return RedirectToAction("Index");
-                    }
+                    TempData["AlertType"] = "error";
+                    TempData["AlertMessage"] = "Banner name cannot contain special characters. Please rename the file and try again";
+                    return RedirectToAction("Index");
                 }
             }
 
-            string bannerFileName = "", mobileBannerFileName = "";
-            bannerFileName = imageUrl != null ? Path.GetFileName(imageUrl.FileName) : "";
-            mobileBannerFileName = imageMobileUrl != null ? Path.GetFileName(imageMobileUrl.FileName) : "";
+            if (imageMobileUrl != null)
+            {
+                if (Path.GetFileName(imageMobileUrl.FileName).Contains('\'') ||
+                    Path.GetFileName(imageMobileUrl.FileName).Contains('&') ||
+                    Path.GetFileName(imageMobileUrl.FileName).Contains('%'))
+                {
+                    TempData["AlertType"] = "error";
+                    TempData["AlertMessage"] = "Mobile Banner name cannot contain special characters. Please rename the file and try again";
+                    return RedirectToAction("Index");
+                }
+            }
 
+            string bannerFileName = imageUrl != null ? Path.GetFileName(imageUrl.FileName) : "";
+            string mobileBannerFileName = imageMobileUrl != null ? Path.GetFileName(imageMobileUrl.FileName) : "";
+
+            // Upload desktop banner
             if (imageUrl != null)
             {
-                if (imageUrl.ContentType != "image/jpg" && imageUrl.ContentType != "image/jpeg" && imageUrl.ContentType != "image/pjpeg" &&
-                imageUrl.ContentType != "image/gif" && imageUrl.ContentType != "image/x-png" && imageUrl.ContentType != "image/png")
+                if (imageUrl.ContentType != "image/jpg" && imageUrl.ContentType != "image/jpeg" &&
+                    imageUrl.ContentType != "image/pjpeg" && imageUrl.ContentType != "image/gif" &&
+                    imageUrl.ContentType != "image/x-png" && imageUrl.ContentType != "image/png")
                 {
-                    TempData["response"] = "Failure";
-                    TempData["message"] = "File uploaded must be an image type (jpg, jpeg, pjpeg, gif, png)";
+                    TempData["AlertType"] = "error";
+                    TempData["AlertMessage"] = "File uploaded must be an image type (jpg, jpeg, pjpeg, gif, png)";
                     return RedirectToAction("Index");
                 }
 
@@ -206,20 +209,23 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                 catch (Exception ex)
                 {
                     Log.Logger.Error($"Error uploading ClientVantage banner {bannerFileName}, folder {categoryToUpload} by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
-                    _logger.Error($"Error uploading ClientVantage banner {bannerFileName}, category {categoryToUpload}: {ex.Message.Substring(0, 300)}", ex, User, "WebOrdering");
-                    TempData["response"] = "Failure";
-                    TempData["message"] = "Failure uploading ClientVantage banner: " + ex.Message.Substring(0, 300);
+                    _logger.Error($"Error uploading ClientVantage banner {bannerFileName}, category {categoryToUpload}: {ex.Message}", ex, User, "WebOrdering");
+
+                    TempData["AlertType"] = "error";
+                    TempData["AlertMessage"] = $"Failed to upload banner: {ex.Message}";
                     return RedirectToAction("Index");
                 }
             }
 
+            // Upload mobile banner
             if (imageMobileUrl != null)
             {
-                if (imageMobileUrl.ContentType != "image/jpg" && imageMobileUrl.ContentType != "image/jpeg" && imageMobileUrl.ContentType != "image/pjpeg" &&
-                    imageMobileUrl.ContentType != "image/gif" && imageMobileUrl.ContentType != "image/x-png" && imageMobileUrl.ContentType != "image/png")
+                if (imageMobileUrl.ContentType != "image/jpg" && imageMobileUrl.ContentType != "image/jpeg" &&
+                    imageMobileUrl.ContentType != "image/pjpeg" && imageMobileUrl.ContentType != "image/gif" &&
+                    imageMobileUrl.ContentType != "image/x-png" && imageMobileUrl.ContentType != "image/png")
                 {
-                    TempData["response"] = "Failure";
-                    TempData["message"] = "File uploaded must be an image type (jpg, jpeg, pjpeg, gif, png)";
+                    TempData["AlertType"] = "error";
+                    TempData["AlertMessage"] = "Mobile banner file must be an image type (jpg, jpeg, pjpeg, gif, png)";
                     return RedirectToAction("Index");
                 }
 
@@ -249,25 +255,30 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                 catch (Exception ex)
                 {
                     Log.Logger.Error($"Error uploading ClientVantage mobile banner {mobileBannerFileName}, folder {categoryToUpload} by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
-                    _logger.Error($"Error uploading ClientVantage mobile banner {mobileBannerFileName}, category {categoryToUpload}: {ex.Message.Substring(0, 300)}", ex, User, "WebOrdering");
-                    TempData["response"] = "Failure";
-                    TempData["message"] = "Failure uploading ClientVantage mobile banner: " + ex.Message.Substring(0, 300);
+                    _logger.Error($"Error uploading ClientVantage mobile banner {mobileBannerFileName}, category {categoryToUpload}: {ex.Message}", ex, User, "WebOrdering");
+
+                    TempData["AlertType"] = "error";
+                    TempData["AlertMessage"] = $"Failed to upload mobile banner: {ex.Message}";
                     return RedirectToAction("Index");
                 }
             }
 
+            // Success logging
             string tempBannerLog;
             if (imageUrl != null && imageMobileUrl != null)
-                tempBannerLog = "Banner (" + bannerFileName + "), Mobile Banner (" + mobileBannerFileName + ")";
+                tempBannerLog = $"Banner ({bannerFileName}), Mobile Banner ({mobileBannerFileName})";
             else if (imageUrl != null)
-                tempBannerLog = "Banner (" + bannerFileName + ")";
+                tempBannerLog = $"Banner ({bannerFileName})";
             else
-                tempBannerLog = "Mobile Banner (" + mobileBannerFileName + ")";
+                tempBannerLog = $"Mobile Banner ({mobileBannerFileName})";
 
-            Log.Logger.Information($"{User.Identity.Name.Substring(7).ToLower()} uploaded ClientVantage banner: {bannerFileName}, mobile banner: {mobileBannerFileName}, category: {categoryToUpload} successfully");
+            Log.Logger.Information($"{User.Identity.Name.Substring(7).ToLower()} uploaded ClientVantage {tempBannerLog}, category: {categoryToUpload} successfully");
             _logger.Information($"Uploaded ClientVantage {tempBannerLog}, category: {categoryToUpload}, successfully", null, User, "WebOrdering");
-            TempData["response"] = "Success";
-            TempData["message"] = "ClientVantage banner was uploaded successfully! ";
+
+            // SUCCESS - Use TempData
+            TempData["AlertType"] = "success";
+            TempData["AlertMessage"] = $"ClientVantage banner(s) uploaded successfully to category '{categoryToUpload}'!";
+
             return RedirectToAction("Index");
         }
 

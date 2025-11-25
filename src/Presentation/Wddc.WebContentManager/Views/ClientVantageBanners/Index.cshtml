@@ -1,30 +1,568 @@
-﻿
-@{
-    ViewBag.Title = "ClientVantage Banners - Redirected";
+﻿@{
+    ViewBag.Title = "ClientVantage Banners";
 }
 
-<div class="wrapper wrapper-content animated fadeInRight">
-    <div class="row">
-        <div class="col-lg-12">
-            <div class="ibox">
-                <div class="ibox-content">
-                    <div class="row">
-                        <div class="col-lg-12 content-center">
-                            <div style="padding: 60px 20px;">
-                                <i class="fa fa-info-circle" style="font-size: 72px; color: #1c84c6; margin-bottom: 20px;"></i>
-                                <h2 style="color: #676a6c; margin-bottom: 30px;">This Tool Has Been Replaced</h2>
-                                <div style="max-width: 700px; margin: 0 auto;">
-                                    <p style="font-size: 16px; color: #676a6c; line-height: 1.6; margin-bottom: 30px;">
-                                        The ClientVantage Banners tool for WDDC Website has been replaced.
-                                        Please use the new <strong style="color: red;">VantageSuite</strong> banner management tool instead.
-                                    </p>
-                                    <a href="@Url.Action("Index", "CVBanners")" class="btn btn-primary btn-lg" style="font-size: 18px; padding: 12px 40px; margin-top: 20px;">
-                                        <i class="fa fa-arrow-right"></i> Go to VantageSuite Banner Tool
-                                    </a>
+@section Styles {
+    <link href="https://kendo.cdn.telerik.com/2021.2.511/styles/kendo.default.min.css" rel="stylesheet" />
+    <link href="https://kendo.cdn.telerik.com/2021.2.511/styles/kendo.bootstrap-v4.min.css" rel="stylesheet" type="text/css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+}
+
+@section Scripts {
+    <script src="https://ajax.aspnetcdn.com/ajax/jquery.validate/1.11.0/jquery.validate.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script>
+    <script src="https://kendo.cdn.telerik.com/2021.2.511/js/kendo.all.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="~/js/pagination/pagination.min.js"></script>
+    <script src="~/js/pagination/pagination.custom.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            prepareLogList();
+
+            // Handle success/error alerts from TempData
+            var alertType = '@TempData["AlertType"]';
+            var alertMessage = '@TempData["AlertMessage"]';
+
+            if (alertType && alertMessage) {
+                Swal.fire({
+                    icon: alertType, // 'success' or 'error'
+                    title: alertType === 'success' ? 'Success!' : 'Error!',
+                    html: alertMessage, // CHANGED: Use 'html' instead of 'text' to render HTML entities
+                    confirmButtonText: 'OK',
+                    timer: 5000,
+                    timerProgressBar: true
+                });
+            }
+
+            // Initialize Kendo dropdowns
+            $("#categoryToUpload").kendoDropDownList({
+                dataSource: {
+                    transport: {
+                        read: {
+                            url: '@Url.Action("GetBannersCategories", "ClientVantageBanners")',
+                            dataType: "json"
+                        }
+                    }
+                },
+                optionLabel: "Select a category...",
+                filter: "contains",
+                height: 600
+            });
+
+            $("#categoryToDelete").kendoDropDownList({
+                dataSource: {
+                    transport: {
+                        read: {
+                            url: '@Url.Action("GetBannersCategories", "ClientVantageBanners")',
+                            dataType: "json"
+                        }
+                    }
+                },
+                optionLabel: "Select a category...",
+                filter: "contains",
+                height: 600,
+                open: function (e) {
+                    document.getElementById("delete-form-row").style.visibility = "hidden";
+                    document.getElementById("mobile-delete-form-row").style.visibility = "hidden";
+                    document.getElementById("search-results-row").style.visibility = "hidden";
+                    document.getElementById("mobile-search-results-row").style.visibility = "hidden";
+                },
+                dataBound: function () {
+                    var categoryValue = '@ViewBag.Category';
+                    if (categoryValue && categoryValue.trim() !== '') {
+                        var dropdown = this;
+                        dropdown.value(categoryValue.trim());
+                        selectCategoryToDelete();
+
+                        var deleteButton = Array.from(document.getElementsByClassName('collapsible-btn')).find(button => button.textContent.includes('Delete'));
+                        if (deleteButton) {
+                            deleteButton.click();
+                        }
+                    }
+                }
+            });
+        });
+
+        function showAlert(type, message) {
+            const alertId = type === 'success' ? 'success-alert' : 'danger-alert';
+            const hideId = type === 'success' ? 'danger-alert' : 'success-alert';
+
+            document.getElementById(hideId).style.display = "none";
+            document.getElementById(alertId).style.display = "block";
+            document.getElementById(alertId).innerHTML = `<strong>${type === 'success' ? 'Success!' : 'Error!'}</strong> ${message}`;
+
+            setTimeout(() => {
+                $(`#${alertId}`).fadeOut(500);
+            }, 5000);
+        }
+
+        function validateUploadForm() {
+            if (document.getElementById("imageUrl").files.length == 0 && document.getElementById("imageMobileUrl").files.length == 0) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'No Files Selected',
+                    text: 'You must select at least one banner to upload!',
+                    confirmButtonText: 'OK'
+                });
+                return false;
+            }
+            return true;
+        }
+
+        function selectCategoryToDelete() {
+            // Start spinner in the search section
+            var spinner = startSpinner("searchSpinningWheel");
+            scrollToElement('#delete-collapsible-row');
+
+            let categoryToDeleteValue = document.getElementById("categoryToDelete").value.trim();
+            var bannersList = document.getElementById("banners-list");
+            var mobileBannersList = document.getElementById("mobile-banners-list");
+            bannersList.innerHTML = '';
+            mobileBannersList.innerHTML = '';
+            document.getElementById("search-results-row").style.visibility = "hidden";
+            document.getElementById("mobile-search-results-row").style.visibility = "hidden";
+
+            $.getJSON('@Url.Action("GetBannersOfCategory", "ClientVantageBanners")?category=' + categoryToDeleteValue, function (results) {
+                if (results.length === 0) {
+                    // Show empty state message when no desktop banners found
+                    document.getElementById("delete-form-row").style.visibility = "visible";
+                    var emptyMessage = '<div class="empty-state-message">' +
+                        '<i class="fa fa-inbox fa-3x"></i>' +
+                        '<p>No desktop banners found for this category</p>' +
+                        '</div>';
+                    bannersList.innerHTML = emptyMessage;
+                } else {
+                    // Existing code for displaying banners
+                    for (var i = 0; i < results.length; i = i + 3) {
+                        var bannerName = results[i];
+                        var newRow = document.createElement('div');
+                        newRow.classList.add('img-row', 'content-center');
+
+                        var newColumn = '<div class="banner-column">' +
+                            '<div class="banner-name-label"><small>' + bannerName + '</small></div>' +
+                            '<div><img class="small-banner" src="../img/ClientVantage_Banners_Temp/' + categoryToDeleteValue + '/' + bannerName + '" id="banner-' + bannerName + '"></div>' +
+                            '<div class="delete-icon-container"><i class="fa fa-trash fa-lg delete-icon" aria-hidden="true" onclick="deleteBanner(\'' + bannerName + '\', \'' + categoryToDeleteValue + '\')"></i></div>' +
+                            '</div>';
+
+                        if (i + 1 < results.length) {
+                            bannerName = results[i + 1];
+                            newColumn += '<div class="banner-column">' +
+                                '<div class="banner-name-label"><small>' + bannerName + '</small></div>' +
+                                '<div><img class="small-banner" src="../img/ClientVantage_Banners_Temp/' + categoryToDeleteValue + '/' + bannerName + '" id="banner-' + bannerName + '"></div>' +
+                                '<div class="delete-icon-container"><i class="fa fa-trash fa-lg delete-icon" aria-hidden="true" onclick="deleteBanner(\'' + bannerName + '\', \'' + categoryToDeleteValue + '\')"></i></div>' +
+                                '</div>';
+                        }
+
+                        if (i + 2 < results.length) {
+                            bannerName = results[i + 2];
+                            newColumn += '<div class="banner-column">' +
+                                '<div class="banner-name-label"><small>' + bannerName + '</small></div>' +
+                                '<div><img class="small-banner" src="../img/ClientVantage_Banners_Temp/' + categoryToDeleteValue + '/' + bannerName + '" id="banner-' + bannerName + '"></div>' +
+                                '<div class="delete-icon-container"><i class="fa fa-trash fa-lg delete-icon" aria-hidden="true" onclick="deleteBanner(\'' + bannerName + '\', \'' + categoryToDeleteValue + '\')"></i></div>' +
+                                '</div>';
+                        }
+
+                        newRow.innerHTML = newColumn;
+                        bannersList.appendChild(newRow);
+                    }
+                }
+                
+                document.getElementById("delete-form-row").style.visibility = "visible";
+                document.getElementById("search-results").innerHTML = results.length + " banner" + (results.length !== 1 ? "s" : "") + " found";
+                document.getElementById("search-results-row").style.visibility = "visible";
+
+                $.getJSON('@Url.Action("GetMobileBannersOfCategory", "ClientVantageBanners")?category=' + categoryToDeleteValue, function (mobileResults) {
+                    if (mobileResults.length === 0) {
+                        // Show empty state message when no mobile banners found
+                        document.getElementById("mobile-delete-form-row").style.visibility = "visible";
+                        var emptyMessage = '<div class="empty-state-message">' +
+                            '<i class="fa fa-inbox fa-3x"></i>' +
+                            '<p>No mobile banners found for this category</p>' +
+                            '</div>';
+                        mobileBannersList.innerHTML = emptyMessage;
+                    } else {
+                        // Existing code for displaying banners
+                        for (var i = 0; i < mobileResults.length; i = i + 3) {
+                            var bannerName = mobileResults[i];
+                            var newRow = document.createElement('div');
+                            newRow.classList.add('img-row', 'content-center');
+
+                            var newColumn = '<div class="banner-column">' +
+                                '<div class="banner-name-label"><small>' + bannerName + '</small></div>' +
+                                '<div><img class="mobile-small-banner" src="../img/ClientVantage_Mobile_Banners_Temp/' + categoryToDeleteValue + '/' + bannerName + '" id="banner-' + bannerName + '"></div>' +
+                                '<div class="delete-icon-container"><i class="fa fa-trash fa-lg delete-icon" aria-hidden="true" onclick="deleteMobileBanner(\'' + bannerName + '\', \'' + categoryToDeleteValue + '\')"></i></div>' +
+                                '</div>';
+
+                            if (i + 1 < mobileResults.length) {
+                                bannerName = mobileResults[i + 1];
+                                newColumn += '<div class="banner-column">' +
+                                    '<div class="banner-name-label"><small>' + bannerName + '</small></div>' +
+                                    '<div><img class="mobile-small-banner" src="../img/ClientVantage_Mobile_Banners_Temp/' + categoryToDeleteValue + '/' + bannerName + '" id="banner-' + bannerName + '"></div>' +
+                                    '<div class="delete-icon-container"><i class="fa fa-trash fa-lg delete-icon" aria-hidden="true" onclick="deleteMobileBanner(\'' + bannerName + '\', \'' + categoryToDeleteValue + '\')"></i></div>' +
+                                    '</div>';
+                            }
+
+                            if (i + 2 < mobileResults.length) {
+                                bannerName = mobileResults[i + 2];
+                                newColumn += '<div class="banner-column">' +
+                                    '<div class="banner-name-label"><small>' + bannerName + '</small></div>' +
+                                    '<div><img class="mobile-small-banner" src="../img/ClientVantage_Mobile_Banners_Temp/' + categoryToDeleteValue + '/' + bannerName + '" id="banner-' + bannerName + '"></div>' +
+                                    '<div class="delete-icon-container"><i class="fa fa-trash fa-lg delete-icon" aria-hidden="true" onclick="deleteMobileBanner(\'' + bannerName + '\', \'' + categoryToDeleteValue + '\')"></i></div>' +
+                                    '</div>';
+                            }
+
+                            newRow.innerHTML = newColumn;
+                            mobileBannersList.appendChild(newRow);
+                        }
+                    }
+
+                    document.getElementById("mobile-delete-form-row").style.visibility = "visible";
+                    document.getElementById("mobile-search-results").innerHTML = mobileResults.length + " mobile banner" + (mobileResults.length !== 1 ? "s" : "") + " found";
+                    document.getElementById("mobile-search-results-row").style.visibility = "visible";
+
+                    // Stop spinner after both requests complete
+                    stopSpinner(spinner, "searchSpinningWheel");
+                })
+                .fail(function() {
+                    // Stop spinner on mobile banners error
+                    stopSpinner(spinner, "searchSpinningWheel");
+                });
+            })
+            .fail(function() {
+                // Stop spinner on desktop banners error
+                stopSpinner(spinner, "searchSpinningWheel");
+                Swal.fire('Error', 'Failed to load banners. Please try again.', 'error');
+            });
+        }
+
+        function deleteBanner(bannerName, categoryToDelete) {
+            Swal.fire({
+                title: 'Delete Banner?',
+                text: `Are you sure you want to delete "${bannerName}"?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Yes, delete it!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById("delete-form-row").style.visibility = "hidden";
+                    document.getElementById("mobile-delete-form-row").style.visibility = "hidden";
+                    document.getElementById("search-results-row").style.visibility = "hidden";
+                    document.getElementById("mobile-search-results-row").style.visibility = "hidden";
+
+                    var spinner = startSpinner("spinningWheel");
+                    $.post('@Url.Action("DeleteCVBanner", "ClientVantageBanners")?categoryToDelete=' + categoryToDelete + '&bannerName=' + bannerName, (result) => {
+                        if (result.success) {
+                            Swal.fire('Deleted!', `Banner "${bannerName}" has been deleted.`, 'success')
+                                .then(() => {
+                                    window.location.href = "@Url.Action("Index", "ClientVantageBanners")?category=" + categoryToDelete;
+                                });
+                        } else {
+                            Swal.fire('Error', result.message || 'Unknown error', 'error');
+                            prepareLogList();
+                            stopSpinner(spinner, "spinningWheel");
+                        }
+                    }).fail((xhr, textStatus, errorThrown) => {
+                        Swal.fire('Error', `Failed to delete banner: ${textStatus}`, 'error');
+                        prepareLogList();
+                        stopSpinner(spinner, "spinningWheel");
+                    });
+                }
+            });
+        }
+
+        function deleteMobileBanner(bannerName, categoryToDelete) {
+            Swal.fire({
+                title: 'Delete Mobile Banner?',
+                text: `Are you sure you want to delete "${bannerName}"?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Yes, delete it!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById("delete-form-row").style.visibility = "hidden";
+                    document.getElementById("mobile-delete-form-row").style.visibility = "hidden";
+                    document.getElementById("search-results-row").style.visibility = "hidden";
+                    document.getElementById("mobile-search-results-row").style.visibility = "hidden";
+
+                    var spinner = startSpinner("spinningWheel");
+                    $.post('@Url.Action("DeleteMobileCVBanner", "ClientVantageBanners")?categoryToDelete=' + categoryToDelete + '&bannerName=' + bannerName, (result) => {
+                        if (result.success) {
+                            Swal.fire('Deleted!', `Mobile banner "${bannerName}" has been deleted.`, 'success')
+                                .then(() => {
+                                    window.location.href = "@Url.Action("Index", "ClientVantageBanners")?category=" + categoryToDelete;
+                                });
+                        } else {
+                            Swal.fire('Error', result.message || 'Unknown error', 'error');
+                            prepareLogList();
+                            stopSpinner(spinner, "spinningWheel");
+                        }
+                    }).fail((xhr, textStatus, errorThrown) => {
+                        Swal.fire('Error', `Failed to delete mobile banner: ${textStatus}`, 'error');
+                        prepareLogList();
+                        stopSpinner(spinner, "spinningWheel");
+                    });
+                }
+            });
+        }
+
+        function prepareLogList() {
+            setupPagination('log', 'log-list', '@Url.Action("Log", "ClientVantageBanners")?referrerUrl=ClientVantageBanners', ['Log', 'Username', 'Created'], 7);
+        }
+
+        function scrollToElement(selector) {
+            $('html, body').animate({ scrollTop: $(selector).offset().top - 20 }, 600);
+        }
+
+        function startSpinner(targetId) {
+            var opts = {
+                lines: 13,
+                length: 20,
+                width: 10,
+                radius: 30,
+                scale: 1,
+                corners: 1,
+                color: '#2e6da4',
+                fadeColor: 'transparent',
+                speed: 1,
+                rotate: 0,
+                animation: 'spinner-line-fade-quick',
+                direction: 1,
+                zIndex: 2e9,
+                className: 'spinner',
+                top: '50%',
+                left: '50%',
+                shadow: '0 0 1px transparent',
+                position: 'absolute'
+            };
+            var target = document.getElementById(targetId);
+            target.classList.add('active');
+            return new Spinner(opts).spin(target);
+        }
+
+        function stopSpinner(spinner, targetId) {
+            spinner.stop();
+            var target = document.getElementById(targetId);
+            if (target) {
+                target.classList.remove('active');
+            }
+        }
+
+        function toggleLog() {
+            $('#log-section').toggleClass('hidden');
+            const isHidden = $('#log-section').hasClass('hidden');
+            $('#toggle-log-btn').html(`<i class="fa fa-${isHidden ? 'eye' : 'eye-slash'}"></i> ${isHidden ? 'Show' : 'Hide'} Log`);
+        }
+
+        // Collapsible accordion functionality
+        $('.collapsible-btn').on('click', function() {
+            const $btn = $(this);
+            const $content = $btn.next('.collapsible-content');
+            const wasOpen = $btn.hasClass('active');
+
+            // Close all other sections
+            $('.collapsible-btn.active').not($btn).each(function() {
+                $(this).removeClass('active');
+                const $other = $(this).next('.collapsible-content');
+                $other.css('maxHeight', '0px');
+            });
+
+            // Toggle clicked section
+            if (wasOpen) {
+                $btn.removeClass('active');
+                $content.css('maxHeight', '0px');
+            } else {
+                $btn.addClass('active');
+                $content.css('maxHeight', $content[0].scrollHeight + 'px');
+                $content.one('transitionend', function() {
+                    if ($content.css('maxHeight') !== '0px') {
+                        $content.css('maxHeight', '10000px');
+                    }
+                });
+            }
+        });
+    </script>
+}
+
+<div class="modern-wrapper">
+    <!-- Header Section -->
+    <div class="page-header">
+        <div class="container-fluid">
+            <div class="row align-items-center">
+                <div class="col-12">
+                    <h2 class="page-title">
+                        <i class="fa fa-flag"></i> ClientVantage Banners Management
+                    </h2>
+                    <p class="page-subtitle">
+                        Upload and delete ClientVantage banners on <span class="highlight-red">WDDC Website - Clinic Resources</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alerts -->
+    <div class="container-fluid mt-3">
+        <div class="alert alert-success modern-alert" id="success-alert" style="display:none"></div>
+        <div class="alert alert-danger modern-alert" id="danger-alert" style="display:none"></div>
+    </div>
+
+    <!-- Website Preview -->
+    <div class="container-fluid">
+        @* <div class="row">
+            <div class="col-12 text-center mb-4">
+                <a href="https://www.wddc.com/wddc_members/m_Images_CV.aspx" target="_blank">
+                    <img id="websiteImg" class="website-preview" src="~/css/images/WDDC ClientVantage Banners.png" alt="Visit WDDC ClientVantage Banners">
+                </a>
+            </div>
+        </div> *@
+
+        <!-- Upload Section -->
+        <div class="action-card mb-4">
+            <button type="button" class="collapsible-btn">
+                <i class="fa fa-upload"></i>
+                <span>Upload ClientVantage Banners</span>
+                <i class="fa fa-chevron-down float-end toggle-icon"></i>
+            </button>
+            <div class="collapsible-content">
+                <form id="upload-form" name="upload-form" method="post"
+                      action="@Url.Action("UploadCVBanner", "ClientVantageBanners")"
+                      enctype="multipart/form-data" onsubmit="return validateUploadForm()">
+                    <div class="row justify-content-center">
+                        <div class="col-lg-2"></div>
+                        <div class="col-lg-8">
+                            <div class="form-group-modern form-group-large form-group-inline">
+                                <label for="categoryToUpload" class="form-label-modern form-label-large form-label-inline">
+                                    <i class="fa fa-folder"></i> Category: <span class="text-danger">*</span>
+                                </label>
+                                <div class="form-input-inline">
+                                    <input id="categoryToUpload" name="categoryToUpload" class="form-control-modern form-control-large" required />
                                 </div>
                             </div>
+
+                            <div class="form-group-modern form-group-large">
+                                <div class="form-group-inline">
+                                    <label for="imageUrl" class="form-label-modern form-label-large form-label-inline">
+                                        <i class="fa fa-image"></i> Banner:
+                                    </label>
+                                    <div class="form-input-inline">
+                                        <input class="form-control form-control-large" id="imageUrl"
+                                               name="imageUrl" type="file" accept="image/*">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group-modern form-group-large">
+                                <div class="form-group-inline">
+                                    <label for="imageMobileUrl" class="form-label-modern form-label-large form-label-inline">
+                                        <i class="fa fa-mobile"></i> Mobile Banner:
+                                    </label>
+                                    <div class="form-input-inline">
+                                        <input class="form-control form-control-large" id="imageMobileUrl"
+                                               name="imageMobileUrl" type="file" accept="image/*">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-note">
+                                <i class="fa fa-info-circle"></i> Note: File names must not contain special characters (\ & %)
+                            </div>
                         </div>
+                        <div class="col-lg-2"></div>
                     </div>
+
+                    <div class="form-actions">
+                        <div id="spinningWheel"></div>
+                        <button type="submit" class="btn btn-primary btn-modern btn-md" id="upload-form-submit">
+                            <i class="fa fa-cloud-upload"></i> Upload Banners
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Delete Section -->
+        <div class="action-card mb-4" id="delete-collapsible-row">
+            <button type="button" class="collapsible-btn">
+                <i class="fa fa-trash"></i>
+                <span>Delete ClientVantage Banners</span>
+                <i class="fa fa-chevron-down float-end toggle-icon"></i>
+            </button>
+            <div class="collapsible-content">
+                <!-- Search Section -->
+                <div class="search-section">
+                    <div class="row justify-content-center">
+                        <div class="col-lg-2"></div>
+                        <div class="col-lg-8">
+                            <div class="form-group-modern">
+                                <label for="categoryToDelete" class="form-label-modern">
+                                    <i class="fa fa-search"></i> Search by Category
+                                </label>
+                                <input id="categoryToDelete" name="categoryToDelete" class="form-control-modern" />
+                            </div>
+                            <div class="text-center mt-3" style="position: relative;">
+                                <button type="button" class="btn btn-primary btn-modern"
+                                        onclick="selectCategoryToDelete()">
+                                    <i class="fa fa-search"></i> Search
+                                </button>
+                                <!-- ADD SPINNER CONTAINER HERE -->
+                                <div id="searchSpinningWheel" style="position: relative; height: 80px; margin-top: 20px;"></div>
+                            </div>
+                        </div>
+                        <div class="col-lg-2"></div>
+                    </div>
+                </div>
+
+                <!-- Desktop Banners Results -->
+                <div id="search-results-row" style="visibility:hidden;" class="mt-4">
+                    <div class="row justify-content-center">
+                        <div class="col-lg-1"></div>
+                        <div class="col-lg-10">
+                            <div class="banner-count-note">
+                                <i class="fa fa-desktop"></i> <strong>Desktop Banners:</strong> <span id="search-results"></span>
+                            </div>
+                            <div id="delete-form-row" style="visibility:hidden;" class="banners-grid">
+                                <div id="banners-list"></div>
+                            </div>
+                        </div>
+                        <div class="col-lg-1"></div>
+                    </div>
+                </div>
+
+                <!-- Mobile Banners Results -->
+                <div id="mobile-search-results-row" style="visibility:hidden; margin-top: 15px;" class="mt-4">
+                    <div class="row justify-content-center">
+                        <div class="col-lg-1"></div>
+                        <div class="col-lg-10">
+                            <div class="banner-count-note">
+                                <i class="fa fa-mobile"></i> <strong>Mobile Banners:</strong> <span id="mobile-search-results"></span>
+                            </div>
+                            <div id="mobile-delete-form-row" style="visibility:hidden;" class="banners-grid">
+                                <div id="mobile-banners-list"></div>
+                            </div>
+                        </div>
+                        <div class="col-lg-1"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Log Section -->
+        <div class="log-section-container mt-5">
+            <div class="text-center mb-3">
+                <button type="button" id="toggle-log-btn" class="btn btn-outline-secondary btn-sm"
+                        onclick="toggleLog()">
+                    <i class="fa fa-eye"></i> Show Log
+                </button>
+            </div>
+            <div id="log-section" class="log-content hidden">
+                <div id="log">
+                    <div class="bs-ObjectList-rows" id="log-list"></div>
                 </div>
             </div>
         </div>
@@ -32,32 +570,519 @@
 </div>
 
 <style>
-    .content-center {
-        text-align: center;
+    #page-heading {
+        display: none;
     }
-
-    .wrapper-content {
-        padding: 10px 10px 20px;
-    }
-
-    .ibox-content {
-        padding: 40px 15px;
-    }
-
-    .btn-primary {
-        background-color: #1c84c6;
-        border-color: #1c84c6;
-        transition: all 0.3s ease;
-    }
-
-        .btn-primary:hover {
-            background-color: #1a7bb9;
-            border-color: #1a7bb9;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        }
 
     .breadcrumb {
         display: none;
     }
+
+    /* Modern Layout */
+    .modern-wrapper {
+        background: #f8f9fa;
+        min-height: 100vh;
+        padding-bottom: 40px;
+    }
+
+    .page-header {
+        background: transparent;
+        color: #333;
+        padding: 20px 0;
+        margin-bottom: 10px;
+        margin-top: 5px;
+        padding-left: 15px;
+    }
+
+    .page-title {
+        font-size: 2rem;
+        font-weight: 600;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        color: #1a73e8;
+    }
+
+    .page-subtitle {
+        margin: 10px 0 0 0;
+        color: #666;
+        font-size: 1.1rem;
+    }
+
+    .highlight-red {
+        color: #ff6b6b;
+        font-weight: 600;
+    }
+
+    /* Modern Alerts */
+    .modern-alert {
+        border-radius: 12px;
+        border: none;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        font-size: 1rem;
+    }
+
+    /* Action Cards */
+    .action-card {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+        overflow: hidden;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        margin-bottom: 30px;
+    }
+
+        .action-card:hover {
+            box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+        }
+
+    /* Collapsible Button */
+    .collapsible-btn {
+        width: 100%;
+        background: linear-gradient(135deg, #2e6da4 0%, #3d7fb8 100%);
+        color: white;
+        border: none;
+        padding: 20px 30px;
+        font-size: 15px;
+        font-weight: 600;
+        text-align: left;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+        .collapsible-btn:hover {
+            background: linear-gradient(135deg, #245682 0%, #2e6da4 100%);
+        }
+
+        .collapsible-btn.active {
+            background: linear-gradient(135deg, #245682 0%, #2e6da4 100%);
+        }
+
+        .collapsible-btn .toggle-icon {
+            transition: transform 0.3s ease;
+        }
+
+        .collapsible-btn.active .toggle-icon {
+            transform: rotate(180deg);
+        }
+
+    /* Collapsible Content */
+    .collapsible-content {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.4s ease-in-out, padding 0.4s ease-in-out;
+        padding: 0 30px;
+        background: white;
+    }
+
+    .action-card .collapsible-btn.active + .collapsible-content {
+        padding: 30px;
+    }
+
+    /* Modern Form Groups */
+    .form-group-modern {
+        margin-bottom: 25px;
+    }
+
+    .form-label-modern {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 1.05rem;
+    }
+
+    .form-control-modern {
+        width: 100%;
+        border-radius: 8px;
+        border: 2px solid #e9ecef;
+        padding: 10px 15px;
+        transition: all 0.3s ease;
+    }
+
+        .form-control-modern:focus {
+            border-color: #1a73e8;
+            box-shadow: 0 0 0 0.2rem rgba(26, 115, 232, 0.25);
+        }
+
+    /* Large form elements */
+    .form-group-large {
+        margin-bottom: 5px;
+    }
+
+    .form-label-large {
+        font-size: 1.3rem !important;
+        font-weight: 700;
+    }
+
+    .form-control-large {
+        font-size: 1.2rem !important;
+    }
+
+    /* Inline form layout */
+    .form-group-inline {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .form-label-inline {
+        margin-bottom: 0 !important;
+        min-width: 180px;
+        flex-shrink: 0;
+        justify-content: flex-start;
+    }
+
+    .form-input-inline {
+        flex: 1;
+    }
+
+    .form-note {
+        background: #fff3cd;
+        border-left: 4px solid #ffc107;
+        padding: 10px 15px;
+        margin-top: 15px;
+        border-radius: 4px;
+        color: #856404;
+        font-size: 0.9rem;
+    }
+
+    /* Modern Buttons */
+    .btn-modern {
+        border-radius: 8px;
+        padding: 12px 30px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        transition: all 0.3s ease;
+        border: none;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+        .btn-modern:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .btn-modern:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-modern i {
+            margin-right: 8px;
+        }
+
+    .form-actions {
+        text-align: center;
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 2px solid #e9ecef;
+        position: relative;
+    }
+
+    /* Search Section */
+    .search-section {
+        padding: 20px 0;
+    }
+
+    /* Banners Grid */
+    .banners-grid {
+        margin-top: 20px;
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 12px;
+        max-height: 500px;
+        overflow-y: auto;
+        border: 1px solid #ced4da;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+    }
+
+    .img-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        justify-content: center;
+        margin-bottom: 20px;
+    }
+
+    .banner-column {
+        flex: 0 0 calc(33.333% - 20px);
+        max-width: calc(33.333% - 20px);
+        text-align: center;
+        background: white;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+        .banner-column:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        }
+
+    .banner-name-label {
+        margin-bottom: 10px;
+        font-weight: 600;
+        color: #495057;
+        font-size: 0.9rem;
+        word-break: break-word;
+    }
+
+    .small-banner {
+        border: 2px solid #dee2e6;
+        border-radius: 8px;
+        height: 75px;
+        width: 100%;
+        max-width: 300px;
+        object-fit: contain;
+        margin-bottom: 10px;
+       /*  transition: transform 0.3s ease; */
+        /* cursor: pointer; */
+    }
+
+       /*  .small-banner:hover {
+            transform: scale(1.5);
+            z-index: 10;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        } */
+
+    .mobile-small-banner {
+        border: 2px solid #dee2e6;
+        border-radius: 8px;
+        width: 100%;
+        max-width: 150px;
+        height: 125px;
+        object-fit: contain;
+        margin-bottom: 10px;
+        /* transition: transform 0.3s ease;
+        cursor: pointer; */
+    }
+
+        /* .mobile-small-banner:hover {
+            transform: scale(1.5);
+            z-index: 10;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        } */
+
+    .delete-icon-container {
+        margin-top: 10px;
+    }
+
+    .delete-icon {
+        color: #dc3545;
+        cursor: pointer;
+        transition: transform 0.3s ease, color 0.3s ease;
+        font-size: 20px;
+    }
+
+        .delete-icon:hover {
+            transform: scale(1.3);
+            color: #c82333;
+        }
+
+    /* Banner count note */
+    .banner-count-note {
+        background: #e3f2fd;
+        color: #1976d2;
+        padding: 10px 15px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        border-left: 4px solid #2196f3;
+        text-align: left;
+    }
+
+        .banner-count-note i {
+            margin-right: 8px;
+            font-size: 1.15rem; /* Added: slightly larger icon */
+        }
+
+        .banner-count-note strong {
+            font-size: 1.15rem; /* Added: make the label text slightly bigger */
+        }
+
+    /* Website Preview */
+    .website-preview {
+        box-shadow: 0 15px 35px rgba(50,50,93,.1), 0 5px 15px rgba(0,0,0,.07);
+        width: 253px;
+        height: 265px;
+        border-radius: 8px;
+        transition: transform 0.3s ease;
+    }
+
+        .website-preview:hover {
+            transform: scale(1.05);
+        }
+
+    /* Log Section */
+    .log-section-container {
+        background: white;
+        padding: 20px;
+        border-radius: 15px;
+        box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+    }
+
+    .log-content {
+        transition: all 0.4s ease-in-out;
+        opacity: 1;
+        max-height: 2000px;
+        overflow: hidden;
+    }
+
+        .log-content.hidden {
+            opacity: 0;
+            max-height: 0;
+            margin-top: 0 !important;
+            padding: 0;
+        }
+
+    /* Log Table */
+    .bs-ObjectList-rows {
+        display: table;
+        width: 100%;
+    }
+
+    .bs-ObjectList-row {
+        display: table-row;
+        transition: background-color 0.2s ease;
+    }
+
+    .bs-ObjectList-row--header {
+        background-color: #DCDCDC;
+        color: #707070;
+    }
+
+        .bs-ObjectList-row--header .bs-ObjectList-cell {
+            font-weight: 600;
+            padding: 10px 10px;
+        }
+
+    .bs-ObjectList-cell {
+        display: table-cell;
+        padding: 12px 10px;
+        vertical-align: middle;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+        .bs-ObjectList-cell:first-child {
+            width: 60%;
+            text-align: left;
+            white-space: pre-wrap;
+        }
+
+        .bs-ObjectList-cell:not(:first-child) {
+            width: 20%;
+            text-align: center;
+        }
+
+    /* Spinner */
+    #spinningWheel {
+        display: none;
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        height: 60px;
+        width: 60px;
+        z-index: 100;
+    }
+
+        #spinningWheel.active {
+            display: block;
+        }
+
+    /* Scrollbars */
+    .banners-grid::-webkit-scrollbar {
+        width: 12px;
+    }
+
+    .banners-grid::-webkit-scrollbar-track {
+        background: #e9ecef;
+        border-radius: 10px;
+        border: 1px solid #dee2e6;
+    }
+
+    .banners-grid::-webkit-scrollbar-thumb {
+        background: #2e6da4;
+        border-radius: 10px;
+        border: 2px solid #e9ecef;
+    }
+
+        .banners-grid::-webkit-scrollbar-thumb:hover {
+            background: #245682;
+        }
+
+    /* Responsive */
+    @@media (max-width: 768px) {
+        .page-title {
+            font-size: 1.5rem;
+        }
+
+        .page-subtitle {
+            font-size: 1rem;
+        }
+
+        .banner-column {
+            flex: 0 0 100%;
+            max-width: 100%;
+        }
+
+        .collapsible-btn {
+            padding: 15px 20px;
+            font-size: 1rem;
+        }
+
+        .collapsible-content {
+            padding: 0 20px;
+        }
+    }
+
+    .k-dropdown {
+        font-size: 1.2rem !important;
+    }
+
+    /* Search Spinner */
+    #searchSpinningWheel {
+        display: none;
+        position: relative;
+        height: 80px;
+        margin-top: 20px;
+        z-index: 100;
+    }
+
+        #searchSpinningWheel.active {
+            display: block;
+        }
+
+    /* Empty State Message */
+    .empty-state-message {
+        text-align: center;
+        padding: 40px 20px;
+        color: #6c757d;
+        background: white;
+        border-radius: 8px;
+        margin: 20px 0;
+    }
+
+        .empty-state-message i {
+            color: #adb5bd;
+            margin-bottom: 15px;
+        }
+
+        .empty-state-message p {
+            font-size: 1.1rem;
+            font-weight: 500;
+            margin: 0;
+            color: #495057;
+        }
 </style>
