@@ -23,7 +23,6 @@ using ActionResult = Microsoft.AspNetCore.Mvc.ActionResult;
 using HttpPostAttribute = Microsoft.AspNetCore.Mvc.HttpPostAttribute;
 using System;
 using System.IO;
-using iTextSharp.text.pdf.parser;
 using Path = System.IO.Path;
 using Wddc.Core.Domain.ClientVantage.Catalog;
 using Category = Wddc.Core.Domain.Media.Category;

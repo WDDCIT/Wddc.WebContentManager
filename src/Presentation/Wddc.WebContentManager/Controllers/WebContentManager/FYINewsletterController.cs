@@ -14,7 +14,6 @@ using Wddc.Core.Domain.Webserver.WebOrdering.Logging;
 using Wddc.WebContentManager.Models;
 using Serilog;
 using Microsoft.AspNetCore.Hosting;
-using IronPdf;
 using Wddc.WebContentManager.Services.WebContent.Newsletter;
 
 namespace Wddc.WebContentManager.Controllers.WebContentManager
@@ -74,7 +73,7 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
 
             List<Web_News> webFYINews = await _newsletterService.GetWebFYINews();
 
-            foreach(Web_News webFY in webFYINews)
+            foreach (Web_News webFY in webFYINews)
             {
                 if (webFY.IssueDate == newIssueDate)
                     return RedirectToAction("Index", new { response = "Failure", message = "Issue date enetered " + newIssueDate.ToString("dd/M/yyyy") + " already exists! You must choose a different date." });
@@ -92,51 +91,43 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                 string fyiPdfFileName = newIssueNumber.ToString() + ".pdf";
                 string fyiPath = "\\\\WEBsrvr\\WDDCMembers\\WDDCWebPages\\wddc_members\\CS\\Newsletter\\FYI";
 
+                string tempInputPath = Path.Combine(this._hostingEnvironment.WebRootPath, "Website_Newsletter_Temp\\Files");
+                if (!Directory.Exists(tempInputPath))
+                    Directory.CreateDirectory(tempInputPath);
+
+                string tempOutputPath = Path.Combine(this._hostingEnvironment.WebRootPath, "Website_Newsletter_Temp\\SplitedFiles");
+                if (!Directory.Exists(tempOutputPath))
+                    Directory.CreateDirectory(tempOutputPath);
+
+                string tempFilePath = Path.Combine(tempInputPath, inputFileName);
+
                 try
                 {
-                    using (var stream = new FileStream(Path.Combine(fyiPath, fyiPdfFileName), FileMode.Create))
+                    // Save uploaded file to temp location
+                    using (var stream = new FileStream(tempFilePath, FileMode.Create))
                     {
                         await newInfoFileUrl.CopyToAsync(stream);
+                        await stream.FlushAsync();
                     }
 
-                    string tempInputPath = Path.Combine(this._hostingEnvironment.WebRootPath, "Website_Newsletter_Temp\\Files");
-                    if (!Directory.Exists(tempInputPath))
-                        Directory.CreateDirectory(tempInputPath);
+                    // Copy to final destination
+                    System.IO.File.Copy(tempFilePath, Path.Combine(fyiPath, fyiPdfFileName), true);
 
-                    string tempOutputPath = Path.Combine(this._hostingEnvironment.WebRootPath, "Website_Newsletter_Temp\\SplitedFiles");
-                    if (!Directory.Exists(tempOutputPath))
-                        Directory.CreateDirectory(tempOutputPath);
+                    // Use IronPDF to load and extract first page
+                    var pdfDoc = IronPdf.PdfDocument.FromFile(tempFilePath);
 
-                    using (FileStream stream = new FileStream(Path.Combine(tempInputPath, inputFileName), FileMode.Create))
-                    {
-                        await newInfoFileUrl.CopyToAsync(stream);
-                    }
+                    // Extract first page only
+                    var firstPage = pdfDoc.CopyPage(0);
+                    string firstPagePdfPath = Path.Combine(tempOutputPath, Path.GetFileNameWithoutExtension(inputFileName) + "_1.pdf");
+                    firstPage.SaveAs(firstPagePdfPath);
 
-                    var firstPagePdfName = "";
-
-                    using (iTextSharp.text.pdf.PdfReader pdfReader = new iTextSharp.text.pdf.PdfReader(Path.Combine(tempInputPath, inputFileName)))
-                    {
-                        for (int pageNumber = 1; pageNumber <= pdfReader.NumberOfPages; pageNumber++)
-                        {
-                            string outputFileName = string.Format("{0}_{1}.pdf", System.IO.Path.GetFileNameWithoutExtension(inputFileName), pageNumber);
-
-                            if (pageNumber == 1)
-                                firstPagePdfName = outputFileName;
-
-                            iTextSharp.text.Document document = new iTextSharp.text.Document();
-                            iTextSharp.text.pdf.PdfCopy pdfCopy = new iTextSharp.text.pdf.PdfCopy(document, new FileStream(Path.Combine(tempOutputPath, outputFileName), FileMode.Create));
-                            document.Open();
-                            pdfCopy.AddPage(pdfCopy.GetImportedPage(pdfReader, pageNumber));
-                            document.Close();
-                        }
-                    }
-
-                    string firstPagePdfPath = Path.Combine(tempOutputPath, firstPagePdfName);
-                    var firstPagePdfFile = PdfDocument.FromFile(firstPagePdfPath);
-
+                    // Generate JPG from first page
                     string fyiJpgFileName = newIssueNumber.ToString() + ".jpg";
-                    firstPagePdfFile.RasterizeToImageFiles(Path.Combine(fyiPath, fyiJpgFileName), 255, 320, IronPdf.Imaging.ImageType.Default, 300);
+                    firstPage.RasterizeToImageFiles(Path.Combine(fyiPath, fyiJpgFileName), 255, 320, IronPdf.Imaging.ImageType.Default, 300);
 
+                    // Cleanup
+                    pdfDoc.Dispose();
+                    firstPage.Dispose();
                     Directory.Delete(tempInputPath, true);
                     Directory.Delete(tempOutputPath, true);
 
@@ -191,51 +182,43 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                 string fyiPdfFileName = issueNumber.ToString() + ".pdf";
                 string fyiPath = "\\\\WEBsrvr\\WDDCMembers\\WDDCWebPages\\wddc_members\\CS\\Newsletter\\FYI";
 
+                string tempInputPath = Path.Combine(this._hostingEnvironment.WebRootPath, "Website_Newsletter_Temp\\Files");
+                if (!Directory.Exists(tempInputPath))
+                    Directory.CreateDirectory(tempInputPath);
+
+                string tempOutputPath = Path.Combine(this._hostingEnvironment.WebRootPath, "Website_Newsletter_Temp\\SplitedFiles");
+                if (!Directory.Exists(tempOutputPath))
+                    Directory.CreateDirectory(tempOutputPath);
+
+                string tempFilePath = Path.Combine(tempInputPath, inputFileName);
+
                 try
                 {
-                    using (var stream = new FileStream(Path.Combine(fyiPath, fyiPdfFileName), FileMode.Create))
+                    // Save uploaded file to temp location
+                    using (var stream = new FileStream(tempFilePath, FileMode.Create))
                     {
                         await updatedInfoFileUrl.CopyToAsync(stream);
+                        await stream.FlushAsync();
                     }
 
-                    string tempInputPath = Path.Combine(this._hostingEnvironment.WebRootPath, "Website_Newsletter_Temp\\Files");
-                    if (!Directory.Exists(tempInputPath))
-                        Directory.CreateDirectory(tempInputPath);
+                    // Copy to final destination
+                    System.IO.File.Copy(tempFilePath, Path.Combine(fyiPath, fyiPdfFileName), true);
 
-                    string tempOutputPath = Path.Combine(this._hostingEnvironment.WebRootPath, "Website_Newsletter_Temp\\SplitedFiles");
-                    if (!Directory.Exists(tempOutputPath))
-                        Directory.CreateDirectory(tempOutputPath);
+                    // Use IronPDF to load and extract first page
+                    var pdfDoc = IronPdf.PdfDocument.FromFile(tempFilePath);
 
-                    using (FileStream stream = new FileStream(Path.Combine(tempInputPath, inputFileName), FileMode.Create))
-                    {
-                        await updatedInfoFileUrl.CopyToAsync(stream);
-                    }
+                    // Extract first page only
+                    var firstPage = pdfDoc.CopyPage(0);
+                    string firstPagePdfPath = Path.Combine(tempOutputPath, Path.GetFileNameWithoutExtension(inputFileName) + "_1.pdf");
+                    firstPage.SaveAs(firstPagePdfPath);
 
-                    var firstPagePdfName = "";
-
-                    using (iTextSharp.text.pdf.PdfReader pdfReader = new iTextSharp.text.pdf.PdfReader(Path.Combine(tempInputPath, inputFileName)))
-                    {
-                        for (int pageNumber = 1; pageNumber <= pdfReader.NumberOfPages; pageNumber++)
-                        {
-                            string outputFileName = string.Format("{0}_{1}.pdf", System.IO.Path.GetFileNameWithoutExtension(inputFileName), pageNumber);
-
-                            if (pageNumber == 1)
-                                firstPagePdfName = outputFileName;
-
-                            iTextSharp.text.Document document = new iTextSharp.text.Document();
-                            iTextSharp.text.pdf.PdfCopy pdfCopy = new iTextSharp.text.pdf.PdfCopy(document, new FileStream(Path.Combine(tempOutputPath, outputFileName), FileMode.Create));
-                            document.Open();
-                            pdfCopy.AddPage(pdfCopy.GetImportedPage(pdfReader, pageNumber));
-                            document.Close();
-                        }
-                    }
-
-                    string firstPagePdfPath = Path.Combine(tempOutputPath, firstPagePdfName);
-                    var firstPagePdfFile = PdfDocument.FromFile(firstPagePdfPath);
-
+                    // Generate JPG from first page
                     string fyiJpgFileName = issueNumber.ToString() + ".jpg";
-                    firstPagePdfFile.RasterizeToImageFiles(Path.Combine(fyiPath, fyiJpgFileName), 255, 320, IronPdf.Imaging.ImageType.Default, 300);
+                    firstPage.RasterizeToImageFiles(Path.Combine(fyiPath, fyiJpgFileName), 255, 320, IronPdf.Imaging.ImageType.Default, 300);
 
+                    // Cleanup
+                    pdfDoc.Dispose();
+                    firstPage.Dispose();
                     Directory.Delete(tempInputPath, true);
                     Directory.Delete(tempOutputPath, true);
                 }
@@ -254,7 +237,7 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             toUpdateWebFYINews.Status = (byte?)(updatedStatus == "yes" ? 1 : 0);
 
             Log.Logger.Information(User.Identity.Name.Substring(7).ToLower() + " is updating the FYI newsletter: {@toUpdateWebFYINews}", toUpdateWebFYINews);
-            
+
             try
             {
                 await _newsletterService.UpdateWebFYINews(toUpdateWebFYINews, toUpdateWebFYINews.ID);
