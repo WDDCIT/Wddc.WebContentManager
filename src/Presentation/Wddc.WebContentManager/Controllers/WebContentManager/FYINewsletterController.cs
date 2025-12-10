@@ -5,7 +5,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Wddc.PurchasingOrderApp.Services;
 using Wddc.Core.Domain.Webserver.WebOrdering;
-using Kendo.Mvc.Extensions;
 using Microsoft.AspNetCore.Http;
 using System.IO;
 using PagedList;
@@ -15,6 +14,8 @@ using Wddc.WebContentManager.Models;
 using Serilog;
 using Microsoft.AspNetCore.Hosting;
 using Wddc.WebContentManager.Services.WebContent.Newsletter;
+using PDFtoImage;
+using SkiaSharp;
 
 namespace Wddc.WebContentManager.Controllers.WebContentManager
 {
@@ -65,6 +66,33 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             return Json(webFYINews);
         }
 
+        /// <summary>
+        /// Converts first page of PDF to JPEG using PDFtoImage (free, cross-platform, no native dependencies)
+        /// </summary>
+        private void ConvertPdfPageToJpeg(string pdfPath, string outputJpgPath, int width = 255, int height = 320, int dpi = 300)
+        {
+            // Read PDF file as byte array
+            byte[] pdfBytes = System.IO.File.ReadAllBytes(pdfPath);
+
+            // Convert first page to SKBitmap with specified DPI
+            using (var bitmap = Conversion.ToImage(pdfBytes, options: new(Dpi: dpi)))
+            {
+                // Resize to target dimensions
+                using (var resizedBitmap = bitmap.Resize(new SKImageInfo(width, height), SKFilterQuality.High))
+                {
+                    using (var image = SKImage.FromBitmap(resizedBitmap))
+                    using (var data = image.Encode(SKEncodedImageFormat.Jpeg, 85)) // 85% quality
+                    using (var fileStream = System.IO.File.OpenWrite(outputJpgPath))
+                    {
+                        data.SaveTo(fileStream);
+                    }
+                }
+            }
+
+            // Force garbage collection to release file handles
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+        }
 
         [HttpPost]
         public async Task<ActionResult> AddWebsiteNewsletterAsync(string newDescription, IFormFile newInfoFileUrl, DateTime newIssueDate, string newStatus)
@@ -95,10 +123,6 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                 if (!Directory.Exists(tempInputPath))
                     Directory.CreateDirectory(tempInputPath);
 
-                string tempOutputPath = Path.Combine(this._hostingEnvironment.WebRootPath, "Website_Newsletter_Temp\\SplitedFiles");
-                if (!Directory.Exists(tempOutputPath))
-                    Directory.CreateDirectory(tempOutputPath);
-
                 string tempFilePath = Path.Combine(tempInputPath, inputFileName);
 
                 try
@@ -113,23 +137,28 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                     // Copy to final destination
                     System.IO.File.Copy(tempFilePath, Path.Combine(fyiPath, fyiPdfFileName), true);
 
-                    // Use IronPDF to load and extract first page
-                    var pdfDoc = IronPdf.PdfDocument.FromFile(tempFilePath);
-
-                    // Extract first page only
-                    var firstPage = pdfDoc.CopyPage(0);
-                    string firstPagePdfPath = Path.Combine(tempOutputPath, Path.GetFileNameWithoutExtension(inputFileName) + "_1.pdf");
-                    firstPage.SaveAs(firstPagePdfPath);
-
                     // Generate JPG from first page
                     string fyiJpgFileName = newIssueNumber.ToString() + ".jpg";
-                    firstPage.RasterizeToImageFiles(Path.Combine(fyiPath, fyiJpgFileName), 255, 320, IronPdf.Imaging.ImageType.Default, 300);
+                    string jpgPath = Path.Combine(fyiPath, fyiJpgFileName);
+                    ConvertPdfPageToJpeg(tempFilePath, jpgPath, 255, 320, 300);
 
-                    // Cleanup
-                    pdfDoc.Dispose();
-                    firstPage.Dispose();
-                    Directory.Delete(tempInputPath, true);
-                    Directory.Delete(tempOutputPath, true);
+                    // Cleanup with retry logic
+                    await Task.Delay(200);
+                    int retryCount = 0;
+                    while (Directory.Exists(tempInputPath) && retryCount < 3)
+                    {
+                        try
+                        {
+                            Directory.Delete(tempInputPath, true);
+                            break;
+                        }
+                        catch (IOException)
+                        {
+                            retryCount++;
+                            if (retryCount < 3) await Task.Delay(500);
+                            else Log.Logger.Warning($"Could not delete temp directory after {retryCount} attempts");
+                        }
+                    }
 
                     Web_News newWeb_News = new Web_News();
                     newWeb_News.Category = 1;
@@ -186,10 +215,6 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                 if (!Directory.Exists(tempInputPath))
                     Directory.CreateDirectory(tempInputPath);
 
-                string tempOutputPath = Path.Combine(this._hostingEnvironment.WebRootPath, "Website_Newsletter_Temp\\SplitedFiles");
-                if (!Directory.Exists(tempOutputPath))
-                    Directory.CreateDirectory(tempOutputPath);
-
                 string tempFilePath = Path.Combine(tempInputPath, inputFileName);
 
                 try
@@ -204,23 +229,28 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                     // Copy to final destination
                     System.IO.File.Copy(tempFilePath, Path.Combine(fyiPath, fyiPdfFileName), true);
 
-                    // Use IronPDF to load and extract first page
-                    var pdfDoc = IronPdf.PdfDocument.FromFile(tempFilePath);
-
-                    // Extract first page only
-                    var firstPage = pdfDoc.CopyPage(0);
-                    string firstPagePdfPath = Path.Combine(tempOutputPath, Path.GetFileNameWithoutExtension(inputFileName) + "_1.pdf");
-                    firstPage.SaveAs(firstPagePdfPath);
-
                     // Generate JPG from first page
                     string fyiJpgFileName = issueNumber.ToString() + ".jpg";
-                    firstPage.RasterizeToImageFiles(Path.Combine(fyiPath, fyiJpgFileName), 255, 320, IronPdf.Imaging.ImageType.Default, 300);
+                    string jpgPath = Path.Combine(fyiPath, fyiJpgFileName);
+                    ConvertPdfPageToJpeg(tempFilePath, jpgPath, 255, 320, 300);
 
-                    // Cleanup
-                    pdfDoc.Dispose();
-                    firstPage.Dispose();
-                    Directory.Delete(tempInputPath, true);
-                    Directory.Delete(tempOutputPath, true);
+                    // Cleanup with retry logic
+                    await Task.Delay(200);
+                    int retryCount = 0;
+                    while (Directory.Exists(tempInputPath) && retryCount < 3)
+                    {
+                        try
+                        {
+                            Directory.Delete(tempInputPath, true);
+                            break;
+                        }
+                        catch (IOException)
+                        {
+                            retryCount++;
+                            if (retryCount < 3) await Task.Delay(500);
+                            else Log.Logger.Warning($"Could not delete temp directory after {retryCount} attempts");
+                        }
+                    }
                 }
                 catch (Exception ex)
                 {

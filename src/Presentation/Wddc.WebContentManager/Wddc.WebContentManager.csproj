@@ -31,6 +31,7 @@
 
   <ItemGroup>
     <PackageReference Include="BuildBundlerMinifier" Version="3.2.449" />
+    <PackageReference Include="Docnet.Core" Version="2.6.0" />
     <PackageReference Include="IdentityModel" Version="6.2.0" />
     <PackageReference Include="IronPdf" Version="2022.9.9056" />
     <PackageReference Include="iTextSharp" Version="5.5.13.3" />
@@ -41,6 +42,8 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="PDFiumSharpV2" Version="1.1.4" />
+    <PackageReference Include="PDFtoImage" Version="5.2.0" />
     <PackageReference Include="Sentry.Serilog" Version="3.41.0" />
     <PackageReference Include="Serilog.Sinks.Console" Version="5.0.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
