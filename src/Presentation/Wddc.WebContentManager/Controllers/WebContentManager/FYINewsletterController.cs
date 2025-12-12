@@ -14,8 +14,10 @@ using Wddc.WebContentManager.Models;
 using Serilog;
 using Microsoft.AspNetCore.Hosting;
 using Wddc.WebContentManager.Services.WebContent.Newsletter;
-using PDFtoImage;
+using Docnet.Core;
+using Docnet.Core.Models;
 using SkiaSharp;
+using System.Runtime.InteropServices;
 
 namespace Wddc.WebContentManager.Controllers.WebContentManager
 {
@@ -67,31 +69,83 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
         }
 
         /// <summary>
-        /// Converts first page of PDF to JPEG using PDFtoImage (free, cross-platform, no native dependencies)
+        /// Converts first page of PDF to JPEG - outputs at 2x resolution for retina/high-DPI displays
         /// </summary>
-        private void ConvertPdfPageToJpeg(string pdfPath, string outputJpgPath, int width = 255, int height = 320, int dpi = 300)
+        private void ConvertPdfPageToJpeg(string pdfPath, string outputJpgPath, int width = 255, int height = 320)
         {
-            // Read PDF file as byte array
-            byte[] pdfBytes = System.IO.File.ReadAllBytes(pdfPath);
+            // Output at 2x the requested size for sharper display when scaled down by browser/CSS
+            int outputWidth = width * 2;  // 510
+            int outputHeight = height * 2; // 640
 
-            // Convert first page to SKBitmap with specified DPI
-            using (var bitmap = Conversion.ToImage(pdfBytes, options: new(Dpi: dpi)))
+            // Render PDF at 8x output size for supersampling
+            int renderWidth = outputWidth * 4;  // 2040
+            int renderHeight = outputHeight * 4; // 2560
+
+            using (var docReader = DocLib.Instance.GetDocReader(pdfPath, new PageDimensions(renderWidth, renderHeight)))
             {
-                // Resize to target dimensions
-                using (var resizedBitmap = bitmap.Resize(new SKImageInfo(width, height), SKFilterQuality.High))
+                using (var pageReader = docReader.GetPageReader(0))
                 {
-                    using (var image = SKImage.FromBitmap(resizedBitmap))
-                    using (var data = image.Encode(SKEncodedImageFormat.Jpeg, 85)) // 85% quality
-                    using (var fileStream = System.IO.File.OpenWrite(outputJpgPath))
+                    var rawBytes = pageReader.GetImage();
+                    var pageWidth = pageReader.GetPageWidth();
+                    var pageHeight = pageReader.GetPageHeight();
+
+                    var handle = GCHandle.Alloc(rawBytes, GCHandleType.Pinned);
+                    try
                     {
-                        data.SaveTo(fileStream);
+                        var info = new SKImageInfo(pageWidth, pageHeight, SKColorType.Bgra8888, SKAlphaType.Premul);
+                        using (var bitmap = new SKBitmap())
+                        {
+                            bitmap.InstallPixels(info, handle.AddrOfPinnedObject(), info.RowBytes);
+
+                            using (var bitmapCopy = bitmap.Copy())
+                            {
+                                // Calculate scaling maintaining aspect ratio
+                                float scaleX = (float)outputWidth / pageWidth;
+                                float scaleY = (float)outputHeight / pageHeight;
+                                float scale = Math.Min(scaleX, scaleY);
+
+                                int scaledWidth = (int)(pageWidth * scale);
+                                int scaledHeight = (int)(pageHeight * scale);
+
+                                // High-quality cubic resampling
+                                var samplingOptions = new SKSamplingOptions(SKCubicResampler.Mitchell);
+
+                                using (var resizedBitmap = bitmapCopy.Resize(new SKImageInfo(scaledWidth, scaledHeight), samplingOptions))
+                                {
+                                    if (resizedBitmap == null)
+                                        throw new InvalidOperationException("Failed to resize the image.");
+
+                                    using (var finalBitmap = new SKBitmap(outputWidth, outputHeight))
+                                    using (var canvas = new SKCanvas(finalBitmap))
+                                    {
+                                        canvas.Clear(SKColors.White);
+
+                                        int offsetX = (outputWidth - scaledWidth) / 2;
+                                        int offsetY = (outputHeight - scaledHeight) / 2;
+
+                                        using (var paint = new SKPaint { IsAntialias = true, FilterQuality = SKFilterQuality.High })
+                                        {
+                                            canvas.DrawBitmap(resizedBitmap, offsetX, offsetY, paint);
+                                        }
+
+                                        // Save as PNG for better quality (no JPEG compression artifacts)
+                                        using (var image = SKImage.FromBitmap(finalBitmap))
+                                        using (var data = image.Encode(SKEncodedImageFormat.Png, 100))
+                                        using (var fileStream = System.IO.File.Create(outputJpgPath.Replace(".jpg", ".png")))
+                                        {
+                                            data.SaveTo(fileStream);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    finally
+                    {
+                        handle.Free();
                     }
                 }
             }
-
-            // Force garbage collection to release file handles
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
         }
 
         [HttpPost]
@@ -138,9 +192,9 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                     System.IO.File.Copy(tempFilePath, Path.Combine(fyiPath, fyiPdfFileName), true);
 
                     // Generate JPG from first page
-                    string fyiJpgFileName = newIssueNumber.ToString() + ".jpg";
+                    string fyiJpgFileName = newIssueNumber.ToString() + ".png";
                     string jpgPath = Path.Combine(fyiPath, fyiJpgFileName);
-                    ConvertPdfPageToJpeg(tempFilePath, jpgPath, 255, 320, 300);
+                    ConvertPdfPageToJpeg(tempFilePath, jpgPath, 255, 320);
 
                     // Cleanup with retry logic
                     await Task.Delay(200);
@@ -178,8 +232,8 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                 catch (Exception ex)
                 {
                     Log.Logger.Error($"Error adding FYI newsletter with description : {newDescription} by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
-                    _logger.Error($"Error adding FYI newsletter: {ex.Message.Substring(0, 200)}", ex, User, "WebOrdering");
-                    return RedirectToAction("Index", new { response = "Failure", message = "Failure adding FYI newsletter: " + ex.Message.Substring(0, 200) });
+                    _logger.Error($"Error adding FYI newsletter: {ex.Message.Substring(0, Math.Min(200, ex.Message.Length))}", ex, User, "WebOrdering");
+                    return RedirectToAction("Index", new { response = "Failure", message = "Failure adding FYI newsletter: " + ex.Message.Substring(0, Math.Min(200, ex.Message.Length)) });
                 }
             }
             return RedirectToAction("Index", new { response = "Failure", message = "No pdf file was selected" });
@@ -232,7 +286,7 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                     // Generate JPG from first page
                     string fyiJpgFileName = issueNumber.ToString() + ".jpg";
                     string jpgPath = Path.Combine(fyiPath, fyiJpgFileName);
-                    ConvertPdfPageToJpeg(tempFilePath, jpgPath, 255, 320, 300);
+                    ConvertPdfPageToJpeg(tempFilePath, jpgPath, 255, 320);
 
                     // Cleanup with retry logic
                     await Task.Delay(200);
@@ -255,8 +309,8 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                 catch (Exception ex)
                 {
                     Log.Logger.Error($"Error updating the pdf file of the FYI newsletter with description : {updatedDescription} by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
-                    _logger.Error($"Error updating pdf file of FYI newsletter: {ex.Message.Substring(0, 200)}", ex, User, "WebOrdering");
-                    return RedirectToAction("Index", new { response = "Failure", message = "Failure updating pdf file of FYI newsletter: " + ex.Message.Substring(0, 200) });
+                    _logger.Error($"Error updating pdf file of FYI newsletter: {ex.Message.Substring(0, Math.Min(200, ex.Message.Length))}", ex, User, "WebOrdering");
+                    return RedirectToAction("Index", new { response = "Failure", message = "Failure updating pdf file of FYI newsletter: " + ex.Message.Substring(0, Math.Min(200, ex.Message.Length)) });
                 }
             }
 
@@ -279,8 +333,8 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             catch (Exception ex)
             {
                 Log.Logger.Error($"Error updating the FYI newsletter with description : {updatedDescription} by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
-                _logger.Error($"Error updating the FYI newsletter: {ex.Message.Substring(0, 200)}", ex, User, "WebOrdering");
-                return RedirectToAction("Index", new { response = "Failure", message = "Failure updating FYI newsletter: " + ex.Message.Substring(0, 200) });
+                _logger.Error($"Error updating the FYI newsletter: {ex.Message.Substring(0, Math.Min(200, ex.Message.Length))}", ex, User, "WebOrdering");
+                return RedirectToAction("Index", new { response = "Failure", message = "Failure updating FYI newsletter: " + ex.Message.Substring(0, Math.Min(200, ex.Message.Length)) });
             }
         }
 
@@ -313,8 +367,8 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             catch (Exception ex)
             {
                 Log.Logger.Error($"Error deleting the FYI newsletter with description : {toDeleteWebFYINews.Description} by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
-                _logger.Error($"Error deleting the FYI newsletter: {ex.Message.Substring(0, 200)}", ex, User, "WebOrdering");
-                return RedirectToAction("Index", new { response = "Failure", message = "Failure deleting FYI newsletter: " + ex.Message.Substring(0, 200) });
+                _logger.Error($"Error deleting the FYI newsletter: {ex.Message.Substring(0, Math.Min(200, ex.Message.Length))}", ex, User, "WebOrdering");
+                return RedirectToAction("Index", new { response = "Failure", message = "Failure deleting FYI newsletter: " + ex.Message.Substring(0, Math.Min(200, ex.Message.Length)) });
             }
         }
 
