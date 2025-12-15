@@ -68,25 +68,22 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
         }
 
         /// <summary>
-        /// Converts first page of PDF to JPEG using PDFtoImage (free, cross-platform, no native dependencies)
+        /// Converts first page of PDF to JPEG at full resolution using PDFtoImage
         /// </summary>
         private void ConvertPdfPageToJpeg(string pdfPath, string outputJpgPath, int width = 239, int height = 300, int dpi = 300)
         {
             // Read PDF file as byte array
             byte[] pdfBytes = System.IO.File.ReadAllBytes(pdfPath);
 
-            // Convert first page to SKBitmap with specified DPI
+            // Convert first page to SKBitmap with specified DPI - NO RESIZING for full quality!
             using (var bitmap = Conversion.ToImage(pdfBytes, options: new(Dpi: dpi)))
             {
-                // Resize to target dimensions
-                using (var resizedBitmap = bitmap.Resize(new SKImageInfo(width, height), SKFilterQuality.High))
+                // Save directly at full resolution without any resizing
+                using (var image = SKImage.FromBitmap(bitmap))
+                using (var data = image.Encode(SKEncodedImageFormat.Jpeg, 95)) // High quality (95%)
+                using (var fileStream = System.IO.File.Create(outputJpgPath))
                 {
-                    using (var image = SKImage.FromBitmap(resizedBitmap))
-                    using (var data = image.Encode(SKEncodedImageFormat.Jpeg, 85)) // 85% quality
-                    using (var fileStream = System.IO.File.OpenWrite(outputJpgPath))
-                    {
-                        data.SaveTo(fileStream);
-                    }
+                    data.SaveTo(fileStream);
                 }
             }
 
@@ -94,6 +91,34 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             GC.Collect();
             GC.WaitForPendingFinalizers();
         }
+
+        /// <summary>
+        /// Converts first page of PDF to JPEG at specified dimensions with high quality
+        /// </summary>
+        //private void ConvertPdfPageToJpeg(string pdfPath, string outputJpgPath, int width = 231, int height = 300, int dpi = 300)
+        //{
+        //    // Read PDF file as byte array
+        //    byte[] pdfBytes = System.IO.File.ReadAllBytes(pdfPath);
+
+        //    // Convert first page to SKBitmap with high DPI for quality source
+        //    using (var bitmap = Conversion.ToImage(pdfBytes, options: new(Dpi: dpi)))
+        //    {
+        //        // Resize to target dimensions with high quality
+        //        using (var resizedBitmap = bitmap.Resize(new SKImageInfo(width, height), SKFilterQuality.High))
+        //        {
+        //            using (var image = SKImage.FromBitmap(resizedBitmap))
+        //            using (var data = image.Encode(SKEncodedImageFormat.Jpeg, 95)) // High quality (95%)
+        //            using (var fileStream = System.IO.File.Create(outputJpgPath))
+        //            {
+        //                data.SaveTo(fileStream);
+        //            }
+        //        }
+        //    }
+
+        //    // Force garbage collection to release file handles
+        //    GC.Collect();
+        //    GC.WaitForPendingFinalizers();
+        //}
 
         [HttpPost]
         public async Task<ActionResult> AddWebsiteNewsletterAsync(string newDescription, IFormFile newInfoFileUrl, DateTime newIssueDate, string newStatus)
@@ -141,7 +166,7 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                     // Generate JPG from first page
                     string insiderJpgFileName = newIssueNumber.ToString() + ".jpg";
                     string jpgPath = Path.Combine(insiderPath, insiderJpgFileName);
-                    ConvertPdfPageToJpeg(tempFilePath, jpgPath, 239, 300, 300);
+                    ConvertPdfPageToJpeg(tempFilePath, jpgPath, 231, 300, 600);
 
                     // Cleanup with retry logic
                     await Task.Delay(200);
@@ -233,7 +258,7 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                     // Generate JPG from first page
                     string insiderJpgFileName = issueNumber.ToString() + ".jpg";
                     string jpgPath = Path.Combine(insiderPath, insiderJpgFileName);
-                    ConvertPdfPageToJpeg(tempFilePath, jpgPath, 239, 300, 300);
+                    ConvertPdfPageToJpeg(tempFilePath, jpgPath, 231, 300, 600);
 
                     // Cleanup with retry logic
                     await Task.Delay(200);
