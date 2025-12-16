@@ -34,10 +34,8 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             _hostingEnvironment = hostingEnvironment;
         }
 
-        public ActionResult Index(string response, string message)
+        public ActionResult Index()
         {
-            ViewBag.response = response;
-            ViewBag.Message = message;
             return View();
         }
 
@@ -101,11 +99,19 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             foreach (Web_News webFY in webFYINews)
             {
                 if (webFY.IssueDate == newIssueDate)
-                    return RedirectToAction("Index", new { response = "Failure", message = "Issue date enetered " + newIssueDate.ToString("dd/M/yyyy") + " already exists! You must choose a different date." });
+                {
+                    TempData["AlertType"] = "Error";
+                    TempData["AlertMessage"] = "Issue date entered " + newIssueDate.ToString("dd/M/yyyy") + " already exists! You must choose a different date.";
+                    return RedirectToAction("Index");
+                }
             }
 
             if (newInfoFileUrl.ContentType != "application/pdf")
-                return RedirectToAction("Index", new { response = "Failure", message = "File uploaded must be PDF!" });
+            {
+                TempData["AlertType"] = "Error";
+                TempData["AlertMessage"] = "File uploaded must be PDF!";
+                return RedirectToAction("Index");
+            }
 
             Web_News lastWebFYINews = await _newsletterService.GetLastWebFYINews();
             int newIssueNumber = Int32.Parse(lastWebFYINews.IssueNumber) + 1;
@@ -170,16 +176,25 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
 
                     Log.Logger.Information($"{User.Identity.Name.Substring(7).ToLower()} added new FYI newsletter id: {newWeb_News.ID} successfully");
                     _logger.Information($"Added FYI newsletter successfully: {newDescription}", null, User, "WebOrdering");
-                    return RedirectToAction("Index", new { response = "Success", message = "FYI newsletter was added successfully to the website! " });
+
+                    TempData["AlertType"] = "Success";
+                    TempData["AlertMessage"] = "FYI newsletter was added successfully to the website!";
+                    return RedirectToAction("Index");
                 }
                 catch (Exception ex)
                 {
                     Log.Logger.Error($"Error adding FYI newsletter with description : {newDescription} by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
                     _logger.Error($"Error adding FYI newsletter: {ex.Message.Substring(0, Math.Min(200, ex.Message.Length))}", ex, User, "WebOrdering");
-                    return RedirectToAction("Index", new { response = "Failure", message = "Failure adding FYI newsletter: " + ex.Message.Substring(0, Math.Min(200, ex.Message.Length)) });
+
+                    TempData["AlertType"] = "Error";
+                    TempData["AlertMessage"] = "Failure adding FYI newsletter: " + ex.Message.Substring(0, Math.Min(200, ex.Message.Length));
+                    return RedirectToAction("Index");
                 }
             }
-            return RedirectToAction("Index", new { response = "Failure", message = "No pdf file was selected" });
+
+            TempData["AlertType"] = "Error";
+            TempData["AlertMessage"] = "No pdf file was selected";
+            return RedirectToAction("Index");
         }
 
         [HttpPost]
@@ -192,7 +207,11 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             foreach (Web_News webFY in webFYINews)
             {
                 if (webFY.IssueDate == updatedIssueDate && webFY.ID != updatedNewsletterId)
-                    return RedirectToAction("Index", new { response = "Failure", message = "Issue date enetered " + updatedIssueDate.ToString("dd/M/yyyy") + " already exists! You must choose a different date." });
+                {
+                    TempData["AlertType"] = "Error";
+                    TempData["AlertMessage"] = "Issue date entered " + updatedIssueDate.ToString("dd/M/yyyy") + " already exists! You must choose a different date.";
+                    return RedirectToAction("Index");
+                }
             }
 
             Web_News toUpdateWebFYINews = await _newsletterService.GetWebFYINewsById(updatedNewsletterId);
@@ -202,7 +221,11 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             if (updatedInfoFileUrl != null)
             {
                 if (updatedInfoFileUrl.ContentType != "application/pdf")
-                    return RedirectToAction("Index", new { response = "Failure", message = "File uploaded must be PDF!" });
+                {
+                    TempData["AlertType"] = "Error";
+                    TempData["AlertMessage"] = "File uploaded must be PDF!";
+                    return RedirectToAction("Index");
+                }
 
                 string inputFileName = Path.GetFileName(updatedInfoFileUrl.FileName);
                 string fyiPdfFileName = issueNumber.ToString() + ".pdf";
@@ -253,7 +276,10 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                 {
                     Log.Logger.Error($"Error updating the pdf file of the FYI newsletter with description : {updatedDescription} by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
                     _logger.Error($"Error updating pdf file of FYI newsletter: {ex.Message.Substring(0, Math.Min(200, ex.Message.Length))}", ex, User, "WebOrdering");
-                    return RedirectToAction("Index", new { response = "Failure", message = "Failure updating pdf file of FYI newsletter: " + ex.Message.Substring(0, Math.Min(200, ex.Message.Length)) });
+
+                    TempData["AlertType"] = "Error";
+                    TempData["AlertMessage"] = "Failure updating pdf file of FYI newsletter: " + ex.Message.Substring(0, Math.Min(200, ex.Message.Length));
+                    return RedirectToAction("Index");
                 }
             }
 
@@ -271,13 +297,19 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
 
                 Log.Logger.Information($"{User.Identity.Name.Substring(7).ToLower()} updated the FYI newsletter id: {toUpdateWebFYINews.ID} successfully");
                 _logger.Information($"Updated FYI newsletter successfully: {updatedDescription}", null, User, "WebOrdering");
-                return RedirectToAction("Index", new { response = "Success", message = "FYI newsletter was updated successfully! " });
+
+                TempData["AlertType"] = "Success";
+                TempData["AlertMessage"] = "FYI newsletter was updated successfully!";
+                return RedirectToAction("Index");
             }
             catch (Exception ex)
             {
                 Log.Logger.Error($"Error updating the FYI newsletter with description : {updatedDescription} by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
                 _logger.Error($"Error updating the FYI newsletter: {ex.Message.Substring(0, Math.Min(200, ex.Message.Length))}", ex, User, "WebOrdering");
-                return RedirectToAction("Index", new { response = "Failure", message = "Failure updating FYI newsletter: " + ex.Message.Substring(0, Math.Min(200, ex.Message.Length)) });
+
+                TempData["AlertType"] = "Error";
+                TempData["AlertMessage"] = "Failure updating FYI newsletter: " + ex.Message.Substring(0, Math.Min(200, ex.Message.Length));
+                return RedirectToAction("Index");
             }
         }
 
@@ -305,13 +337,19 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
 
                 Log.Logger.Information($"{User.Identity.Name.Substring(7).ToLower()} deleted the FYI newsletter id: {toDeleteWebFYINews.ID} successfully");
                 _logger.Information($"Deleted FYI newsletter successfully: {toDeleteWebFYINews.Description}", null, User, "WebOrdering");
-                return RedirectToAction("Index", new { response = "Success", message = "FYI newsletter was deleted successfully! " });
+
+                TempData["AlertType"] = "Success";
+                TempData["AlertMessage"] = "FYI newsletter was deleted successfully!";
+                return RedirectToAction("Index");
             }
             catch (Exception ex)
             {
                 Log.Logger.Error($"Error deleting the FYI newsletter with description : {toDeleteWebFYINews.Description} by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
                 _logger.Error($"Error deleting the FYI newsletter: {ex.Message.Substring(0, Math.Min(200, ex.Message.Length))}", ex, User, "WebOrdering");
-                return RedirectToAction("Index", new { response = "Failure", message = "Failure deleting FYI newsletter: " + ex.Message.Substring(0, Math.Min(200, ex.Message.Length)) });
+
+                TempData["AlertType"] = "Error";
+                TempData["AlertMessage"] = "Failure deleting FYI newsletter: " + ex.Message.Substring(0, Math.Min(200, ex.Message.Length));
+                return RedirectToAction("Index");
             }
         }
 

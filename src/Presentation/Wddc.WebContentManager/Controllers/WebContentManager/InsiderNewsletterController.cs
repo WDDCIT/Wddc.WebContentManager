@@ -35,10 +35,8 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             _hostingEnvironment = hostingEnvironment;
         }
 
-        public ActionResult Index(string response, string message)
+        public ActionResult Index()
         {
-            ViewBag.response = response;
-            ViewBag.Message = message;
             return View();
         }
 
@@ -130,11 +128,19 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             foreach (Web_News webInsider in webInsiderNews)
             {
                 if (webInsider.IssueDate == newIssueDate)
-                    return RedirectToAction("Index", new { response = "Failure", message = "Issue date enetered " + newIssueDate.ToString("dd/M/yyyy") + " already exists! You must choose a different date." });
+                {
+                    TempData["AlertType"] = "Error";
+                    TempData["AlertMessage"] = "Issue date entered " + newIssueDate.ToString("dd/M/yyyy") + " already exists! You must choose a different date.";
+                    return RedirectToAction("Index");
+                }
             }
 
             if (newInfoFileUrl.ContentType != "application/pdf")
-                return RedirectToAction("Index", new { response = "Failure", message = "File uploaded must be PDF!" });
+            {
+                TempData["AlertType"] = "Error";
+                TempData["AlertMessage"] = "File uploaded must be PDF!";
+                return RedirectToAction("Index");
+            }
 
             Web_News lastWebInsiderNews = await _newsletterService.GetLastWebInsiderNews();
             int newIssueNumber = Int32.Parse(lastWebInsiderNews.IssueNumber) + 1;
@@ -199,16 +205,25 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
 
                     Log.Logger.Information($"{User.Identity.Name.Substring(7).ToLower()} added new Insider newsletter id: {newWeb_News.ID} successfully");
                     _logger.Information($"Added Insider newsletter successfully: {newDescription}", null, User, "WebOrdering");
-                    return RedirectToAction("Index", new { response = "Success", message = "Insider newsletter was added successfully to the website! " });
+
+                    TempData["AlertType"] = "Success";
+                    TempData["AlertMessage"] = "Insider newsletter was added successfully to the website!";
+                    return RedirectToAction("Index");
                 }
                 catch (Exception ex)
                 {
                     Log.Logger.Error($"Error adding Insider newsletter with description : {newDescription} by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
                     _logger.Error($"Error adding Insider newsletter: {ex.Message.Substring(0, 200)}", ex, User, "WebOrdering");
-                    return RedirectToAction("Index", new { response = "Failure", message = "Failure adding Insider newsletter: " + ex.Message.Substring(0, 200) });
+
+                    TempData["AlertType"] = "Error";
+                    TempData["AlertMessage"] = "Failure adding Insider newsletter: " + ex.Message.Substring(0, 200);
+                    return RedirectToAction("Index");
                 }
             }
-            return RedirectToAction("Index", new { response = "Failure", message = "No pdf file was selected" });
+
+            TempData["AlertType"] = "Error";
+            TempData["AlertMessage"] = "No pdf file was selected";
+            return RedirectToAction("Index");
         }
 
         [HttpPost]
@@ -221,7 +236,11 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             foreach (Web_News webInsider in webInsiderNews)
             {
                 if (webInsider.IssueDate == updatedIssueDate && webInsider.ID != updatedNewsletterId)
-                    return RedirectToAction("Index", new { response = "Failure", message = "Issue date enetered " + updatedIssueDate.ToString("dd/M/yyyy") + " already exists! You must choose a different date." });
+                {
+                    TempData["AlertType"] = "Error";
+                    TempData["AlertMessage"] = "Issue date entered " + updatedIssueDate.ToString("dd/M/yyyy") + " already exists! You must choose a different date.";
+                    return RedirectToAction("Index");
+                }
             }
 
             Web_News toUpdateWebInsiderNews = await _newsletterService.GetWebInsiderNewsById(updatedNewsletterId);
@@ -231,7 +250,11 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             if (updatedInfoFileUrl != null)
             {
                 if (updatedInfoFileUrl.ContentType != "application/pdf")
-                    return RedirectToAction("Index", new { response = "Failure", message = "File uploaded must be PDF!" });
+                {
+                    TempData["AlertType"] = "Error";
+                    TempData["AlertMessage"] = "File uploaded must be PDF!";
+                    return RedirectToAction("Index");
+                }
 
                 string inputFileName = Path.GetFileName(updatedInfoFileUrl.FileName);
                 string insiderPdfFileName = issueNumber.ToString() + ".pdf";
@@ -282,7 +305,10 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                 {
                     Log.Logger.Error($"Error updating the pdf file of the Insider newsletter with description : {updatedDescription} by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
                     _logger.Error($"Error updating pdf file of Insider newsletter: {ex.Message.Substring(0, 200)}", ex, User, "WebOrdering");
-                    return RedirectToAction("Index", new { response = "Failure", message = "Failure updating pdf file of Insider newsletter: " + ex.Message.Substring(0, 200) });
+
+                    TempData["AlertType"] = "Error";
+                    TempData["AlertMessage"] = "Failure updating pdf file of Insider newsletter: " + ex.Message.Substring(0, 200);
+                    return RedirectToAction("Index");
                 }
             }
 
@@ -300,13 +326,19 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
 
                 Log.Logger.Information($"{User.Identity.Name.Substring(7).ToLower()} updated the Insider newsletter id: {toUpdateWebInsiderNews.ID} successfully");
                 _logger.Information($"Updated Insider newsletter successfully: {updatedDescription}", null, User, "WebOrdering");
-                return RedirectToAction("Index", new { response = "Success", message = "Insider newsletter was updated successfully! " });
+
+                TempData["AlertType"] = "Success";
+                TempData["AlertMessage"] = "Insider newsletter was updated successfully!";
+                return RedirectToAction("Index");
             }
             catch (Exception ex)
             {
                 Log.Logger.Error($"Error updating the Insider newsletter with description : {updatedDescription} by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
                 _logger.Error($"Error updating the Insider newsletter: {ex.Message.Substring(0, 200)}", ex, User, "WebOrdering");
-                return RedirectToAction("Index", new { response = "Failure", message = "Failure updating Insider newsletter: " + ex.Message.Substring(0, 200) });
+
+                TempData["AlertType"] = "Error";
+                TempData["AlertMessage"] = "Failure updating Insider newsletter: " + ex.Message.Substring(0, 200);
+                return RedirectToAction("Index");
             }
         }
 
@@ -334,13 +366,19 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
 
                 Log.Logger.Information($"{User.Identity.Name.Substring(7).ToLower()} deleted the Insider newsletter id: {toDeleteWebInsiderNews.ID} successfully");
                 _logger.Information($"Deleted Insider newsletter successfully: {toDeleteWebInsiderNews.Description}", null, User, "WebOrdering");
-                return RedirectToAction("Index", new { response = "Success", message = "Insider newsletter was deleted successfully! " });
+
+                TempData["AlertType"] = "Success";
+                TempData["AlertMessage"] = "Insider newsletter was deleted successfully!";
+                return RedirectToAction("Index");
             }
             catch (Exception ex)
             {
                 Log.Logger.Error($"Error deleting the Insider newsletter with description : {toDeleteWebInsiderNews.Description} by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
                 _logger.Error($"Error deleting the Insider newsletter: {ex.Message.Substring(0, 200)}", ex, User, "WebOrdering");
-                return RedirectToAction("Index", new { response = "Failure", message = "Failure deleting Insider newsletter: " + ex.Message.Substring(0, 200) });
+
+                TempData["AlertType"] = "Error";
+                TempData["AlertMessage"] = "Failure deleting Insider newsletter: " + ex.Message.Substring(0, 200);
+                return RedirectToAction("Index");
             }
         }
 

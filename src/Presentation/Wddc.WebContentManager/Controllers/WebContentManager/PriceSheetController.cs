@@ -14,7 +14,6 @@ using Wddc.Core.Domain.Webserver.WebOrdering.Logging;
 using Wddc.WebContentManager.Models;
 using Serilog;
 using Microsoft.AspNetCore.Hosting;
-using IronPdf;
 using Wddc.WebContentManager.Services.WebContent.Newsletter;
 
 namespace Wddc.WebContentManager.Controllers.WebContentManager
@@ -34,10 +33,8 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             _hostingEnvironment = hostingEnvironment;
         }
 
-        public ActionResult Index(string response, string message)
+        public ActionResult Index()
         {
-            ViewBag.response = response;
-            ViewBag.Message = message;
             return View();
         }
 
@@ -73,7 +70,11 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             Log.Logger.Information(User.Identity.Name.Substring(7).ToLower() + " is adding a new price list sheet with description: " + newDescription);
 
             if (newInfoFileUrl.ContentType != "application/pdf")
-                return RedirectToAction("Index", new { response = "Failure", message = "File uploaded must be PDF!" });
+            {
+                TempData["AlertType"] = "Error";
+                TempData["AlertMessage"] = "File uploaded must be PDF!";
+                return RedirectToAction("Index");
+            }
 
             if (newInfoFileUrl != null)
             {
@@ -99,16 +100,25 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
 
                     Log.Logger.Information($"{User.Identity.Name.Substring(7).ToLower()} added new price sheet id: {newWeb_News.ID} successfully");
                     _logger.Information($"Added price sheet successfully: {newDescription}", null, User, "WebOrdering");
-                    return RedirectToAction("Index", new { response = "Success", message = "Price sheet was added successfully to the website! " });
+
+                    TempData["AlertType"] = "Success";
+                    TempData["AlertMessage"] = "Price sheet was added successfully to the website!";
+                    return RedirectToAction("Index");
                 }
                 catch (Exception ex)
                 {
                     Log.Logger.Error($"Error adding price sheet, description: {newDescription} by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
                     _logger.Error($"Error adding price sheet, description: {newDescription}: {ex.Message.Substring(0, 300)}", ex, User, "WebOrdering");
-                    return RedirectToAction("Index", new { response = "Failure", message = "Failure adding price sheet: " + ex.Message.Substring(0, 300) });
+
+                    TempData["AlertType"] = "Error";
+                    TempData["AlertMessage"] = "Failure adding price sheet: " + ex.Message.Substring(0, 300);
+                    return RedirectToAction("Index");
                 }
             }
-            return RedirectToAction("Index", new { response = "Failure", message = "No pdf file was selected" });
+
+            TempData["AlertType"] = "Error";
+            TempData["AlertMessage"] = "No pdf file was selected";
+            return RedirectToAction("Index");
         }
 
         [HttpPost]
@@ -119,7 +129,11 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             if (updatedInfoFileUrl != null)
             {
                 if (updatedInfoFileUrl.ContentType != "application/pdf")
-                    return RedirectToAction("Index", new { response = "Failure", message = "File uploaded must be PDF!" });
+                {
+                    TempData["AlertType"] = "Error";
+                    TempData["AlertMessage"] = "File uploaded must be PDF!";
+                    return RedirectToAction("Index");
+                }
 
                 string priceListPath = "\\\\WEBsrvr\\WDDCMembers\\WDDCWebPages\\wddc_members\\CS\\Price Lists";
 
@@ -134,7 +148,10 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                 {
                     Log.Logger.Error($"Error updating the pdf file of price sheet, description: {updatedDescription} by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
                     _logger.Error($"Error updating pdf file of price sheet, description: {updatedDescription}: {ex.Message.Substring(0, 300)}", ex, User, "WebOrdering");
-                    return RedirectToAction("Index", new { response = "Failure", message = "Failure updating pdf file of price sheet: " + ex.Message.Substring(0, 300) });
+
+                    TempData["AlertType"] = "Error";
+                    TempData["AlertMessage"] = "Failure updating pdf file of price sheet: " + ex.Message.Substring(0, 300);
+                    return RedirectToAction("Index");
                 }
             }
 
@@ -154,13 +171,19 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
 
                 Log.Logger.Information($"{User.Identity.Name.Substring(7).ToLower()} updated price sheet, ID: {updatedPriceSheetId} successfully");
                 _logger.Information($"Updated price sheet successfully: {updatedDescription}", null, User, "WebOrdering");
-                return RedirectToAction("Index", new { response = "Success", message = "Price sheet was updated successfully! " });
+
+                TempData["AlertType"] = "Success";
+                TempData["AlertMessage"] = "Price sheet was updated successfully!";
+                return RedirectToAction("Index");
             }
             catch (Exception ex)
             {
                 Log.Logger.Error($"Error updating price sheet, ID: {updatedPriceSheetId} by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
                 _logger.Error($"Error updating price sheet, description: {updatedDescription}: {ex.Message.Substring(0, 300)}", ex, User, "WebOrdering");
-                return RedirectToAction("Index", new { response = "Failure", message = "Failure updating price sheet: " + ex.Message.Substring(0, 300) });
+
+                TempData["AlertType"] = "Error";
+                TempData["AlertMessage"] = "Failure updating price sheet: " + ex.Message.Substring(0, 300);
+                return RedirectToAction("Index");
             }
 
         }
@@ -189,13 +212,19 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
 
                 Log.Logger.Information($"{User.Identity.Name.Substring(7).ToLower()} deleted price sheet Id: {toDeletePriceSheet.ID} successfully");
                 _logger.Information($"Deleted price sheet successfully, description: {toDeletePriceSheet.Description}", null, User, "WebOrdering");
-                return RedirectToAction("Index", new { response = "Success", message = "Price sheet was deleted successfully! " });
+
+                TempData["AlertType"] = "Success";
+                TempData["AlertMessage"] = "Price sheet was deleted successfully!";
+                return RedirectToAction("Index");
             }
             catch (Exception ex)
             {
                 Log.Logger.Error($"Error deleting price sheet, description: {toDeletePriceSheet.Description} by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
                 _logger.Error($"Error deleting price sheet, description: {toDeletePriceSheet.Description}: {ex.Message.Substring(0, 300)}", ex, User, "WebOrdering");
-                return RedirectToAction("Index", new { response = "Failure", message = "Failure deleting price sheet: " + ex.Message.Substring(0, 300) });
+
+                TempData["AlertType"] = "Error";
+                TempData["AlertMessage"] = "Failure deleting price sheet: " + ex.Message.Substring(0, 300);
+                return RedirectToAction("Index");
             }
         }
 
