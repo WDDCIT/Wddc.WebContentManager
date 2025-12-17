@@ -18,8 +18,12 @@
     <script src="~/js/pagination/pagination.custom.js"></script>
 
     <script>
+        // Kendo Grid for Bulk Delete
+        var selectedPriceSheetIds = [];
+
         $(document).ready(function () {
             prepareLogList();
+            initializeBulkDeleteGrid();
 
             // Handle alerts
             var alertType = '@TempData["AlertType"]';
@@ -154,6 +158,250 @@
                 }
             });
         });
+
+        function initializeBulkDeleteGrid() {
+            $("#priceSheetGrid").kendoGrid({
+                dataSource: {
+                    transport: {
+                        read: {
+                            url: '@Url.Action("GetPriceSheets", "PriceSheet")',
+                            dataType: "json"
+                        }
+                    },
+                    schema: {
+                        model: {
+                            id: "ID",
+                            fields: {
+                                ID: { type: "number" },
+                                IssueDate: { type: "date" },
+                                Description: { type: "string" },
+                                Status: { type: "number" },
+                                IssueNumber: { type: "string" }
+                            }
+                        }
+                    },
+                    sort: { field: "IssueDate", dir: "desc" }
+                },
+                height: 550,
+                sortable: true,
+                filterable: {
+                    mode: "row"
+                },
+                persistSelection: true,
+                change: onGridSelectionChange,
+                columns: [
+                    {
+                        selectable: true,
+                        width: "50px",
+                        headerTemplate: '<input type="checkbox" id="select-all-checkbox" />',
+                        attributes: {
+                            style: "text-align: center;"
+                        }
+                    },
+                    {
+                        field: "IssueDate",
+                        title: "Issue Date",
+                        width: "180px",
+                        template: "#= kendo.toString(kendo.parseDate(IssueDate), 'MMMM dd, yyyy') #",
+                        filterable: {
+                            cell: {
+                                operator: "contains",
+                                showOperators: false
+                            }
+                        }
+                    },
+                    {
+                        field: "Description",
+                        title: "Description",
+                        filterable: {
+                            cell: {
+                                operator: "contains",
+                                showOperators: false
+                            }
+                        }
+                    },
+                    {
+                        field: "Status",
+                        title: "Status",
+                        width: "120px",
+                        template: "# if(Status == 1) { # <span class='badge badge-success'>Visible</span> # } else { # <span class='badge badge-secondary'>Hidden</span> # } #",
+                        filterable: {
+                            cell: {
+                                template: function (args) {
+                                    args.element.kendoDropDownList({
+                                        dataSource: [
+                                            { text: "All", value: "" },
+                                            { text: "Visible", value: "1" },
+                                            { text: "Hidden", value: "0" }
+                                        ],
+                                        dataTextField: "text",
+                                        dataValueField: "value",
+                                        valuePrimitive: true
+                                    });
+                                },
+                                showOperators: false
+                            }
+                        }
+                    },
+                    {
+                        title: "Actions",
+                        width: "100px",
+                        template: '<a href="https://www.wddc.com/wddc_members/CS/Price%20Lists/#= IssueNumber #.pdf" target="_blank" class="btn btn-sm btn-info"><i class="fa fa-external-link-alt"></i> View</a>',
+                        filterable: false,
+                        sortable: false
+                    }
+                ],
+                dataBound: function() {
+                    // Handle "Select All" checkbox
+                    $("#select-all-checkbox").off("change").on("change", function() {
+                        var checked = this.checked;
+                        var grid = $("#priceSheetGrid").data("kendoGrid");
+                        var dataItems = grid.dataSource.view();
+
+                        if (checked) {
+                            dataItems.forEach(function(item) {
+                                grid.select(grid.tbody.find("tr[data-uid='" + item.uid + "']"));
+                            });
+                        } else {
+                            grid.clearSelection();
+                        }
+                    });
+                }
+            });
+        }
+
+        function onGridSelectionChange(e) {
+            var grid = e.sender;
+            var selectedRows = grid.select();
+
+            selectedPriceSheetIds = [];
+            selectedRows.each(function() {
+                var dataItem = grid.dataItem(this);
+                selectedPriceSheetIds.push(dataItem.ID);
+            });
+
+            updateSelectionCount();
+        }
+
+        function updateSelectionCount() {
+            var count = selectedPriceSheetIds.length;
+            $("#selected-count").text(count + " selected");
+            $("#bulk-delete-btn").prop("disabled", count === 0);
+
+            // Update "Select All" checkbox state
+            var grid = $("#priceSheetGrid").data("kendoGrid");
+            if (grid) {
+                var totalItems = grid.dataSource.view().length;
+                var selectedCount = grid.select().length;
+
+                $("#select-all-checkbox").prop("checked", totalItems > 0 && selectedCount === totalItems);
+            }
+        }
+
+        function clearSelection() {
+            var grid = $("#priceSheetGrid").data("kendoGrid");
+            if (grid) {
+                grid.clearSelection();
+                selectedPriceSheetIds = [];
+                updateSelectionCount();
+            }
+        }
+
+        function bulkDeletePriceSheets() {
+            if (selectedPriceSheetIds.length === 0) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'No Selection',
+                    text: 'Please select at least one price sheet to delete',
+                    confirmButtonColor: '#1a73e8'
+                });
+                return;
+            }
+
+            // Build the list of selected items for confirmation
+            var grid = $("#priceSheetGrid").data("kendoGrid");
+            var selectedItems = [];
+            selectedPriceSheetIds.forEach(function(id) {
+                var dataItem = grid.dataSource.get(id);
+                if (dataItem) {
+                    selectedItems.push({
+                        description: dataItem.Description,
+                        date: kendo.toString(kendo.parseDate(dataItem.IssueDate), 'MMMM dd, yyyy')
+                    });
+                }
+            });
+
+            var itemsList = selectedItems.map(function(item) {
+                return '<li style="text-align: left;"><strong>' + item.description + '</strong> - ' + item.date + '</li>';
+            }).join('');
+
+            Swal.fire({
+                title: 'Confirm Bulk Delete',
+                html: `<p>Are you sure you want to <strong>permanently delete</strong> these <strong>${selectedPriceSheetIds.length}</strong> price sheets?</p>
+                       <div style="max-height: 300px; overflow-y: auto; margin-top: 15px;">
+                           <ul style="list-style-type: none; padding-left: 0;">${itemsList}</ul>
+                       </div>
+                       <p style="margin-top: 15px; color: #dc3545;"><strong>This action cannot be undone!</strong></p>`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, Delete All ' + selectedPriceSheetIds.length,
+                cancelButtonText: 'Cancel',
+                width: '600px'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Show loading indicator
+                    Swal.fire({
+                        title: 'Deleting...',
+                        html: 'Please wait while we delete the selected price sheets.',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        showConfirmButton: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+
+                    // Submit the bulk delete request
+                    $.ajax({
+                        url: '@Url.Action("BulkDeletePriceSheets", "PriceSheet")',
+                        type: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify({ priceSheetIds: selectedPriceSheetIds }),
+                        success: function(response) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Success!',
+                                text: `Successfully deleted ${selectedPriceSheetIds.length} price sheet(s)`,
+                                showConfirmButton: false,
+                                timer: 3000,
+                                position: 'center',
+                                timerProgressBar: true
+                            }).then(() => {
+                                // Refresh the grid
+                                var grid = $("#priceSheetGrid").data("kendoGrid");
+                                grid.dataSource.read();
+                                clearSelection();
+                            });
+                        },
+                        error: function(xhr, status, error) {
+                            var errorMessage = 'An error occurred while deleting the price sheets.';
+                            if (xhr.responseJSON && xhr.responseJSON.message) {
+                                errorMessage = xhr.responseJSON.message;
+                            }
+
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Delete Failed',
+                                text: errorMessage,
+                                confirmButtonColor: '#1a73e8'
+                            });
+                        }
+                    });
+                }
+            });
+        }
 
         function showAlert(type, message) {
             if (type === 'success') {
@@ -654,6 +902,42 @@
             </div>
         </div>
 
+        <!-- Bulk Delete Price Sheets Section -->
+        <div class="action-card mb-4">
+            <button type="button" class="collapsible-btn">
+                <i class="fa fa-trash-alt"></i>
+                <span>Bulk Delete Price Sheets</span>
+                <i class="fa fa-chevron-down float-end toggle-icon"></i>
+            </button>
+            <div class="collapsible-content">
+                <div class="bulk-delete-section">
+                    <div class="row justify-content-center">
+                        <div class="col-lg-12">
+                            <div class="alert alert-info" role="alert">
+                                <i class="fa fa-info-circle"></i>
+                                <strong>Bulk Delete:</strong> Select multiple price sheets below and delete them all at once.
+                                Use the checkbox in the header to select/deselect all items.
+                            </div>
+
+                            <div class="selection-summary mb-3">
+                                <span id="selected-count" class="badge badge-primary">0 selected</span>
+                                <button type="button" id="bulk-delete-btn" class="btn btn-danger btn-modern btn-sm ml-3"
+                                        onclick="bulkDeletePriceSheets()" disabled>
+                                    <i class="fa fa-trash"></i> Delete Selected
+                                </button>
+                                <button type="button" class="btn btn-secondary btn-modern btn-sm ml-2"
+                                        onclick="clearSelection()">
+                                    <i class="fa fa-times"></i> Clear Selection
+                                </button>
+                            </div>
+
+                            <div id="priceSheetGrid"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Log Section -->
         <div class="log-section-container mt-5">
             <div class="text-center mb-3">
@@ -892,6 +1176,11 @@
             margin-right: 8px;
         }
 
+    .btn-sm {
+        padding: 8px 20px;
+        font-size: 0.85rem;
+    }
+
     .btn-light {
         color: #212529;
         background-color: white;
@@ -906,6 +1195,21 @@
             background-color: #f8f9fa;
             border-color: #1a73e8;
             color: #1a73e8;
+        }
+
+    .btn-info {
+        background-color: #17a2b8;
+        color: white !important;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        text-decoration: none;
+    }
+
+        .btn-info:hover {
+            background-color: #138496;
+            color: white;
         }
 
     /* ===== PREVIEW SECTION ===== */
@@ -1014,6 +1318,97 @@
     .radio-label input[type="radio"]:disabled + .radio-custom {
         opacity: 0.5;
         cursor: not-allowed;
+    }
+
+    /* ===== BULK DELETE SECTION ===== */
+    .bulk-delete-section {
+        padding: 20px 0;
+    }
+
+    .selection-summary {
+        display: flex;
+        align-items: center;
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+    }
+
+        .selection-summary .badge {
+            font-size: 1rem;
+            padding: 8px 15px;
+        }
+
+        .selection-summary .badge-primary {
+            background-color: #1a73e8;
+        }
+
+    .ml-2 {
+        margin-left: 0.5rem !important;
+    }
+
+    .ml-3 {
+        margin-left: 1rem !important;
+    }
+
+    .badge-success {
+        background-color: #28a745;
+        color: white;
+        padding: 5px 10px;
+        border-radius: 4px;
+        font-size: 0.85rem;
+    }
+
+    .badge-secondary {
+        background-color: #6c757d;
+        color: white;
+        padding: 5px 10px;
+        border-radius: 4px;
+        font-size: 0.85rem;
+    }
+
+    /* Kendo Grid Styling for Price Sheets */
+    #priceSheetGrid {
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        font-size: 1.05rem !important;
+    }
+
+        #priceSheetGrid .k-grid-header {
+            color: inherit;
+            font-weight: 600;
+            font-size: 1.1rem !important;
+        }
+
+            #priceSheetGrid .k-grid-header .k-header {
+                color: inherit;
+                border-color: rgba(255,255,255,0.2);
+            }
+
+        #priceSheetGrid .k-selected, .k-state-selected {
+            background-color: #f8f9fa !important;
+        }
+
+            #priceSheetGrid .k-selected td {
+                background-color: #f8f9fa !important;
+            }
+
+        #priceSheetGrid .k-grid-content {
+            max-height: 550px;
+        }
+
+        /* #priceSheetGrid .k-alt {
+            background-color: #f8f9fa;
+        } */
+
+    .alert-info {
+        background-color: #d1ecf1;
+        border-color: #bee5eb;
+        color: #0c5460;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 20px;
     }
 
     /* ===== LOG SECTION ===== */
@@ -1237,5 +1632,80 @@
         .collapsible-content {
             padding: 0 20px;
         }
+    }
+
+    /* Override Kendo Grid Filter Row and Sorted Column Background */
+    #priceSheetGrid .k-filter-row {
+        background-color: #ffffff !important;
+    }
+
+        #priceSheetGrid .k-filter-row th {
+            background-color: #f8f9fa !important;
+            border-bottom: 2px solid #dee2e6 !important;
+        }
+
+    /* Remove blue background from sorted columns in body */
+    #priceSheetGrid .k-sorted,
+    #priceSheetGrid th.k-sorted,
+    #priceSheetGrid td.k-sorted {
+        background-color: transparent !important;
+        background-image: none !important;
+    }
+
+    #priceSheetGrid tbody .k-sorted,
+    #priceSheetGrid tbody td.k-sorted {
+        background-color: inherit !important;
+    }
+
+    /* Ensure alternating row colors are preserved */
+    #priceSheetGrid .k-grid-content tr.k-alt td.k-sorted,
+    #priceSheetGrid .k-grid-content tr.k-alt .k-sorted {
+        background-color: #f8f9fa !important;
+    }
+
+    #priceSheetGrid .k-grid-content tr:not(.k-alt) td.k-sorted,
+    #priceSheetGrid .k-grid-content tr:not(.k-alt) .k-sorted {
+        background-color: #ffffff !important;
+    }
+
+    /* Override Kendo's default sorted column styling for newer versions */
+    #priceSheetGrid .k-grid-content .k-table-tbody .k-table-row td.k-sorted {
+        background-color: inherit !important;
+    }
+
+    #priceSheetGrid .k-grid-content .k-table-tbody .k-table-row.k-alt td.k-sorted {
+        background-color: #f8f9fa !important;
+    }
+
+    /* Remove blue background from filter inputs */
+    #priceSheetGrid .k-filter-row input,
+    #priceSheetGrid .k-filter-row .k-dropdown,
+    #priceSheetGrid .k-filter-row .k-textbox {
+        background-color: #ffffff !important;
+    }
+
+
+    /* ===== CHECKBOX STYLING ===== */
+    /* Make checkboxes larger in the grid */
+    #priceSheetGrid input[type="checkbox"] {
+        width: 15px !important;
+        height: 15px !important;
+        cursor: pointer;
+        /* transform: scale(1.3); */
+    }
+
+    /* Make the select-all checkbox in header larger */
+    #priceSheetGrid .k-grid-header input[type="checkbox"]#select-all-checkbox {
+        width: 15px !important;
+        height: 15px !important;
+        cursor: pointer;
+        /* transform: scale(1.3); */
+    }
+
+    /* Adjust spacing for larger checkboxes */
+    #priceSheetGrid .k-grid-content td:first-child,
+    #priceSheetGrid .k-grid-header th:first-child {
+        vertical-align: middle;
+        padding: 10px !important;
     }
 </style>

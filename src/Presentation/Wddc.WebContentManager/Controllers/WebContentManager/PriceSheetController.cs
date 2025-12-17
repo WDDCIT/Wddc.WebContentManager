@@ -228,6 +228,108 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             }
         }
 
+        [HttpPost]
+        public async Task<IActionResult> BulkDeletePriceSheets([FromBody] BulkDeleteRequest request)
+        {
+            try
+            {
+                if (request == null || request.PriceSheetIds == null || !request.PriceSheetIds.Any())
+                {
+                    return Json(new { success = false, message = "No price sheets selected for deletion." });
+                }
+
+                Log.Logger.Information($"{User.Identity.Name.Substring(7).ToLower()} is performing bulk delete of {request.PriceSheetIds.Count} price sheets");
+
+                var deletedCount = 0;
+                var failedCount = 0;
+                var errorMessages = new List<string>();
+                string priceListPath = "\\\\WEBsrvr\\WDDCMembers\\WDDCWebPages\\wddc_members\\CS\\Price Lists";
+
+                foreach (var priceSheetId in request.PriceSheetIds)
+                {
+                    try
+                    {
+                        var priceSheet = await _newsletterService.GetPriceSheetById(priceSheetId);
+
+                        if (priceSheet == null)
+                        {
+                            failedCount++;
+                            errorMessages.Add($"Price sheet with ID {priceSheetId} not found.");
+                            Log.Logger.Warning($"Price sheet with ID {priceSheetId} not found during bulk delete");
+                            continue;
+                        }
+
+                        // Delete the PDF file from the server if it exists
+                        if (!string.IsNullOrEmpty(priceSheet.IssueNumber))
+                        {
+                            // Delete PDF file
+                            string pdfFileName = priceSheet.IssueNumber.ToString() + ".pdf";
+                            string pdfFilePath = Path.Combine(priceListPath, pdfFileName);
+
+                            if (System.IO.File.Exists(pdfFilePath))
+                            {
+                                System.IO.File.Delete(pdfFilePath);
+                            }
+
+                            // Delete JPG file (if exists)
+                            string jpgFileName = priceSheet.IssueNumber.ToString() + ".jpg";
+                            string jpgFilePath = Path.Combine(priceListPath, jpgFileName);
+
+                            if (System.IO.File.Exists(jpgFilePath))
+                            {
+                                System.IO.File.Delete(jpgFilePath);
+                            }
+                        }
+
+                        // Delete from database
+                        await _newsletterService.DeletePriceSheet(priceSheet.ID);
+
+                        // Log the deletion
+                        Log.Logger.Information($"{User.Identity.Name.Substring(7).ToLower()} deleted price sheet Id: {priceSheet.ID} (Bulk Delete) successfully");
+                        _logger.Information($"Bulk Delete - Deleted price sheet: {priceSheet.Description}, Issue Date: {priceSheet.IssueDate:MMMM dd, yyyy}", null, User, "WebOrdering");
+
+                        deletedCount++;
+                    }
+                    catch (Exception ex)
+                    {
+                        failedCount++;
+                        var errorMsg = $"Error deleting price sheet ID {priceSheetId}: {ex.Message}";
+                        errorMessages.Add(errorMsg);
+                        Log.Logger.Error($"Error during bulk delete of price sheet ID {priceSheetId} by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
+                    }
+                }
+
+                // Prepare response message
+                var message = $"Successfully deleted {deletedCount} price sheet(s).";
+                if (failedCount > 0)
+                {
+                    message += $" {failedCount} failed.";
+                }
+
+                Log.Logger.Information($"Bulk delete completed by {User.Identity.Name.Substring(7).ToLower()}: {deletedCount} successful, {failedCount} failed");
+
+                return Json(new
+                {
+                    success = deletedCount > 0,
+                    message = message,
+                    deletedCount = deletedCount,
+                    failedCount = failedCount,
+                    errors = errorMessages
+                });
+            }
+            catch (Exception ex)
+            {
+                Log.Logger.Error($"Critical error during bulk delete by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
+                return Json(new { success = false, message = $"An error occurred during bulk delete: {ex.Message}" });
+            }
+        }
+
+        // Request model for bulk delete
+        public class BulkDeleteRequest
+        {
+            public List<int> PriceSheetIds { get; set; }
+        }
+
 
         public async Task<ActionResult> LogAsync(int? pageNumber, int pageSize = 5, string referrerUrl = null)
         {
