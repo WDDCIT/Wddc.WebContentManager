@@ -5,9 +5,7 @@
 }
 
 @section Styles {
-
     <link href="https://kendo.cdn.telerik.com/2021.2.511/styles/kendo.bootstrap-v4.min.css" rel="stylesheet" type="text/css" />
-
 }
 
 @section Scripts {
@@ -26,15 +24,153 @@
     <script>
 
         var liquidationSaleDataSource, salesGrid;
+        var isLogVisible = false;
+        var activityLogGrid;
         var today = new Date(), addressResult;
         var dd = String(today.getDate()).padStart(2, '0');
         var mm = String(today.getMonth() + 1).padStart(2, '0');
         var yyyy = today.getFullYear();
         today = mm + '/' + dd + '/' + yyyy;
 
+        function showNotification(type, message) {
+            Swal.fire({
+                icon: type,
+                title: type === 'success' ? 'Success!' : 'Error',
+                text: message,
+                confirmButtonColor: '#3182ce',
+                timer: 3000,
+                timerProgressBar: true,
+                showConfirmButton: true,
+                confirmButtonText: 'OK'
+            });
+        }
+
+        function toggleLog() {
+            isLogVisible = !isLogVisible;
+            var container = $('#logContainer');
+            var toggleText = $('#logToggleText');
+
+            if (isLogVisible) {
+                container.slideDown(300);
+                toggleText.text('Hide Activity Log');
+                loadActivityLog();
+            } else {
+                container.slideUp(300);
+                toggleText.text('Show Activity Log');
+            }
+        }
+
+        function loadActivityLog() {
+            $.ajax({
+                url: '@Url.Action("Log", "LiquidationSale")',
+                type: 'GET',
+                data: {
+                    referrerUrl: 'LiquidationSale',
+                    pageNumber: 1,
+                    pageSize: 100
+                },
+                success: function (response) {
+                    if (response && response.Results) {
+                        initActivityLogGrid(response.Results);
+                    } else {
+                        initActivityLogGrid([]);
+                    }
+                },
+                error: function (xhr, status, error) {
+                    console.error('Error loading activity log:', error);
+                    showNotification('error', 'Failed to load activity log: ' + error);
+                    initActivityLogGrid([]);
+                }
+            });
+        }
+
+        function initActivityLogGrid(logData) {
+            if (activityLogGrid) {
+                activityLogGrid.destroy();
+                $('#gridActivityLog').empty();
+            }
+
+            activityLogGrid = $("#gridActivityLog").kendoGrid({
+                dataSource: {
+                    data: logData,
+                    pageSize: 20,
+                    schema: {
+                        model: {
+                            fields: {
+                                Text: { type: "string" },
+                                User: { type: "string" },
+                                Created: { type: "string" }
+                            }
+                        }
+                    }
+                },
+                height: 400,
+                scrollable: true,
+                sortable: true,
+                pageable: {
+                    refresh: true,
+                    pageSizes: [10, 20, 50, 100],
+                    buttonCount: 5
+                },
+                filterable: {
+                    mode: "row"
+                },
+                resizable: true,
+                columns: [
+                    {
+                        field: "Text",
+                        title: "Log Message",
+                        width: "55%",
+                        filterable: {
+                            cell: {
+                                operator: "contains",
+                                showOperators: false
+                            }
+                        },
+                        template: function (dataItem) {
+                            var text = dataItem.Text || '';
+                            return '<div style="white-space: pre-wrap; word-wrap: break-word; line-height: 1.5;">' +
+                                kendo.htmlEncode(text) + '</div>';
+                        },
+                        attributes: { style: "white-space: normal; word-wrap: break-word;" }
+                    },
+                    {
+                        field: "User",
+                        title: "Username",
+                        width: "20%",
+                        filterable: {
+                            cell: {
+                                operator: "contains",
+                                showOperators: false
+                            }
+                        },
+                        template: function (dataItem) {
+                            return dataItem.User || 'Unknown';
+                        }
+                    },
+                    {
+                        field: "Created",
+                        title: "Date",
+                        width: "25%",
+                        filterable: false,
+                        template: function (dataItem) {
+                            return dataItem.Created || '';
+                        }
+                    }
+                ]
+            }).data("kendoGrid");
+        }
+
         $(document).ready(function () {
 
-            prepareLogList();
+            // Handle ViewBag alerts via SweetAlert2 toast
+            var response = '@ViewBag.response';
+            var message = '@ViewBag.Message';
+            if (response === 'Success') {
+                showNotification('success', message || 'Operation completed successfully');
+            } else if (response && response !== '') {
+                showNotification('error', message || 'An error occurred');
+            }
 
             var link = '@Url.Action("GetWebLiquidation", "LiquidationSale")';
             liquidationSaleDataSource = new kendo.data.DataSource({
@@ -70,6 +206,23 @@
 
                     }
                 },
+                requestEnd: function (e) {
+                    if (e.type === "create") {
+                        showNotification('success', 'Item added successfully');
+                    } else if (e.type === "update") {
+                        showNotification('success', 'Item updated successfully');
+                    } else if (e.type === "destroy") {
+                        showNotification('success', 'Item deleted successfully');
+                    }
+                },
+                error: function (e) {
+                    var message = 'An error occurred';
+                    if (e.xhr && e.xhr.responseJSON && e.xhr.responseJSON.message) {
+                        message = e.xhr.responseJSON.message;
+                    }
+                    showNotification('error', message);
+                    this.cancelChanges();
+                },
                 schema: {
                     model: {
                         id: "ID",
@@ -79,6 +232,7 @@
                             REG_Code: { type: "string", validation: { required: true } },
                             Description: { editable: true, type: "string" },
                             Reason: { editable: true, type: "string"},
+                            Source: { editable: true, type: "string" },
                             QOH: { editable: true, type: "number", validation: { required: true, min: 0 } },
                             Expiry_Date: { editable: true, type: "date" },
                             Regular_Cost: { editable: true, type: "number", validation: { required: true, min: 0 } },
@@ -102,8 +256,37 @@
                     showIndexes: true
                 },
                 filterable: true,
-                resizable: false,
+                resizable: true,
                 edit: function (e) {
+                    // Style the popup window
+                    var editWindow = e.container.data("kendoWindow");
+                    editWindow.setOptions({ width: 700 });
+                    editWindow.center();
+
+                    // Style form fields inside popup
+                    e.container.find(".k-edit-label label").css({
+                        "font-weight": "600",
+                        "color": "#495057",
+                        "font-size": "13px"
+                    });
+                    e.container.find(".k-edit-field .k-textbox, .k-edit-field .k-numerictextbox, .k-edit-field .k-datepicker").css({
+                        "width": "100%"
+                    });
+
+                    // Replace Source input with a resizable textarea
+                    // Replace Source input with a resizable textarea
+                    var sourceInput = e.container.find('[name="Source"]');
+                    if (sourceInput.length) {
+                        var textarea = $('<textarea class="k-textbox source-textarea" name="Source" rows="5" placeholder="Enter notes or source details..."></textarea>');
+                        textarea.val(sourceInput.val());
+                        sourceInput.replaceWith(textarea);
+
+                        // Bind textarea changes back to the Kendo model
+                        textarea.on('input', function () {
+                            e.model.set("Source", $(this).val());
+                        });
+                    }
+
                     if (e.model.isNew()) {
                         var addButtons = document.getElementsByClassName("k-grid-update");
                         addButtons[0].innerHTML = '<span class="k-icon k-i-check"></span>Add';
@@ -112,13 +295,12 @@
                         document.getElementById("REG_Code").onchange = function () { getItemInfo() };
                     }
                 },
-                //editable: "popup",
                 editable: {
                     mode: "popup",
                     confirmation: false
-                }, 
+                },
                 columns: [
-                    { selectable: true, width: "35px" },
+                    { selectable: true, width: "40px" },
                     {
                         field: "RET_Code",
                         title: "Location",
@@ -126,7 +308,7 @@
                             multi: true,
                             search: true
                         },
-                        attributes: { class: "grid-cell", style: "text-align: center; color: black;" }
+                        attributes: { class: "grid-cell", style: "text-align: center;" }
                     },
                     {
                         field: "REG_Code",
@@ -142,7 +324,7 @@
                         field: "Description",
                         title: "Description",
                         filterable: false,
-                        attributes: { class: "grid-cell", style: "text-align: left; font-size: 11px;"  }
+                        attributes: { class: "grid-cell" }
                     },
                     {
                         field: "Reason",
@@ -151,18 +333,32 @@
                             multi: true,
                             search: true
                         },
-                        attributes: { class: "grid-cell", style: "text-align: left;" }
+                        attributes: { class: "grid-cell" }
+                    },
+                    {
+                        field: "Source",
+                        title: "Source",
+                        filterable: {
+                            multi: true,
+                            search: true
+                        },
+                        template: function (dataItem) {
+                            var val = dataItem.Source || "";
+                            return '<span class="source-cell" title="' + kendo.htmlEncode(val) + '">' + kendo.htmlEncode(val) + '</span>';
+                        },
+                        attributes: { class: "grid-cell" }
                     },
                     {
                         field: "Expiry_Date",
                         title: "Expiry",
+                        width: "90px",
                         filterable: false,
                         template: function (dataItem) {
                             if (dataItem.Expiry_Date == null)
                                 return "";
                             return moment(dataItem.Expiry_Date).format('MM/YYYY');
                         },
-                        attributes: { class: "grid-cell", style: "text-align: center; " }
+                        attributes: { class: "grid-cell", style: "text-align: center;" }
                     },
                     {
                         field: "QOH",
@@ -195,7 +391,14 @@
                         step: 0.1,
                         attributes: { class: "grid-cell", style: "text-align: center;" }
                     },
-                    { command: ["edit", "destroy"], title: "&nbsp;", width: "250px" }
+                    {
+                        command: [
+                            { name: "edit", className: "btn-row-edit" },
+                            { name: "customDelete", text: "Delete", click: confirmRowDelete, className: "btn-row-delete" }
+                        ],
+                        title: "&nbsp;",
+                        width: "200px"
+                    }
                 ]
             }).data("kendoGrid");
 
@@ -214,14 +417,52 @@
             $("#salesGrid").find(".k-grid-toolbar").on("click", ".k-grid-Refresh", function (e) {
                 e.preventDefault();
                 salesGrid.dataSource.read();
-                prepareLogList();
+                if (isLogVisible) loadActivityLog();
             });
 
-            $("#salesGrid").find(".k-grid-toolbar").on("click", ".k-grid-DeleteSelected", function (e) {
-                $("#salesGrid").find("input:checked").each(function () {
-                    salesGrid.removeRow($(this).closest('tr'));
-                })
-                prepareLogList();
+           $("#salesGrid").find(".k-grid-toolbar").on("click", ".k-grid-DeleteSelected", function (e) {
+                var checkedRows = $("#salesGrid").find("input:checked");
+                if (checkedRows.length === 0) {
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'No Selection',
+                        text: 'Please select at least one item to delete.',
+                        confirmButtonColor: '#3182ce'
+                    });
+                    return;
+                }
+
+                Swal.fire({
+                    title: 'Confirm Bulk Delete',
+                    text: 'Delete ' + checkedRows.length + ' selected item(s)?',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#e53e3e',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Yes, delete all!',
+                    cancelButtonText: 'Cancel'
+                }).then(function (result) {
+                    if (result.isConfirmed) {
+                        // Collect all data items while DOM is still intact
+                        var itemsToDelete = [];
+                        checkedRows.each(function () {
+                            var row = $(this).closest('tr');
+                            var dataItem = salesGrid.dataItem(row);
+                            if (dataItem) {
+                                itemsToDelete.push(dataItem);
+                            }
+                        });
+
+                        // Remove from DataSource without triggering individual syncs
+                        itemsToDelete.forEach(function (item) {
+                            salesGrid.dataSource.remove(item);
+                        });
+
+                        // Single sync sends all delete requests
+                        salesGrid.dataSource.sync();
+                        if (isLogVisible) loadActivityLog();
+                    }
+                });
             });
 
             function isEditable(e) {
@@ -240,186 +481,568 @@
             }
 
             function grid_dataBound(e) {
-                document.getElementById("salesGridTotal").innerHTML = "Total: " + liquidationSaleDataSource.total() + " out of " + liquidationSaleDataSource.data().length ;
+                document.getElementById("salesGridTotal").innerHTML =
+                    '<i class="fa fa-database"></i> <strong>' + liquidationSaleDataSource.total() + '</strong> of ' + liquidationSaleDataSource.data().length + ' items';
             }
 
             function grid_save(e) {
                 e.sender.one("dataBound", function () {
                     e.sender.dataSource.read();
-                    prepareLogList();
+                    if (isLogVisible) loadActivityLog();
+                });
+            }
+
+            function confirmRowDelete(e) {
+                e.preventDefault();
+                var grid = $("#salesGrid").data("kendoGrid");
+                var tr = $(e.currentTarget).closest("tr");
+                var dataItem = grid.dataItem(tr);
+                var itemId = dataItem.ID;
+
+                Swal.fire({
+                    title: 'Confirm Delete',
+                    text: 'Delete item ' + (dataItem.REG_Code || '') + ' at location ' + (dataItem.RET_Code || '') + '?',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#e53e3e',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Yes, delete it!',
+                    cancelButtonText: 'Cancel'
+                }).then(function (result) {
+                    if (result.isConfirmed) {
+                        // Re-fetch by ID — the TR may be stale after async confirmation
+                        var currentItem = grid.dataSource.get(itemId);
+                        if (currentItem) {
+                            grid.dataSource.remove(currentItem);
+                            grid.dataSource.sync();
+                        }
+                        if (isLogVisible) loadActivityLog();
+                    }
                 });
             }
 
         })
 
-        function prepareLogList() {
-            setupPagination('log', 'log-list', '@Url.Action("Log", "LiquidationSale")?referrerUrl=LiquidationSale', ['Log', 'Username', 'Created'], 7);
-        }
-
-
     </script>
 }
 
+<!-- Page Header -->
 <div class="wrapper wrapper-content animated fadeInRight">
+
+    <!-- Page Header -->
     <div class="row">
-        <div class="col-12 col-lg-12 col-sm-12 col-xl-12 content-center">
-            <div class="alert alert-success" id="success-alert" style="display:none"></div>
-            <div class="alert alert-danger" id="danger-alert" style="display:none"></div>
+        <div class="col-12">
+            <div class="page-header-banner">
+                <h2>
+                    <i class="fa fa-tags"></i>
+                    Liquidation Sale — Returns
+                </h2>
+                <p class="subtitle">
+                    Manage liquidation inventory, pricing, and return items across locations
+                </p>
+            </div>
         </div>
     </div>
+
+    <!-- Main Grid Card -->
     <div class="row">
         <div class="col-lg-12">
-            <div class="ibox">
-                <div class="ibox-content">
-                    <div class="row">
-                        <div class="col-lg-12">
-                            <div class="row">
-                                <div class="col-lg-12">
-                                    <div id="grid">
-                                        <h5 id="salesGridTotal"></h5>
-                                        <div id="salesGrid"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row" style="margin-top: 30px;">
-                        <div class="col-lg-2"></div>
-                        <div class="col-lg-8">
-                            <div id="log" class="content-center">
-                                <div class="bs-ObjectList-rows" id="log-list">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-lg-2"></div>
-                    </div>
+            <div class="card shadow-sm">
+                <div class="card-header d-flex align-items-center justify-content-between">
+                    <span class="grid-total-badge" id="salesGridTotal"></span>
+                </div>
+                <div class="card-body">
+                    <div id="salesGrid"></div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
+    <!-- Log Section -->
+    <div class="row">
+        <div class="col-12">
+            <div class="log-section">
+                <div class="log-header">
+                    <button type="button" class="btn-toggle-log" onclick="toggleLog()">
+                        <i class="fa fa-history"></i> <span id="logToggleText">Show Activity Log</span>
+                    </button>
+                </div>
+                <div id="logContainer" style="display: none; margin-top: 15px;">
+                    <div id="gridActivityLog"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
 
 <style>
 
-    #salesGridTotal {
-        color: #708090;
+    #page-heading, .breadcrumb {
+        display: none;
     }
 
+    /* ===== Page Layout ===== */
+    .wrapper-content {
+        padding: 15px 20px 30px;
+    }
+
+    /* ===== Card Styling ===== */
+    .card {
+        border: none;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .card-header {
+        background: linear-gradient(135deg, #f8f9fc 0%, #eef1f6 100%);
+        border-bottom: 1px solid #e3e6ef;
+        padding: 14px 20px;
+    }
+
+    .card-title {
+        font-size: 15px;
+        font-weight: 600;
+        color: #2d3748;
+        letter-spacing: 0.3px;
+    }
+
+    .card-body {
+        padding: 16px 20px;
+    }
+
+    /* ===== Grid Total Badge (override site.min.css badge-info) ===== */
+    .grid-total-badge {
+        font-size: 12px;
+        font-weight: 600;
+        padding: 5px 14px;
+        border-radius: 20px;
+        background: #e9ecef !important;
+        color: #2d3748 !important;
+        letter-spacing: 0.3px;
+        box-shadow: none;
+        border: 1px solid #dee2e6;
+    }
+
+    /* ===== Kendo Grid ===== */
     #salesGrid .k-grid-content {
         min-height: 100px;
         max-height: 600px;
     }
 
-    .content-center {
-        margin: 0px auto 0px auto;
+    #salesGrid .k-grid-header .k-header {
+        background: #f7f9fc;
+        border-bottom: 2px solid #dee2e6;
+    }
+
+    #salesGrid .k-grid-header .k-link {
         text-align: center;
+        font-weight: 700;
+        font-size: 11.5px;
+        color: #4a5568;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
-    .wrapper-content {
-        padding: 10px 10px 20px;
+    #salesGrid .k-master-row td {
+        border-bottom: 1px solid #f0f0f0;
     }
 
-    .ibox-content {
-        padding: 7px 15px 15px 15px;
+    #salesGrid .k-master-row:hover td {
+        background-color: #f0f7ff !important;
     }
 
-    #grid {
-        margin: 0px auto;
-        width: 90%;
+    #salesGrid .k-alt td {
+        background-color: #fafbfd;
     }
 
     .grid-cell {
+        font-size: 12.5px;
+        color: #4a5568;
+        padding: 8px 10px;
+    }
+
+    /* ===== Grid Toolbar ===== */
+    #salesGrid .k-grid-toolbar {
+        background: #fff;
+        border-bottom: 1px solid #e9ecef;
+        padding: 10px 14px;
+        gap: 6px;
+    }
+
+    .k-grid-excel, .k-grid-add,
+    .k-grid-Refresh, .k-grid-DeleteSelected {
         font-size: 12px;
+        border-radius: 4px !important;
+        padding: 5px 12px !important;
     }
 
-    .k-header .k-link {
-        text-align: center;
-        font-weight: bold;
-        font-size: 11px;
+    .k-grid-add {
+        background-color: #3182ce !important;
+        color: #fff !important;
+        border-color: #3182ce !important;
     }
 
-    .k-grid-excel, .k-grid-edit, .k-grid-add, .k-grid-delete, .k-grid-Refresh, .k-grid-DeleteSelected {
-        font-size: 12px;
+        .k-grid-add:hover {
+            background-color: #2c5282 !important;
+        }
+
+    .k-grid-DeleteSelected {
+        background-color: #e53e3e !important;
+        color: #fff !important;
+        border-color: #e53e3e !important;
     }
 
-    .k-textbox {
-        font-size: 12px;
+        .k-grid-DeleteSelected:hover {
+            background-color: #c53030 !important;
+        }
+
+    /* ===== Row Command Buttons — Edit ===== */
+    #salesGrid .btn-row-edit {
+        background: #3182ce !important;
+        color: #fff !important;
+        border: none !important;
+        border-radius: 4px !important;
+        font-size: 11px !important;
+        font-weight: 500 !important;
+        padding: 4px 14px !important;
+        transition: all 0.2s ease !important;
     }
 
-    .k-grid-edit-row .k-edit-cell input {
+        #salesGrid .btn-row-edit:hover {
+            background: #2c5282 !important;
+            box-shadow: 0 2px 6px rgba(49, 130, 206, 0.35) !important;
+        }
+
+    /* ===== Row Command Buttons — Delete ===== */
+    #salesGrid .btn-row-delete {
+        background: #e53e3e !important;
+        color: #fff !important;
+        border: none !important;
+        border-radius: 4px !important;
+        font-size: 11px !important;
+        font-weight: 500 !important;
+        padding: 4px 14px !important;
+        transition: all 0.2s ease !important;
+    }
+
+        #salesGrid .btn-row-delete:hover {
+            background: #c53030 !important;
+            box-shadow: 0 2px 6px rgba(229, 62, 62, 0.35) !important;
+        }
+
+    /* ===== Popup Editor Styling ===== */
+    .k-edit-form-container {
+        width: 460px;
+        padding: 20px 24px;
+    }
+
+        .k-edit-form-container .k-edit-label {
+            width: 35%;
+            padding: 8px 0;
+        }
+
+            .k-edit-form-container .k-edit-label label {
+                font-weight: 600;
+                font-size: 13px;
+                color: #374151;
+            }
+
+        .k-edit-form-container .k-edit-field {
+            width: 60%;
+            padding: 6px 0;
+        }
+
+        .k-edit-form-container .k-textbox {
+            width: 100%;
+            padding: 6px 10px;
+            border-radius: 4px;
+            border: 1px solid #d1d5db;
+            font-size: 13px;
+            transition: border-color 0.2s;
+        }
+
+            .k-edit-form-container .k-textbox:focus {
+                border-color: #3182ce;
+                box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.15);
+                outline: none;
+            }
+
+        .k-edit-form-container .k-numerictextbox,
+        .k-edit-form-container .k-datepicker {
+            width: 100%;
+        }
+
+            .k-edit-form-container .k-numerictextbox .k-numeric-wrap,
+            .k-edit-form-container .k-datepicker .k-picker-wrap {
+                border-radius: 4px;
+                font-size: 13px;
+            }
+
+        .k-edit-form-container .k-edit-buttons {
+            padding: 14px 0 4px;
+            border-top: 1px solid #e5e7eb;
+            margin-top: 10px;
+            text-align: right;
+        }
+
+        .k-edit-form-container .k-grid-update {
+            background-color: #3182ce;
+            color: #fff;
+            border-color: #3182ce;
+            border-radius: 4px;
+            padding: 6px 20px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+            .k-edit-form-container .k-grid-update:hover {
+                background-color: #2c5282;
+            }
+
+        .k-edit-form-container .k-grid-cancel {
+            border-radius: 4px;
+            padding: 6px 20px;
+            font-size: 13px;
+        }
+
+    /* Popup window title bar */
+    .k-window-titlebar {
+        background: linear-gradient(135deg, #3182ce 0%, #2c5282 100%);
+        color: #fff;
+        padding: 10px 16px;
         font-size: 14px;
+        font-weight: 600;
     }
 
-    .k-numerictextbox .k-numeric-wrap {
-        font-size: 14px;
+        .k-window-titlebar .k-window-title {
+            color: #fff;
+        }
+
+        .k-window-titlebar .k-window-action .k-icon {
+            color: #fff;
+        }
+
+    /* ===== Source Column ===== */
+    .source-cell {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 400px;
+        white-space: normal;
+        word-break: break-word;
+        cursor: help;
     }
 
-    .k-edit-field.k-no-editor {
-        font-size: 12px;
-    }
-
+    /* ===== Checkbox ===== */
     .k-checkbox {
-        width: 15px;
-        height: 15px;
+        width: 16px;
+        height: 16px;
+        border-radius: 3px;
     }
 
+    /* ===== Date/Calendar Pickers ===== */
     .k-datepicker, .k-timepicker {
-        font-size: 1.3rem;
+        font-size: 13px;
     }
 
     .k-calendar {
-        font-size: 1.3rem;
+        font-size: 13px;
     }
 
-    #page-heading {
-        font-size: 20px;
-        font-weight: bold;
-        color: #1565C0;
+    /* ===== Log Section ===== */
+    .log-section {
+        border-top: 2px solid #e7eaec;
+        padding-top: 20px;
+        padding-bottom: 20px;
+        margin-top: 30px;
     }
 
-    .bs-ObjectList-row {
-        border-radius: 0.25rem;
-    }
-
-    .bs-ObjectList-row--header {
-        position: relative;
-        background-color: #E8E8E8;
-    }
-
-        .bs-ObjectList-row--header .bs-ObjectList-cell {
-            font-weight: bold;
-        }
-
-    .bs-ObjectList-row .bs-ObjectList-cell {
-        width: 20%;
+    .log-header {
         text-align: center;
+        margin-bottom: 15px;
     }
 
-        .bs-ObjectList-row .bs-ObjectList-cell:last-child {
-            width: 20%;
-            text-align: center;
+    .btn-toggle-log {
+        padding: 6px 16px;
+        background: linear-gradient(135deg, #2c5282 0%, #3182ce 100%);
+        color: #ffffff;
+        border: none;
+        border-radius: 16px;
+        font-weight: 600;
+        font-size: 11px;
+        cursor: pointer;
+        box-shadow: 0 2px 4px rgba(49, 130, 206, 0.3);
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+        .btn-toggle-log:hover {
+            background: linear-gradient(135deg, #2c5282 0%, #265080 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(49, 130, 206, 0.4);
         }
 
-        .bs-ObjectList-row .bs-ObjectList-cell:first-child {
-            width: 60%;
-            text-align: left;
-            white-space: pre-wrap;
+    #logContainer {
+        animation: slideDown 0.3s ease-out;
+        padding: 0 20px;
+    }
+
+    @@keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
         }
 
-    .bs-ObjectList-child, .bs-ObjectList-parent, .bs-ObjectList-row {
-        display: table-row;
-        transition: background-color .15s ease 0s;
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 
-    .bs-ObjectList-cell {
-        display: table-cell;
-        position: relative;
-        padding: 9px 10px;
-        color: #525f7f;
-        font-weight: 400;
-        line-height: 22px;
-        vertical-align: top;
-        white-space: nowrap;
+    /* ===== Activity Log Grid ===== */
+    #gridActivityLog {
+        border-radius: 6px;
+        border: 1px solid #e7eaec;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     }
+
+        #gridActivityLog .k-grid-header {
+            background: linear-gradient(to bottom, #f8f9fa 0%, #e9ecef 100%);
+            border-bottom: 1px solid #dee2e6;
+        }
+
+            #gridActivityLog .k-grid-header .k-header {
+                font-weight: bold;
+                color: #495057;
+                font-size: 13px;
+            }
+
+        #gridActivityLog tbody tr {
+            height: auto !important;
+        }
+
+            #gridActivityLog tbody tr:hover {
+                background-color: rgba(49, 130, 206, 0.05);
+            }
+
+        #gridActivityLog tbody td {
+            white-space: normal !important;
+            word-wrap: break-word !important;
+            word-break: break-word !important;
+            vertical-align: top !important;
+            padding: 8px 10px !important;
+        }
+
+            #gridActivityLog tbody td:first-child {
+                color: #2c3e50 !important;
+                text-align: left !important;
+                padding-left: 12px !important;
+                font-size: 12px !important;
+                line-height: 1.5 !important;
+                max-width: none !important;
+                overflow: visible !important;
+            }
+
+            #gridActivityLog tbody td:not(:first-child) {
+                text-align: center !important;
+            }
+
+        #gridActivityLog .k-filter-row th {
+            border-color: #dee2e6 !important;
+            background: #f8f9fa !important;
+        }
+
+        #gridActivityLog .k-filter-row .k-filtercell {
+            border-color: #dee2e6 !important;
+        }
+
+        #gridActivityLog .k-filter-row input.k-textbox {
+            border-color: #ced4da !important;
+        }
+
+    /* ===== Shadow Utility ===== */
+    .shadow-sm {
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06) !important;
+    }
+
+    /* ===== Page Header Banner ===== */
+    .page-header-banner {
+        background: linear-gradient(135deg, #3182ce 0%, #2c5282 100%);
+        color: white;
+        padding: 12px 20px;
+        margin-bottom: 20px;
+        border-radius: 6px;
+        box-shadow: 0 2px 10px rgba(49, 130, 206, 0.3);
+    }
+
+        .page-header-banner h2 {
+            margin: 0 0 2px 0;
+            font-size: 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: white;
+        }
+
+            .page-header-banner h2 i {
+                font-size: 20px;
+                opacity: 0.9;
+            }
+
+        .page-header-banner .subtitle {
+            margin: 0;
+            font-size: 13px;
+            opacity: 0.85;
+            font-weight: 400;
+        }
+
+    .k-edit-form-container .source-textarea {
+        width: 100% !important;
+        min-height: 180px;
+        max-height: 400px;
+        resize: vertical;
+        font-family: inherit;
+        font-size: 13px;
+        line-height: 1.6;
+        padding: 10px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 4px;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+        .k-edit-form-container .source-textarea:focus {
+            border-color: #3182ce;
+            box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.15);
+            outline: none;
+        }
+
+    /* ===== Popup Editor Styling ===== */
+    .k-edit-form-container {
+        width: 620px;
+        padding: 20px 24px;
+    }
+
+        .k-edit-form-container .k-edit-label {
+            width: 25%;
+            padding: 8px 0;
+        }
+
+            .k-edit-form-container .k-edit-label label {
+                font-weight: 600;
+                font-size: 13px;
+                color: #374151;
+            }
+
+        .k-edit-form-container .k-edit-field {
+            width: 70%;
+            padding: 6px 0;
+        }
+
+
+
 </style>

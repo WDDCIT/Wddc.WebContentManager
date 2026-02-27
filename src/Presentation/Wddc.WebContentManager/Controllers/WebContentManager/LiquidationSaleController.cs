@@ -64,6 +64,7 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             toUpdate.RET_Code = model.RET_Code;
             toUpdate.Description = model.Description;
             toUpdate.Reason = model.Reason;
+            toUpdate.Source = model.Source;
             toUpdate.QOH = model.QOH;
             toUpdate.Expiry_Date = model.Expiry_Date;
             toUpdate.Regular_Cost = model.Regular_Cost;
@@ -81,7 +82,8 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             {
                 Log.Logger.Error($"Error updating Web Liquidation Sale by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
                 _logger.Error($"Error updating Web Liquidation Sale. RET Code: {toUpdate.RET_Code}, REG Code: {toUpdate.REG_Code} : {ex.Message.Substring(0, 200)}", ex, User, "WebOrdering");
-                return Json(model);
+                Response.StatusCode = 500;
+                return Json(new { message = $"Error updating item. RET Code: {toUpdate.RET_Code}, REG Code: {toUpdate.REG_Code}" });
             }
         }
 
@@ -97,7 +99,8 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             {
                 Log.Logger.Error($"Error adding Web Liquidation Sale by {User.Identity.Name.Substring(7).ToLower()}: REG Code is required");
                 _logger.Error($"Error adding Web Liquidation Sale. RET Code: {model.RET_Code}, REG Code is required", null, User, "WebOrdering");
-                return Json(model);
+                Response.StatusCode = 400;
+                return Json(new { message = "Item Number (REG Code) is required" });
             }
 
             if (String.IsNullOrEmpty(model.Reason))
@@ -110,6 +113,7 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             newWeb_Liquidation_RET.REG_Code = model.REG_Code;
             newWeb_Liquidation_RET.Description = model.Description;
             newWeb_Liquidation_RET.Reason = model.Reason;
+            newWeb_Liquidation_RET.Source = model.Source;
             newWeb_Liquidation_RET.QOH = model.QOH;
             newWeb_Liquidation_RET.Expiry_Date = model.Expiry_Date;
             newWeb_Liquidation_RET.Regular_Cost = model.Regular_Cost;
@@ -119,7 +123,7 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
 
             try
             {
-               newWeb_Liquidation_RET = await _liquidationSaleService.CreateWebLiquidation(newWeb_Liquidation_RET);
+                newWeb_Liquidation_RET = await _liquidationSaleService.CreateWebLiquidation(newWeb_Liquidation_RET);
                 Log.Logger.Information($"{User.Identity.Name.Substring(7).ToLower()} added new Web Liquidation Sale with ID: {newWeb_Liquidation_RET.ID} successfully");
                 _logger.Information($"Added new Web Liquidation Sale successfully. RET Code: {newWeb_Liquidation_RET.RET_Code}, REG Code: {newWeb_Liquidation_RET.REG_Code}", null, User, "WebOrdering");
                 return Json(model);
@@ -128,7 +132,8 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             {
                 Log.Logger.Error($"Error adding Web Liquidation Sale by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
                 _logger.Error($"Error adding Web Liquidation Sale. RET Code: {newWeb_Liquidation_RET.RET_Code}, REG Code: {newWeb_Liquidation_RET.REG_Code} : {ex.Message.Substring(0, 200)}", ex, User, "WebOrdering");
-                return Json(model);
+                Response.StatusCode = 500;
+                return Json(new { message = $"Error adding item. REG Code: {newWeb_Liquidation_RET.REG_Code}" });
             }
         }
 
@@ -148,7 +153,8 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             {
                 Log.Logger.Error($"Error deleting Web Liquidation Sale by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
                 _logger.Error($"Error deleting Web Liquidation Sale. RET Code: {model.RET_Code}, REG Code: {model.REG_Code} : {ex.Message.Substring(0, 200)}", ex, User, "WebOrdering");
-                return Json(model);
+                Response.StatusCode = 500;
+                return Json(new { message = $"Error deleting item. RET Code: {model.RET_Code}, REG Code: {model.REG_Code}" });
             }
         }
 
