@@ -10,12 +10,14 @@ namespace Wddc.WebContentManager.Core.Configuration
         public IOpenIdConfiguration OpenIdConfiguration { get; set; }
         public IResourceConfiguration ResourceConfiguration { get; set; }
         public IDynamicsGPConfiguration DynamicsGPConfiguration { get; set; }
+        public ISecondaryApiConfiguration SecondaryApiConfiguration { get; set; }
 
-        public RootConfiguration(IOptions<OpenIdConfiguration> openIdConfiguration, IOptions<ResourceConfiguration> resourceConfiguration, IOptions<DynamicsGPConfiguration> dynamicsOptions)
+        public RootConfiguration(IOptions<OpenIdConfiguration> openIdConfiguration, IOptions<ResourceConfiguration> resourceConfiguration, IOptions<DynamicsGPConfiguration> dynamicsOptions, IOptions<SecondaryApiConfiguration> secondaryApiOptions)
         {
             OpenIdConfiguration = openIdConfiguration.Value;
             ResourceConfiguration = resourceConfiguration.Value;
             DynamicsGPConfiguration = dynamicsOptions.Value;
+            SecondaryApiConfiguration = secondaryApiOptions.Value;
         }
     }
 }

@@ -5,5 +5,6 @@
         public const string OpenIdConfigurationKey = "OpenIdConfiguration";
         public const string ResourceConfigurationKey = "ResourceConfiguration";
         public const string DynamicsGPConfigurationKey = "DynamicsGPConfiguration";
+        public const string SecondaryApiConfigurationKey = "SecondaryApi";
     }
 }

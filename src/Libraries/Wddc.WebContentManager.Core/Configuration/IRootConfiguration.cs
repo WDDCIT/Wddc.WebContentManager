@@ -9,5 +9,6 @@ namespace Wddc.WebContentManager.Core.Configuration
         IOpenIdConfiguration OpenIdConfiguration { get; }
         IResourceConfiguration ResourceConfiguration { get; }
         IDynamicsGPConfiguration DynamicsGPConfiguration { get; }
+        ISecondaryApiConfiguration SecondaryApiConfiguration { get; }
     }
 }

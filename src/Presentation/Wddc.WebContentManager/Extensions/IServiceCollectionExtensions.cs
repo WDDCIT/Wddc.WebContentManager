@@ -52,9 +52,11 @@ namespace Wddc.WebContentManager.Extensions
             services.Configure<OpenIdConfiguration>(configuration.GetSection(ConfigurationConsts.OpenIdConfigurationKey));
             services.Configure<ResourceConfiguration>(configuration.GetSection(ConfigurationConsts.ResourceConfigurationKey));
             services.Configure<DynamicsGPConfiguration>(configuration.GetSection(ConfigurationConsts.DynamicsGPConfigurationKey));
+            services.Configure<SecondaryApiConfiguration>(configuration.GetSection(ConfigurationConsts.SecondaryApiConfigurationKey));
 
             services.TryAddSingleton<IRootConfiguration, RootConfiguration>();
             services.TryAddSingleton<IWddcApiService, WddcApiService>();
+            services.TryAddSingleton<IWddcAppsApiService, WddcAppsApiService>();
             services.TryAddSingleton<ILogger, DefaultLogger>();
             services.TryAddSingleton<ICacheManager, MemoryCacheManager>();
             services.TryAddSingleton<IContinuingEducationService, ContinuingEducationService>();
@@ -120,6 +122,17 @@ namespace Wddc.WebContentManager.Extensions
                 // Other settings
                 c.BaseAddress = new Uri(rootConfiguration.ResourceConfiguration.WddcApiBaseUrl);
             });
+
+            // Secondary apps API (API-key based)
+            var secondaryApi = rootConfiguration.SecondaryApiConfiguration;
+            if (secondaryApi != null)
+            {
+                services.AddHttpClient("wddc_apps_api", c =>
+                {
+                    c.BaseAddress = new Uri(secondaryApi.BaseUrl);
+                    c.DefaultRequestHeaders.Add("X-Api-Key", secondaryApi.ApiKey);
+                });
+            }
 
             return services;
         }
