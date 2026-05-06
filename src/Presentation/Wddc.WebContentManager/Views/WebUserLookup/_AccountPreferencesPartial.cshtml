@@ -1,5 +1,5 @@
 ﻿
-@model Wddc.Core.Domain.Webserver.Customers.GetContactInfo_Result
+@model Wddc.WebContentManager.Services.WebUser.ContactInfoDto
 
 @if (Model.MemberNbr == null)
 {
@@ -276,18 +276,18 @@ else
 
     $(document).ready(function () {
 
-        if (@Model.MemberNbr != null) {
+        if ('@Model.MemberNbr' != '') {
             $("#lastUpdated").kendoDatePicker({
                 format: "MMMM dd, yyyy",
                 value: new Date('@Model.LastUpdated')
             });
 
-            document.getElementById("clinicPhone").value = formatPhoneNumber(@Model.Clinic_Phone);
-            document.getElementById("clinicFax").value = formatPhoneNumber(@Model.Clinic_Fax);
-            document.getElementById("PhoneAcctng").value = formatPhoneNumber(@Model.Contact_PhoneAcctng);
-            document.getElementById("PhoneOrdering").value = formatPhoneNumber(@Model.Contact_PhoneOrdering);
-            document.getElementById("PhoneReception").value = formatPhoneNumber(@Model.Reception_Phone);
-            document.getElementById("PhoneManager").value = formatPhoneNumber(@Model.Manager_Phone);
+            document.getElementById("clinicPhone").value = formatPhoneNumber('@Model.Clinic_Phone');
+            document.getElementById("clinicFax").value = formatPhoneNumber('@Model.Clinic_Fax');
+            document.getElementById("PhoneAcctng").value = formatPhoneNumber('@Model.Contact_PhoneAcctng');
+            document.getElementById("PhoneOrdering").value = formatPhoneNumber('@Model.Contact_PhoneOrdering');
+            document.getElementById("PhoneReception").value = formatPhoneNumber('@Model.Reception_Phone');
+            document.getElementById("PhoneManager").value = formatPhoneNumber('@Model.Manager_Phone');
         }
 
 

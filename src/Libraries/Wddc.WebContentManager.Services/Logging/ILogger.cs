@@ -3,10 +3,10 @@ using System;
 using System.Collections.Generic;
 using System.Security.Principal;
 using System.Threading.Tasks;
+using Wddc.Api.Core.Domain.Entities.WebOrder;
 using Wddc.Core.Domain.EdiOrdering.Finance.Logging;
 using Wddc.Core.Domain.Purchasing.Logging;
 using Wddc.Core.Domain.Shipping.Logging;
-using Wddc.Core.Domain.Webserver.WebOrdering.Logging;
 
 namespace Wddc.WebContentManager.Services.Logging
 {
@@ -39,31 +39,6 @@ namespace Wddc.WebContentManager.Services.Logging
         /// Clears a log
         /// </summary>
         //void ClearLog();
-
-        /// <summary>
-        /// Gets all log items
-        /// </summary>
-        /// <param name="fromUtc">Log item creation from; null to load all records</param>
-        /// <param name="toUtc">Log item creation to; null to load all records</param>
-        /// <param name="message">Message</param>
-        /// <param name="logLevel">Log level; null to load all records</param>
-        /// <param name="pageIndex">Page index</param>
-        /// <param name="pageSize">Page size</param>
-        /// <returns>Log item items</returns>
-        Task<IPagedList<Log>> GetAllShippingLogsAsync(DateTime? fromUtc = null, DateTime? toUtc = null,
-            string message = "", LogLevel? logLevel = null,
-            int pageIndex = 1, int pageSize = int.MaxValue,
-            string referrerUrl = "");
-
-        Task<IPagedList<FinanceLog>> GetAllFinanceLogsAsync(DateTime? fromUtc = null, DateTime? toUtc = null,
-            string message = "", LogLevel? logLevel = null,
-            int pageIndex = 1, int pageSize = int.MaxValue,
-            string referrerUrl = "");
-
-        Task<IPagedList<PurchasingLog>> GetAllPurchasingLogsAsync(DateTime? fromUtc = null, DateTime? toUtc = null,
-            string message = "", LogLevel? logLevel = null,
-            int pageIndex = 1, int pageSize = int.MaxValue,
-            string referrerUrl = "");
 
         Task<IPagedList<WebOrderingLog>> GetAllWebOrderingLogsAsync(DateTime? fromUtc = null, DateTime? toUtc = null,
             string message = "", LogLevel? logLevel = null,

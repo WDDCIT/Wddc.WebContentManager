@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Http;
 using System.IO;
 using PagedList;
 using Wddc.WebContentManager.Services.Logging;
-using Wddc.Core.Domain.Webserver.WebOrdering.Logging;
+using Wddc.Api.Core.Domain.Entities.WebOrder;
 using Wddc.WebContentManager.Models;
 using Serilog;
 using Microsoft.AspNetCore.Hosting;

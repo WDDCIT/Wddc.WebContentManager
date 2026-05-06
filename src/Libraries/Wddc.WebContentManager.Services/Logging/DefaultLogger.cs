@@ -6,10 +6,10 @@ using System.Linq;
 using System.Security.Principal;
 using System.Text;
 using System.Threading.Tasks;
+using Wddc.Api.Core.Domain.Entities.WebOrder;
 using Wddc.Core.Domain.EdiOrdering.Finance.Logging;
 using Wddc.Core.Domain.Purchasing.Logging;
 using Wddc.Core.Domain.Shipping.Logging;
-using Wddc.Core.Domain.Webserver.WebOrdering.Logging;
 using Wddc.Web.Core;
 using Wddc.WebContentManager.Services.Logging;
 
@@ -28,6 +28,7 @@ namespace Wddc.WebContentManager.Services.Logging
         //private readonly IWebHelper _webHelper;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IWddcApiService _apiService;
+        private readonly IWddcAppsApiService _appsApiService;
 
         #endregion
 
@@ -49,10 +50,11 @@ namespace Wddc.WebContentManager.Services.Logging
         //    this._webHelper = webHelper;
         //}
 
-        public DefaultLogger(IHttpContextAccessor httpContextAccessor, IWddcApiService apiService)
+        public DefaultLogger(IHttpContextAccessor httpContextAccessor, IWddcApiService apiService, IWddcAppsApiService appsApiService)
         {
             _httpContextAccessor = httpContextAccessor;
             _apiService = apiService;
+            _appsApiService = appsApiService;
         }
 
         #endregion
@@ -124,61 +126,6 @@ namespace Wddc.WebContentManager.Services.Logging
         //    _dbContext.Database.ExecuteSqlCommand(String.Format("TRUNCATE TABLE [{0}]", "Route.Log"));
         //}
 
-        /// <summary>
-        /// Gets all log items
-        /// </summary>
-        /// <param name="fromUtc">Log item creation from; null to load all records</param>
-        /// <param name="toUtc">Log item creation to; null to load all records</param>
-        /// <param name="message">Message</param>
-        /// <param name="logLevel">Log level; null to load all records</param>
-        /// <param name="pageIndex">Page index</param>
-        /// <param name="pageSize">Page size</param>
-        /// <returns>Log item items</returns>
-        public virtual async Task<IPagedList<Log>> GetAllShippingLogsAsync(DateTime? fromUtc = null, DateTime? toUtc = null,
-            string message = "", LogLevel? logLevel = null,
-            int pageIndex = 1, int pageSize = int.MaxValue,
-            string referrerUrl = "")
-        {
-            int? logLevelId = null;
-
-            if (logLevel.HasValue)
-                logLevelId = (int)logLevel.Value;
-
-            List<Log> query = await _apiService.GetAsync<List<Log>>($"/api/Shipping/Logs?fromUtc={fromUtc}&toUtc={toUtc}&message={message}&logLevelId={logLevelId}&referrerUrl={referrerUrl}");
-            var log = query.ToPagedList(pageIndex, pageSize);
-            return log;
-        }
-
-        public virtual async Task<IPagedList<FinanceLog>> GetAllFinanceLogsAsync(DateTime? fromUtc = null, DateTime? toUtc = null,
-            string message = "", LogLevel? logLevel = null,
-            int pageIndex = 1, int pageSize = int.MaxValue,
-            string referrerUrl = "")
-        {
-            int? logLevelId = null;
-
-            if (logLevel.HasValue)
-                logLevelId = (int)logLevel.Value;
-
-            List<FinanceLog> query = await _apiService.GetAsync<List<FinanceLog>>($"/api/Finance/Logs?fromUtc={fromUtc}&toUtc={toUtc}&message={message}&logLevelId={logLevelId}&referrerUrl={referrerUrl}");
-            var log = query.ToPagedList(pageIndex, pageSize);
-            return log;
-        }
-
-        public virtual async Task<IPagedList<PurchasingLog>> GetAllPurchasingLogsAsync(DateTime? fromUtc = null, DateTime? toUtc = null,
-            string message = "", LogLevel? logLevel = null,
-            int pageIndex = 1, int pageSize = int.MaxValue,
-            string referrerUrl = "")
-        {
-            int? logLevelId = null;
-
-            if (logLevel.HasValue)
-                logLevelId = (int)logLevel.Value;
-
-            List<PurchasingLog> query = await _apiService.GetAsync<List<PurchasingLog>>($"/api/Purchasing/Logs?fromUtc={fromUtc}&toUtc={toUtc}&message={message}&logLevelId={logLevelId}&referrerUrl={referrerUrl}");
-            var log = query.ToPagedList(pageIndex, pageSize);
-            return log;
-        }
-
         public virtual async Task<IPagedList<WebOrderingLog>> GetAllWebOrderingLogsAsync(DateTime? fromUtc = null, DateTime? toUtc = null,
             string message = "", LogLevel? logLevel = null,
             int pageIndex = 1, int pageSize = int.MaxValue,
@@ -189,7 +136,7 @@ namespace Wddc.WebContentManager.Services.Logging
             if (logLevel.HasValue)
                 logLevelId = (int)logLevel.Value;
 
-            List<WebOrderingLog> query = await _apiService.GetAsync<List<WebOrderingLog>>($"/api/WebOrdering/Logs?fromUtc={fromUtc}&toUtc={toUtc}&message={message}&logLevelId={logLevelId}&referrerUrl={referrerUrl}");
+            List<WebOrderingLog> query = await _appsApiService.GetAsync<List<WebOrderingLog>>($"/api/WebOrdering/Logs?fromUtc={fromUtc}&toUtc={toUtc}&message={message}&logLevelId={logLevelId}&referrerUrl={referrerUrl}");
             var log = query.ToPagedList(pageIndex, pageSize);
             return log;
         }
@@ -293,7 +240,7 @@ namespace Wddc.WebContentManager.Services.Logging
 
         public async Task<WebOrderingLog> InsertWebOrderingLog(LogLevel logLevel, string shortMessage, string fullMessage = "", IPrincipal user = null)
         {
-            var log = new FinanceLog
+            var log = new WebOrderingLog
             {
                 LogLevelId = (int)logLevel,
                 ShortMessage = shortMessage,
@@ -305,7 +252,7 @@ namespace Wddc.WebContentManager.Services.Logging
                 CreatedOnUtc = DateTime.UtcNow
             };
 
-            return await _apiService.PostAsync<WebOrderingLog>($"/api/WebOrdering/Log/", log);
+            return await _appsApiService.PostAsync<WebOrderingLog>($"/api/WebOrdering/Log/", log);
         }
 
         #endregion

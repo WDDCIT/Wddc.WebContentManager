@@ -11,7 +11,7 @@ using System.IO;
 using Wddc.WebContentManager.Services.WebContent.Affinity;
 using PagedList;
 using Wddc.WebContentManager.Services.Logging;
-using Wddc.Core.Domain.Webserver.WebOrdering.Logging;
+using Wddc.Api.Core.Domain.Entities.WebOrder;
 using Wddc.WebContentManager.Models;
 using Serilog;
 using Wddc.WebContentManager.Models.WebContent.AffinityPrograms;

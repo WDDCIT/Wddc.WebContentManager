@@ -68,7 +68,10 @@
             <!-- Top Navbar -->
             @await Html.PartialAsync("_TopNavbar")
 
-            @await Html.PartialAsync("_Breadcrumb")
+            @if (ViewData["HideBreadcrumb"] == null || !(bool)ViewData["HideBreadcrumb"])
+            {
+                @await Html.PartialAsync("_Breadcrumb")
+            }
             <!-- Main view  -->
             @RenderBody()
 

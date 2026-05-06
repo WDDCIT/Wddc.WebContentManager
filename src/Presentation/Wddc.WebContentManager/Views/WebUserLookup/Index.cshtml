@@ -11,8 +11,8 @@
 @section Scripts {
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
-    <script src="http://ajax.aspnetcdn.com/ajax/jquery.validate/1.11.0/jquery.validate.min.js"></script>
-    <script src="http://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script>
+    <script src="https://ajax.aspnetcdn.com/ajax/jquery.validate/1.11.0/jquery.validate.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script>
 
     <script src="https://kendo.cdn.telerik.com/2021.2.511/js/kendo.all.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -31,9 +31,10 @@
        $(document).ready(function () {
 
            $("#memberNumber").kendoDropDownList({
+                popup: { width: 420 },
                 filter: "contains",
-                template: '<span class="k-state-default"><p>#: data.MemberNbr #</p></span>&nbsp;&nbsp;' +
-                          '<span class="k-state-default"><p>#: data.CUSTNAME #</p></span>',
+                template: '<span class="k-state-default">#: data.MemberNbr #</span>&nbsp;&nbsp;<span class="k-state-default" style="color:rgb(85,85,85);">#: data.CUSTNAME #</span>',
+                valueTemplate: '<span>#: data.MemberNbr # &mdash; #: data.CUSTNAME #</span>',
                 dataTextField: "MemberNbr",
                 dataValueField: "MemberNbr",
                 optionLabel: "Select a member",
@@ -64,6 +65,9 @@
                             }
                         ]
                     });
+                },
+                open: function () {
+                    $("#search-results").hide();
                 }
             });
        })
@@ -79,15 +83,24 @@
 
             let memberNbr = document.getElementById("memberNumber").value.trim();
 
+            if (!memberNbr) {
+                Swal.fire({ icon: 'warning', title: 'No Member Selected', text: 'Please select a member number first.', confirmButtonColor: '#3182ce' });
+                return;
+            }
+
+            var ddl = $("#memberNumber").data("kendoDropDownList");
+            var selectedItem = ddl ? ddl.dataItem() : null;
+            var clinicName = selectedItem ? selectedItem.CUSTNAME : '';
+
             $.getJSON('@Url.Action("GetMemberInfo", "WebUserLookup")?memberNbr=' + memberNbr, function (result) {
 
                     if (!result) {
                         $("#search-results").hide();
-                        alert("Clinic is not found!");
+                        Swal.fire({ icon: 'error', title: 'Not Found', text: 'Clinic is not found!', confirmButtonColor: '#3182ce' });
                     }
                     else {
                         document.getElementById("member-number").innerHTML = memberNbr;
-                        document.getElementById("member-name").innerHTML = result.CUSTNAME;
+                        document.getElementById("member-name").innerHTML = clinicName;
 
                         webAccessDataSource = new kendo.data.DataSource({
                             transport: {
@@ -214,58 +227,79 @@
 </script>
 }
 
+<!-- Page -->
 <div class="wrapper wrapper-content animated fadeInRight">
-    <div class="row">
-        <div class="col-12 col-lg-12 col-sm-12 col-xl-12">
-            <div class="ibox">
-                <div class="ibox-content">
-                    <div class="row">
-                        <div class="col-4 col-lg-4 col-sm-4 col-xl-4"></div>
-                        <div class="col-4 col-lg-4 col-sm-4 col-xl-4 content-center">
-                            <div class="demo-section k-content">
-                                <input id="memberNumber" style="width: 100%;" />
-                            </div>
-                            <button class="k-button k-primary submit-btn" onclick="getMemberInfo()">Select</button>
-                        </div>
-                        <div class="col-4 col-lg-4 col-sm-4 col-xl-4"></div>
-                    </div>
-                    <div class="row" id="search-results" style="display: none;">
-                        <div class="col-12 col-lg-12 col-sm-12 col-xl-12">
-                            <div class="row">
-                                <div class="col-2 col-lg-2 col-sm-2 col-xl-2"></div>
-                                <div class="col-8 col-lg-8 col-sm-8 col-xl-8 content-center">
-                                    <div class="alert alert-info" role="alert">
-                                        <div class="row">
-                                            <div class="col-6 col-lg-6 col-sm-6 col-xl-6 content-center" id="member-number"></div>
-                                            <div class="col-6 col-lg-6 col-sm-6 col-xl-6 content-center" id="member-name"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-2 col-lg-2 col-sm-2 col-xl-2"></div>
-                            </div>
-                            <div class="row">
-                                <div class="col-12 col-lg-12 col-sm-12 col-xl-12 collapsible-col">
-                                    <button type="button" class="collapsible-info">Clinic Web Logins</button>
-                                    <div class="content">
-                                        <div id="grid">
-                                            <div id="webAccessGrid"></div>
-                                            <div class="grid-note">Reset Email Sent (Yes): Reset email sent but not clicked yet</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-12 col-lg-12 col-sm-12 col-xl-12 collapsible-col">
-                                    <button type="button" class="collapsible-info">Account Preferences</button>
-                                    <div class="content">
-                                        <div id="accountPreferences-section">
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
 
+    <!-- Page Header Banner -->
+    <div class="row">
+        <div class="col-12">
+            <div class="page-header-banner">
+                <h2>
+                    <i class="fa fa-user"></i>
+                    Web User Lookup
+                </h2>
+                <p class="subtitle">
+                    Look up member web access logins and account preferences
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search Card -->
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card shadow-sm">
+                <div class="card-header d-flex align-items-center justify-content-center">
+                    <div class="search-wrapper">
+                        <label class="search-label">Select Member:</label>
+                        <div class="search-input-group">
+                            <input id="memberNumber" style="width: 420px;" />
+                            <button class="btn-search" onclick="getMemberInfo()">
+                                <i class="fa fa-search"></i> Search
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Results -->
+                    <div id="search-results" style="display: none;">
+                        <!-- Member Info Badge -->
+                        <div class="member-info-badge">
+                            <div class="member-info-item">
+                                <i class="fa fa-id-card-o"></i>
+                                <span id="member-number"></span>
+                            </div>
+                            <div class="member-info-item">
+                                <i class="fa fa-building-o"></i>
+                                <span id="member-name"></span>
+                            </div>
+                        </div>
+
+                        <!-- Clinic Web Logins Section -->
+                        <div class="section-block">
+                            <button type="button" class="collapsible-info">
+                                <i class="fa fa-key"></i> Clinic Web Logins
+                            </button>
+                            <div class="content">
+                                <div class="grid-wrapper">
+                                    <div id="webAccessGrid"></div>
+                                    <div class="grid-note">
+                                        <i class="fa fa-info-circle"></i> Reset Email Sent (Yes): Reset email sent but not clicked yet
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Account Preferences Section -->
+                        <div class="section-block">
+                            <button type="button" class="collapsible-info">
+                                <i class="fa fa-cog"></i> Account Preferences
+                            </button>
+                            <div class="content">
+                                <div id="accountPreferences-section"></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -275,82 +309,270 @@
 
 <style>
 
+    #page-heading, .breadcrumb {
+        display: none;
+    }
+
+    /* ===== Page Layout ===== */
+    .wrapper-content {
+        padding: 15px 20px 30px;
+    }
+
+    /* ===== Page Header Banner ===== */
+    .page-header-banner {
+        background: linear-gradient(135deg, #3182ce 0%, #2c5282 100%);
+        color: white;
+        padding: 12px 20px;
+        margin-bottom: 20px;
+        border-radius: 6px;
+        box-shadow: 0 2px 10px rgba(49, 130, 206, 0.3);
+    }
+
+        .page-header-banner h2 {
+            margin: 0 0 2px 0;
+            font-size: 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: white;
+        }
+
+            .page-header-banner h2 i {
+                font-size: 20px;
+                opacity: 0.9;
+            }
+
+        .page-header-banner .subtitle {
+            margin: 0;
+            font-size: 13px;
+            opacity: 0.85;
+            font-weight: 400;
+        }
+
+    /* ===== Card ===== */
+    .card {
+        border: none;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .card-header {
+        background: linear-gradient(135deg, #f8f9fc 0%, #eef1f6 100%);
+        border-bottom: 1px solid #e3e6ef;
+        padding: 18px 20px;
+    }
+
+    .card-body {
+        padding: 20px;
+    }
+
+    /* ===== Search Wrapper ===== */
+    .search-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .search-label {
+        font-weight: 600;
+        font-size: 13px;
+        color: #4a5568;
+        margin: 0;
+        white-space: nowrap;
+    }
+
+    .search-input-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .btn-search {
+        padding: 7px 18px;
+        background: linear-gradient(135deg, #3182ce 0%, #2c5282 100%);
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s ease;
+    }
+
+        .btn-search:hover {
+            background: linear-gradient(135deg, #2c5282 0%, #1a365d 100%);
+            box-shadow: 0 2px 6px rgba(49, 130, 206, 0.35);
+            transform: translateY(-1px);
+        }
+
+    /* ===== Member Info Badge ===== */
+    .member-info-badge {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 30px;
+        padding: 12px 20px;
+        background: linear-gradient(135deg, #ebf8ff 0%, #e6f7ff 100%);
+        border: 1px solid #bee3f8;
+        border-radius: 6px;
+        margin-bottom: 20px;
+    }
+
+    .member-info-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        color: #2c5282;
+    }
+
+        .member-info-item i {
+            font-size: 16px;
+            opacity: 0.8;
+        }
+
+    /* ===== Section Blocks ===== */
+    .section-block {
+        margin-bottom: 16px;
+    }
+
+    .collapsible-info {
+        background: linear-gradient(135deg, #3182ce 0%, #2c5282 100%);
+        color: white;
+        cursor: pointer;
+        padding: 10px 20px;
+        width: 100%;
+        border: none;
+        border-radius: 6px 6px 0 0;
+        text-align: left;
+        outline: none;
+        font-size: 13px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: background 0.2s ease;
+    }
+
+        .collapsible-info:hover {
+            background: linear-gradient(135deg, #2c5282 0%, #1a365d 100%);
+        }
+
+        .collapsible-info:after {
+            content: '\002B';
+            color: white;
+            font-weight: bold;
+            margin-left: auto;
+            font-size: 16px;
+        }
+
+        #search-results .active:after {
+            content: "\2212";
+        }
+
+    .content {
+        padding: 16px 20px;
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease-out;
+        background-color: #fafbfd;
+        border: 1px solid #e3e6ef;
+        border-top: none;
+        border-radius: 0 0 6px 6px;
+    }
+
+    .grid-wrapper {
+        width: 100%;
+    }
+
+    /* ===== Kendo Grid ===== */
     #webAccessGrid .k-grid-content {
         min-height: 100px;
         max-height: 600px;
     }
 
-    .content-center {
-        margin: 0px auto 0px auto;
+    #webAccessGrid .k-grid-header .k-header {
+        background: #f7f9fc;
+        border-bottom: 2px solid #dee2e6;
+    }
+
+    #webAccessGrid .k-grid-header .k-link {
         text-align: center;
+        font-weight: 700;
+        font-size: 11.5px;
+        color: #4a5568;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
-    .wrapper-content {
-        padding: 10px 10px 20px;
+    #webAccessGrid .k-master-row td {
+        border-bottom: 1px solid #f0f0f0;
     }
 
-    .ibox-content {
-        padding: 7px 15px 15px 15px;
+    #webAccessGrid .k-master-row:hover td {
+        background-color: #f0f7ff !important;
     }
 
-    #grid {
-        margin: 10px auto;
-        width: 80%;
+    #webAccessGrid .k-alt td {
+        background-color: #fafbfd;
     }
 
+    .grid-cell {
+        font-size: 12.5px;
+        color: #4a5568;
+        padding: 8px 10px;
+    }
+
+    .grid-note {
+        margin-top: 10px;
+        font-size: 11px;
+        color: #718096;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    /* ===== Account Preferences (Partial) ===== */
     .collapsible-section {
         margin: 5px auto 10px auto;
-        /*width: 95%;*/
-        border: 1px solid #ddd;
-        padding: 5px 2px;
+        border: 1px solid #e3e6ef;
+        border-radius: 6px;
+        padding: 12px 16px;
+        background: #fff;
     }
 
     .collapsible-section-header {
-        /*width: 95%;*/
-        margin: 10px auto;
+        margin: 12px auto 6px;
     }
 
         .collapsible-section-header span {
-            width: max-content;
-            background-color: lightgrey;
-            padding: 5px 10px;
-            border-radius: 25px;
-            font-weight: bold;
+            background: linear-gradient(135deg, #e2e8f0 0%, #edf2f7 100%);
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 12px;
+            color: #4a5568;
         }
 
     .collapsible-section-subheader {
         padding: 5px 15px;
     }
 
-    .collapsible-section-subheader span {
-        font-weight: bold;
-        color: #0c5460;
-        border-color: #bee5eb;
-        margin: 5px 15px;
-        border-radius: 10px;
-    }
+        .collapsible-section-subheader span {
+            font-weight: 600;
+            color: #2c5282;
+            margin: 5px 0;
+            font-size: 12px;
+        }
 
-    .collapsible-col {
-        padding-left: 50px;
-        padding-right: 50px;
-    }
-
-    .grid-cell {
-        font-size: 14px;
-    }
-
-    .k-header .k-link {
-        text-align: center;
-        font-weight: bold;
-        font-size: 13px;
-    }
-
-    label {
-        margin-bottom: 0px;
-    }
-
+    /* ===== Form Styles ===== */
     .form-row {
-        margin: 10px 0px 10px 0px;
+        margin: 8px 0;
         vertical-align: central;
         display: flex;
     }
@@ -362,8 +584,9 @@
     }
 
     .control-label {
-        color: #556375;
-        font-size: 1.3rem;
+        color: #4a5568;
+        font-size: 12px;
+        font-weight: 600;
     }
 
     .control-label-center {
@@ -372,112 +595,56 @@
         margin-bottom: auto;
     }
 
-    .control-label-top {
-        display: flex;
-    }
-
     .form-control {
-        border-color: #ddd;
+        border-color: #e2e8f0;
+        border-radius: 4px;
+        font-size: 12px;
+        padding: 4px 8px;
     }
 
-    .k-datepicker, .k-timepicker {
-        font-size: 14px;
-    }
-
-        .k-datepicker .k-picker-wrap {
-            color: black;
+        .form-control[disabled] {
+            background-color: #f7fafc;
+            color: #4a5568;
+            cursor: default;
+            opacity: 1;
         }
 
-        .btn-default, .btn-default:hover, .btn-default:focus, .btn-default:active, .btn-default.active {
-            color: inherit;
-            color: #fff;
-            background-color: #1266f1;
-        }
-
-    .alert-info {
-        color: #0c5460;
-        background-color: #d1ecf1;
-        border-color: #bee5eb;
+    label {
+        margin-bottom: 0px;
     }
 
-    .alert {
-        position: relative;
-        padding: 0.75rem 1.25rem;
-        border: 1px solid transparent;
-        border-radius: 0.25rem;
-        font-weight: bold;
-        margin: 20px 0px 20px 0px;
-    }
-
-    .collapsible-info {
-        background-color: #2e6da4;
-        color: white;
-        cursor: pointer;
-        padding: 8px 20px 8px 20px;
-        width: 100%;
-        border: none;
-        text-align: left;
-        outline: none;
-        font-size: 15px;
-    }
-
-        #search-results .active, .collapsible-info:hover {
-            background-color: #337ab7;
-        }
-
-    .collapsible-info:after {
-        content: '\002B';
-        color: white;
-        font-weight: bold;
-        float: right;
-        margin-left: 5px;
-    }
-
-    #search-results .active:after {
-        content: "\2212";
-    }
-
-    .content {
-        padding: 5px 18px;
-        max-height: 0;
-        overflow: hidden;
-        transition: max-height 0.2s ease-out;
-        background-color: #f1f1f1;
-    }
-
+    /* ===== Kendo Overrides ===== */
     .k-disabled, .k-state-disabled, .k-widget[disabled] {
         cursor: default;
         opacity: 1;
         box-shadow: none;
     }
 
-    .form-control[disabled], fieldset[disabled] .form-control {
-        cursor: default;
-    }
-
     .k-dropdown, .k-textbox {
-        font-size: 14px;
-    }
-
-    .submit-btn {
-        margin-top: 15px;
         font-size: 13px;
     }
 
     .k-input {
-        padding: 15px;
+        padding: 12px;
     }
 
-    .k-datepicker .k-select {
-        border-color: #e4e7eb;
-        color: #ced4da;
-        background-color: #e4e7eb;
+    .k-datepicker, .k-timepicker {
+        font-size: 13px;
     }
 
-    .grid-note {
-        margin-top: 8px;
-        font-size: 12px;
-        color: #696969;
+        .k-datepicker .k-picker-wrap {
+            color: black;
+        }
+
+        .k-datepicker .k-select {
+            border-color: #e4e7eb;
+            color: #ced4da;
+            background-color: #e4e7eb;
+        }
+
+    /* ===== Shadow Utility ===== */
+    .shadow-sm {
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06) !important;
     }
 
 </style>

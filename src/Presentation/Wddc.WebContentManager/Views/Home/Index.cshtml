@@ -1,46 +1,442 @@
 ﻿@{
-    ViewData["Title"] = "Applications";
+    ViewData["Title"] = "Home";
+    ViewData["HideBreadcrumb"] = true;
 }
 
-    <div class="wrapper wrapper-content animated fadeInRight">
-        <div class="row">
-            <div class="col-lg-12">
-                <div class="ibox float-e-margins">
-                    <div class="ibox-content text-center p-md">
-                        <h2>
-                            <span class="text-navy">WDDC Web Content Manager</span>
-                        </h2>
-                        <p>Welcome to the Web Content Manager</p>
-                        <p>A tool that helps manage the content of WDDC website</p>
-                    </div>
-                    <div class="row">
-                        <div class="col-lg-4"></div>
-                        <div class="col-lg-4">
-                            <div class="p-lg ">
-                                <a href="https://www.wddc.com/p_home.aspx" target="_blank"><img class="img-responsive img-shadow" src="~/css/images/wddc_site.jpg" alt=""></a>
-                            </div>
+<div class="wcm-dashboard">
 
-                        </div>
-                        <div class="col-lg-4"></div>
-                    </div>
-                    
+    <!-- Hero -->
+    <div class="wcm-hero">
+        <div class="wcm-hero-bg"></div>
+        <div class="wcm-hero-content">
+            <div class="wcm-hero-inner">
+                <div class="wcm-hero-badge">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+                    </svg>
                 </div>
-                
+                <div>
+                    <h1 class="wcm-hero-title">Web Content Manager</h1>
+                    <p class="wcm-hero-sub">Manage, update and publish content across the WDDC website</p>
+                </div>
+            </div>
+            <a href="https://www.wddc.com/p_home.aspx" target="_blank" class="wcm-hero-link">
+                <i class="fa fa-external-link"></i> Visit WDDC.com
+            </a>
+        </div>
+    </div>
+
+    <!-- Section: Content -->
+    <div class="wcm-section-label"><i class="fa fa-pencil-square-o"></i> Content Management</div>
+    <div class="wcm-grid">
+        <a href="@Url.Action("Index", "ContinuingEducation")" class="wcm-card">
+            <div class="wcm-card-icon" style="--card-hue: 210;"><i class="fa fa-graduation-cap"></i></div>
+            <div class="wcm-card-body">
+                <div class="wcm-card-title">Continuing Education</div>
+                <div class="wcm-card-desc">Manage CE courses and listings</div>
+            </div>
+            <i class="fa fa-arrow-right wcm-card-arrow"></i>
+        </a>
+
+        <a href="@Url.Action("Index", "ClassifiedAds")" class="wcm-card">
+            <div class="wcm-card-icon" style="--card-hue: 30;"><i class="fa fa-newspaper-o"></i></div>
+            <div class="wcm-card-body">
+                <div class="wcm-card-title">Classified Ads</div>
+                <div class="wcm-card-desc">Post and manage classified listings</div>
+            </div>
+            <i class="fa fa-arrow-right wcm-card-arrow"></i>
+        </a>
+
+        <a href="@Url.Action("Index", "Careers")" class="wcm-card">
+            <div class="wcm-card-icon" style="--card-hue: 260;"><i class="fa fa-suitcase"></i></div>
+            <div class="wcm-card-body">
+                <div class="wcm-card-title">WDDC Careers</div>
+                <div class="wcm-card-desc">Post and manage job openings</div>
+            </div>
+            <i class="fa fa-arrow-right wcm-card-arrow"></i>
+        </a>
+
+        <a href="@Url.Action("Index", "Videos")" class="wcm-card">
+            <div class="wcm-card-icon" style="--card-hue: 0;"><i class="fa fa-play-circle"></i></div>
+            <div class="wcm-card-body">
+                <div class="wcm-card-title">WDDC Videos</div>
+                <div class="wcm-card-desc">Manage video content on the website</div>
+            </div>
+            <i class="fa fa-arrow-right wcm-card-arrow"></i>
+        </a>
+
+        <a href="@Url.Action("Index", "ItemInfo")" class="wcm-card">
+            <div class="wcm-card-icon" style="--card-hue: 170;"><i class="fa fa-info-circle"></i></div>
+            <div class="wcm-card-body">
+                <div class="wcm-card-title">Item Information</div>
+                <div class="wcm-card-desc">View and update product item details</div>
+            </div>
+            <i class="fa fa-arrow-right wcm-card-arrow"></i>
+        </a>
+
+        <a href="@Url.Action("Index", "GenericMessage")" class="wcm-card">
+            <div class="wcm-card-icon" style="--card-hue: 45;"><i class="fa fa-comment"></i></div>
+            <div class="wcm-card-body">
+                <div class="wcm-card-title">Generic Messages</div>
+                <div class="wcm-card-desc">Configure site-wide messaging banners</div>
+            </div>
+            <i class="fa fa-arrow-right wcm-card-arrow"></i>
+        </a>
+    </div>
+
+    <!-- Section: Sales & Vendors -->
+    <div class="wcm-section-label"><i class="fa fa-shopping-cart"></i> Sales &amp; Vendors</div>
+    <div class="wcm-grid">
+        <a href="@Url.Action("Index", "LiquidationSale")" class="wcm-card">
+            <div class="wcm-card-icon" style="--card-hue: 340;"><i class="fa fa-tags"></i></div>
+            <div class="wcm-card-body">
+                <div class="wcm-card-title">Liquidation Sales</div>
+                <div class="wcm-card-desc">Manage liquidation &amp; returns listings</div>
+            </div>
+            <i class="fa fa-arrow-right wcm-card-arrow"></i>
+        </a>
+
+        <a href="@Url.Action("Index", "PriceSheet")" class="wcm-card">
+            <div class="wcm-card-icon" style="--card-hue: 140;"><i class="fa fa-file-text-o"></i></div>
+            <div class="wcm-card-body">
+                <div class="wcm-card-title">Supplier Price Sheets</div>
+                <div class="wcm-card-desc">Upload and manage supplier price sheets</div>
+            </div>
+            <i class="fa fa-arrow-right wcm-card-arrow"></i>
+        </a>
+
+        <a href="@Url.Action("Index", "VendorList")" class="wcm-card">
+            <div class="wcm-card-icon" style="--card-hue: 195;"><i class="fa fa-address-card-o"></i></div>
+            <div class="wcm-card-body">
+                <div class="wcm-card-title">Web Vendor List</div>
+                <div class="wcm-card-desc">Manage vendor listings on the website</div>
+            </div>
+            <i class="fa fa-arrow-right wcm-card-arrow"></i>
+        </a>
+
+        <div class="wcm-card wcm-card-group">
+            <div class="wcm-card-icon" style="--card-hue: 50;"><i class="fa fa-star"></i></div>
+            <div class="wcm-card-body">
+                <div class="wcm-card-title">Affinity Programs</div>
+                <div class="wcm-card-sub-links">
+                    <a href="@Url.Action("Index", "AffinityPrograms")"><i class="fa fa-list"></i> Programs</a>
+                    <a href="@Url.Action("AffinityProgramsList", "AffinityPrograms")"><i class="fa fa-file-pdf-o"></i> PDF List</a>
+                </div>
             </div>
         </div>
     </div>
 
+    <!-- Section: Marketing -->
+    <div class="wcm-section-label"><i class="fa fa-bullhorn"></i> Marketing</div>
+    <div class="wcm-grid">
+        <div class="wcm-card wcm-card-group">
+            <div class="wcm-card-icon" style="--card-hue: 200;"><i class="fa fa-envelope-o"></i></div>
+            <div class="wcm-card-body">
+                <div class="wcm-card-title">Website Newsletters</div>
+                <div class="wcm-card-sub-links">
+                    <a href="@Url.Action("Index", "FYINewsletter")"><i class="fa fa-paper-plane"></i> FYI Newsletter</a>
+                    <a href="@Url.Action("Index", "InsiderNewsletter")"><i class="fa fa-bookmark"></i> Insider Newsletter</a>
+                </div>
+            </div>
+        </div>
+
+        <a href="@Url.Action("Index", "CVBanners")" class="wcm-card">
+            <div class="wcm-card-icon" style="--card-hue: 280;"><i class="fa fa-flag"></i></div>
+            <div class="wcm-card-body">
+                <div class="wcm-card-title">Vantage Suite Banners</div>
+                <div class="wcm-card-desc">Manage ClientVantage banner content</div>
+            </div>
+            <i class="fa fa-arrow-right wcm-card-arrow"></i>
+        </a>
+    </div>
+
+    <!-- Section: Administration -->
+    <div class="wcm-section-label"><i class="fa fa-cog"></i> Administration</div>
+    <div class="wcm-grid">
+        <a href="@Url.Action("Index", "WebUserLookup")" class="wcm-card">
+            <div class="wcm-card-icon" style="--card-hue: 220;"><i class="fa fa-users"></i></div>
+            <div class="wcm-card-body">
+                <div class="wcm-card-title">Web User Lookup</div>
+                <div class="wcm-card-desc">Search and manage web portal users</div>
+            </div>
+            <i class="fa fa-arrow-right wcm-card-arrow"></i>
+        </a>
+    </div>
+</div>
+
 <style>
-    .disabled {
-        pointer-events: none;
-        opacity: 0.6;
+    /* ── Reset & Layout ── */
+    .wcm-dashboard {
+        padding: 0 0 48px;
+        font-family: 'Open Sans', sans-serif;
+        background: #f4f7fb;
+        min-height: 100vh;
     }
 
-    .text-navy {
+    /* ── Hero ── */
+    .wcm-hero {
+        position: relative;
+        overflow: hidden;
+        margin-bottom: 36px;
+    }
+
+    .wcm-hero-bg {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(135deg, #0a3d91 0%, #1565C0 40%, #1e88e5 100%);
+    }
+
+    .wcm-hero-bg::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at 80% 20%, rgba(255,255,255,.08) 0%, transparent 60%),
+                    radial-gradient(circle at 20% 80%, rgba(255,255,255,.05) 0%, transparent 50%);
+    }
+
+    .wcm-hero-content {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 20px;
+        padding: 40px 32px;
+        color: #fff;
+    }
+
+    .wcm-hero-inner {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .wcm-hero-badge {
+        width: 56px;
+        height: 56px;
+        border-radius: 16px;
+        background: rgba(255,255,255,.12);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255,255,255,.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        color: #fff;
+    }
+
+    .wcm-hero-title {
+        margin: 0 0 6px;
+        font-size: 28px;
+        font-weight: 700;
+        letter-spacing: -.4px;
+        line-height: 1.15;
+    }
+
+    .wcm-hero-sub {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 400;
+        opacity: .75;
+        letter-spacing: .1px;
+    }
+
+    .wcm-hero-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(255,255,255,.12);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255,255,255,.25);
+        color: #fff;
+        padding: 10px 22px;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all .2s;
+        white-space: nowrap;
+    }
+
+    .wcm-hero-link:hover {
+        background: rgba(255,255,255,.22);
+        border-color: rgba(255,255,255,.5);
+        color: #fff;
+        text-decoration: none;
+        transform: translateY(-1px);
+    }
+
+    /* ── Section labels ── */
+    .wcm-section-label {
+        padding: 0 32px;
+        margin: 28px 0 14px;
+        font-size: 11.5px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1.2px;
+        color: #6b7c93;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .wcm-section-label .fa {
+        font-size: 13px;
         color: #1565C0;
     }
 
-    .ibox-content h2 {
-        margin-bottom: 20px;
+    .wcm-section-label:first-of-type {
+        margin-top: 0;
+    }
+
+    /* ── Grid ── */
+    .wcm-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 16px;
+        padding: 0 32px;
+    }
+
+    /* ── Cards ── */
+    .wcm-card {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        background: #fff;
+        border: 1px solid #e4eaf3;
+        border-radius: 14px;
+        padding: 18px 20px;
+        text-decoration: none;
+        color: #2c3e50;
+        transition: all .22s ease;
+        cursor: pointer;
+        position: relative;
+    }
+
+    .wcm-card:hover {
+        border-color: #c5d4ea;
+        box-shadow: 0 8px 30px rgba(21,101,192,.10), 0 2px 8px rgba(0,0,0,.04);
+        transform: translateY(-3px);
+        text-decoration: none;
+        color: #2c3e50;
+    }
+
+    .wcm-card-icon {
+        --card-hue: 210;
+        width: 46px;
+        height: 46px;
+        border-radius: 12px;
+        background: hsl(var(--card-hue), 70%, 96%);
+        color: hsl(var(--card-hue), 65%, 45%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 19px;
+        flex-shrink: 0;
+        transition: all .22s;
+    }
+
+    .wcm-card:hover .wcm-card-icon {
+        background: hsl(var(--card-hue), 65%, 45%);
+        color: #fff;
+        transform: scale(1.05);
+    }
+
+    .wcm-card-body {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .wcm-card-title {
+        font-size: 14px;
+        font-weight: 700;
+        color: #1a2640;
+        margin-bottom: 2px;
+        line-height: 1.3;
+    }
+
+    .wcm-card-desc {
+        font-size: 12.5px;
+        color: #8795a8;
+        line-height: 1.4;
+    }
+
+    .wcm-card-arrow {
+        color: #c5cdd8;
+        font-size: 12px;
+        flex-shrink: 0;
+        transition: all .2s;
+        opacity: 0;
+        transform: translateX(-4px);
+    }
+
+    .wcm-card:hover .wcm-card-arrow {
+        color: #1565C0;
+        opacity: 1;
+        transform: translateX(0);
+    }
+
+    /* ── Group cards ── */
+    .wcm-card-group {
+        cursor: default;
+    }
+
+    .wcm-card-group:hover {
+        transform: translateY(-3px);
+    }
+
+    .wcm-card-sub-links {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-top: 8px;
+    }
+
+    .wcm-card-sub-links a {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 12px;
+        font-weight: 600;
+        color: #1565C0;
+        background: #edf2fc;
+        border-radius: 8px;
+        padding: 5px 12px;
+        text-decoration: none;
+        transition: all .15s;
+        border: 1px solid transparent;
+    }
+
+    .wcm-card-sub-links a .fa {
+        font-size: 11px;
+    }
+
+    .wcm-card-sub-links a:hover {
+        background: #1565C0;
+        color: #fff;
+        text-decoration: none;
+        border-color: #1565C0;
+        transform: translateY(-1px);
+    }
+
+    /* ── Responsive ── */
+    @@media (max-width: 768px) {
+        .wcm-hero-content {
+            padding: 28px 20px;
+        }
+
+        .wcm-hero-title {
+            font-size: 22px;
+        }
+
+        .wcm-grid {
+            grid-template-columns: 1fr;
+            padding: 0 16px;
+        }
+
+        .wcm-section-label {
+            padding: 0 16px;
+        }
     }
 </style>

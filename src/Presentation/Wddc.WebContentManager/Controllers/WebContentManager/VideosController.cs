@@ -10,7 +10,7 @@ using Wddc.WebContentManager.Services.WebContent.Videos;
 using Wddc.WebContentManager.Models.WebContent.Videos;
 using Serilog;
 using Wddc.WebContentManager.Services.Logging;
-using Wddc.Core.Domain.Webserver.WebOrdering.Logging;
+using Wddc.Api.Core.Domain.Entities.WebOrder;
 using Wddc.WebContentManager.Models;
 using PagedList;
 

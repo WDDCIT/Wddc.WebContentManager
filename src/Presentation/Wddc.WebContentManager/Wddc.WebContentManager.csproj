@@ -48,6 +48,7 @@
     <PackageReference Include="SixLabors.ImageSharp" Version="3.0.2" />
     <PackageReference Include="System.ServiceModel.Http" Version="6.2.0" />
     <PackageReference Include="Telerik.UI.for.AspNet.Core" Version="2021.1.224" />
+    <PackageReference Include="Wddc.Api.Core" Version="1.0.114" />
   </ItemGroup>
 
   <ItemGroup>

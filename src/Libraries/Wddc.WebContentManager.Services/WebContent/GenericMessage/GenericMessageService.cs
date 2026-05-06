@@ -1,36 +1,35 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
-using Wddc.Core.Domain.Webserver.WebOrdering;
 
 namespace Wddc.WebContentManager.Services.WebContent.GenericMessage
 {
     public class GenericMessageService : IGenericMessageService
     {
-        private readonly IWddcApiService _apiService;
+        private readonly IWddcAppsApiService _apiService;
 
-        public GenericMessageService(IWddcApiService apiService)
+        public GenericMessageService(IWddcAppsApiService apiService)
         {
             this._apiService = apiService;
         }
 
-        public async Task<List<Message_Generic>> GetGenericMessages()
+        public async Task<List<GenericMessageDto>> GetGenericMessages()
         {
-            return await _apiService.GetAsync<List<Message_Generic>>($"/api/GenericMessage/MessageGeneric");
+            return await _apiService.GetAsync<List<GenericMessageDto>>($"/api/GenericMessage/MessageGeneric");
         }
 
-        public async Task<Message_Generic> GetGenericMessageById(int Id)
+        public async Task<GenericMessageDto> GetGenericMessageById(int Id)
         {
-            return await _apiService.GetAsync<Message_Generic>($"/api/GenericMessage/MessageGeneric/{Id}");
+            return await _apiService.GetAsync<GenericMessageDto>($"/api/GenericMessage/MessageGeneric/{Id}");
         }
 
-        public async Task<Message_Generic> AddGenericMessage(Message_Generic genericMessage)
+        public async Task<GenericMessageDto> AddGenericMessage(GenericMessageDto genericMessage)
         {
-            return await _apiService.PostAsync<Message_Generic>($"/api/GenericMessage/MessageGeneric", genericMessage);
+            return await _apiService.PostAsync<GenericMessageDto>($"/api/GenericMessage/MessageGeneric", genericMessage);
         }
 
-        public async Task UpdateGenericMessage(Message_Generic genericMessage, int Id)
+        public async Task<GenericMessageDto> UpdateGenericMessage(GenericMessageDto genericMessage, int Id)
         {
-            await _apiService.PostAsync($"/api/GenericMessage/MessageGeneric/{Id}", genericMessage);
+            return await _apiService.PostAsync<GenericMessageDto>($"/api/GenericMessage/MessageGeneric/{Id}", genericMessage);
         }
 
     }

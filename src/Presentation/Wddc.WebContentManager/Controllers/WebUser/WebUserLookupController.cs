@@ -5,12 +5,10 @@ using System.Threading.Tasks;
 using Wddc.PurchasingOrderApp.Services;
 using Kendo.Mvc.Extensions;
 using Serilog;
-using Wddc.Core.Domain.Webserver.WebOrdering.Logging;
+using Wddc.Api.Core.Domain.Entities.WebOrder;
 using Wddc.WebContentManager.Models;
 using PagedList;
 using Wddc.WebContentManager.Services.WebUser;
-using Wddc.Core.Domain.Webserver.WebOrdering;
-using Wddc.Core.Domain.Webserver.Customers;
 
 namespace Wddc.WebContentManager.Controllers.WebUser
 {
@@ -34,37 +32,33 @@ namespace Wddc.WebContentManager.Controllers.WebUser
 
         public async Task<JsonResult> GetMemberInfoAsync(string memberNbr)
         {
-            List<GetWebAccess_Result> results = await _webUserLookupService.GetWebAccess(memberNbr);
+            List<WebAccessDto> results = await _webUserLookupService.GetWebAccess(memberNbr);
             return Json(results.FirstOrDefault());
         }
 
         public async Task<JsonResult> GetWebAccessAsync(string memberNbr)
         {
             Log.Logger.Information("The system is getting web access records of member number: " + memberNbr);
-            List<GetWebAccess_Result> results = await _webUserLookupService.GetWebAccess(memberNbr);
+            List<WebAccessDto> results = await _webUserLookupService.GetWebAccess(memberNbr);
             return Json(results.OrderBy(_ => _.UserName));
         }
 
         public async Task<JsonResult> GetWebAccessMembersAsync()
         {
             Log.Logger.Information("The system is getting web access members");
-            List<GetWebAccessMembers_Result> results = await _webUserLookupService.GetWebAccessMembers();
+            List<WebAccessMemberDto> results = await _webUserLookupService.GetWebAccessMembers();
             return Json(results.OrderBy(_ => _.MemberNbr));
         }
 
         public async Task<ActionResult> AccountPreferencesPartialAsync(string memberNbr)
         {
             Log.Logger.Information("The system is getting contact info of member number: " + memberNbr);
-            List<GetContactInfo_Result> results = await _webUserLookupService.GetContactInfo(memberNbr);
-            if(results.Count == 0)
+            ContactInfoDto result = await _webUserLookupService.GetContactInfo(memberNbr);
+            if (result == null)
             {
-                GetContactInfo_Result nullResults = new GetContactInfo_Result();
-                return PartialView("_AccountPreferencesPartial", nullResults);
-            }  
-            else
-            {
-                return PartialView("_AccountPreferencesPartial", results.FirstOrDefault());
-            }        
+                result = new ContactInfoDto();
+            }
+            return PartialView("_AccountPreferencesPartial", result);
         }
 
         public async Task<ActionResult> LogAsync(int? pageNumber, int pageSize = 5, string referrerUrl = null)

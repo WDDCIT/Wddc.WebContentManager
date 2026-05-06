@@ -11,7 +11,7 @@ using Wddc.WebContentManager.Services.WebContent.Sales.RetailClearanceSale;
 using Wddc.WebContentManager.Models.WebContent.Sales.RetailClearanceSale;
 using Serilog;
 using Wddc.WebContentManager.Services.Logging;
-using Wddc.Core.Domain.Webserver.WebOrdering.Logging;
+using Wddc.Api.Core.Domain.Entities.WebOrder;
 using PagedList;
 using Wddc.WebContentManager.Models;
 

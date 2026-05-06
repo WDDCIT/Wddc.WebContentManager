@@ -86,16 +86,8 @@
                 <a href="@Url.Action("Index", "CVBanners", new { area = ""})"><i class="fa fa-flag"></i> <span class="nav-label">Vantage Suite CV Banners</span></a>
             </li> *@
 
-            <li class="@Html.IsSelected(controller: "ClientVantageBanners") @Html.IsSelected(controller: "CVBanners")">
-                <a href="#"><i class="fa fa-flag"></i> <span class="nav-label">ClientVantage Banners</span><span class="fa arrow"></span></a>
-                <ul class="nav nav-second-level collapse" aria-expanded="true" id="cvBanners-ul">
-                    <li id="cvBanner-li">
-                        <a href="@Url.Action("Index", "ClientVantageBanners", new { area = ""})">Wddc Website</a>
-                    </li>
-                    <li id="cvBanner-li">
-                        <a href="@Url.Action("Index", "CVBanners", new { area = ""})">Vantage Suite</a>
-                    </li>
-                </ul>
+            <li id="cvBanner-li" class="@Html.IsSelected(controller: "CVBanners")">
+                <a href="@Url.Action("Index", "CVBanners", new { area = ""})"><i class="fa fa-flag"></i> <span class="nav-label">Vantage Suite Banners</span></a>
             </li>
 
             <li id="search-li">

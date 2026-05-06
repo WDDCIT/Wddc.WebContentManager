@@ -1,15 +1,15 @@
 ﻿
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Wddc.Core.Domain.Webserver.WebOrdering;
+using Wddc.Api.Core.Domain.Entities.WebOrder;
 
 namespace Wddc.WebContentManager.Services.WebContent.Vendors
 {
     public class VendorListService : IVendorListService
     {
-        private readonly IWddcApiService _apiService;
+        private readonly IWddcAppsApiService _apiService;
 
-        public VendorListService(IWddcApiService apiService)
+        public VendorListService(IWddcAppsApiService apiService)
         {
             this._apiService = apiService;
         }
@@ -31,7 +31,7 @@ namespace Wddc.WebContentManager.Services.WebContent.Vendors
 
         public async Task DeleteWebVendor(string VendorID)
         {
-            await _apiService.PostAsync($"/api/WebVendorList/Web_VendorList/Delete/{VendorID}");
+            await _apiService.PostAsync<object>($"/api/WebVendorList/Web_VendorList/Delete/{VendorID}");
         }
 
         public async Task<Web_VendorList> UpdateWebVendor(Web_VendorList webVendor, string VendorID)

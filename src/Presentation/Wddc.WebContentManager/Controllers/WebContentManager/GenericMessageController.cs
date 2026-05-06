@@ -3,58 +3,46 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Wddc.PurchasingOrderApp.Services;
-using Kendo.Mvc.Extensions;
 using Microsoft.AspNetCore.Http;
 using System.IO;
 using PagedList;
 using Wddc.WebContentManager.Services.Logging;
-using Wddc.Core.Domain.Webserver.WebOrdering.Logging;
+using Wddc.Api.Core.Domain.Entities.WebOrder;
 using Wddc.WebContentManager.Models;
 using Serilog;
 using Microsoft.AspNetCore.Hosting;
-using static System.Net.WebRequestMethods;
 using Wddc.WebContentManager.Services.WebContent.GenericMessage;
-using Wddc.Core.Domain.Media;
-using System.Globalization;
-using Wddc.Core.Domain.Webserver.WebOrdering;
-using System.Reflection;
-using EdiFabric.Templates.X12004010;
 
 namespace Wddc.WebContentManager.Controllers.WebContentManager
 {
     public class GenericMessageController : BaseController
     {
-        private readonly LogManager _loggerManager;
         private readonly Services.Logging.ILogger _logger;
         private readonly IGenericMessageService _genericMessageService;
-        private readonly IHostingEnvironment _hostingEnvironment;
+        private readonly IWebHostEnvironment _hostingEnvironment;
 
-        public GenericMessageController(IGenericMessageService genericMessageService, Services.Logging.ILogger logger, IHostingEnvironment hostingEnvironment)
+        public GenericMessageController(IGenericMessageService genericMessageService, Services.Logging.ILogger logger, IWebHostEnvironment hostingEnvironment)
         {
-            _loggerManager = new LogManager();
             _logger = logger;
             _genericMessageService = genericMessageService;
             _hostingEnvironment = hostingEnvironment;
         }
 
-        public ActionResult Index(string response, string message)
+        public ActionResult Index()
         {
-            ViewBag.response = response;
-            ViewBag.Message = message;
             return View();
         }
 
         public async Task<JsonResult> GetMessagesAsync()
         {
-            List<Message_Generic> messages = await _genericMessageService.GetGenericMessages();
+            var messages = await _genericMessageService.GetGenericMessages();
 
             return Json(messages.Where(_ => _.Status == 0).OrderBy(_ => _.CreateDate));
         }
 
         public async Task<JsonResult> GetMessageByIdAsync(int Id)
         {
-            Message_Generic message = await _genericMessageService.GetGenericMessageById(Id);
+            var message = await _genericMessageService.GetGenericMessageById(Id);
 
             string sourcePath = "\\\\WEBSRVR\\WDDCWebPages\\wddc_members\\CS\\Ads";
             string destinationPath = Path.Combine(this._hostingEnvironment.WebRootPath, "Message_Generic_Temp");
@@ -82,17 +70,20 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
         {
             if (string.IsNullOrEmpty(subject))
             {
-                return RedirectToAction("Index", new { response = "Failure", message = "Message subject must be filled out!" });
+                TempData["response"] = "Failure"; TempData["message"] = "Message subject must be filled out!";
+                return RedirectToAction("Index");
             }
 
             if (pdfFile == null)
             {
-                return RedirectToAction("Index", new { response = "Failure", message = "You must select a pdf file to upload!" });
+                TempData["response"] = "Failure"; TempData["message"] = "You must select a pdf file to upload!";
+                return RedirectToAction("Index");
             }
 
             if (expiryDate < DateTime.Today)
             {
-                return RedirectToAction("Index", new { response = "Failure", message = "Expiry date is invalid!" });
+                TempData["response"] = "Failure"; TempData["message"] = "Expiry date is invalid!";
+                return RedirectToAction("Index");
             }
 
             if (site == -1)
@@ -122,10 +113,11 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             {
                 Log.Logger.Error($"Error uploading generic message pdf file: {fileName} by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
                 _logger.Error($"Error uploading generic message pdf file: {fileName}: {ex.Message.Substring(0, 200)}", ex, User, "WebOrdering");
-                return RedirectToAction("Index", new { response = "Failure", message = "Failure uploading generic message pdf file: " + fileName + ": " + ex.Message.Substring(0, 200) });
+                TempData["response"] = "Failure"; TempData["message"] = "Failure uploading generic message pdf file: " + fileName + ": " + ex.Message.Substring(0, 200);
+                return RedirectToAction("Index");
             }
 
-            Message_Generic genericMessage = new Message_Generic();
+            var genericMessage = new GenericMessageDto();
             genericMessage.Subject = subject.Trim();
             genericMessage.GenericBody = null;
             genericMessage.FileName = fileName;
@@ -143,12 +135,14 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             {
                 Log.Logger.Error($"Error inserting Message_Generic, subject: {subject} by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
                 _logger.Error($"Error inserting Message_Generic, subject: {subject}: {ex.Message.Substring(0, 200)}", ex, User, "WebOrdering");
-                return RedirectToAction("Index", new { response = "Failure", message = "Failure inserting Message_Generic, subject:: " + subject + ": " + ex.Message.Substring(0, 200) });
+                TempData["response"] = "Failure"; TempData["message"] = "Failure inserting Message_Generic, subject:: " + subject + ": " + ex.Message.Substring(0, 200);
+                return RedirectToAction("Index");
             }
 
             Log.Logger.Information($"{User.Identity.Name.Substring(7).ToLower()} created generic message: {subject} successfully");
             _logger.Information($"Created generic message: {subject}, successfully", null, User, "WebOrdering");
-            return RedirectToAction("Index", new { response = "Success", message = "Generic message: " + subject + " was created successfully! " });
+            TempData["response"] = "Success"; TempData["message"] = "Generic message: " + subject + " was created successfully! ";
+            return RedirectToAction("Index");
         }
 
         [HttpPost]
@@ -156,13 +150,14 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
         {
             if (string.IsNullOrEmpty(subject))
             {
-                return RedirectToAction("Index", new { response = "Failure", message = "Message subject must be filled out!" });
+                TempData["response"] = "Failure"; TempData["message"] = "Message subject must be filled out!";
+                return RedirectToAction("Index");
             }
 
             if (site == -1)
                 site = 0;
 
-            Message_Generic message = await _genericMessageService.GetGenericMessageById(messageId);
+            var message = await _genericMessageService.GetGenericMessageById(messageId);
 
             if (pdfFile != null)
             {
@@ -185,7 +180,8 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                 {
                     Log.Logger.Error($"Error deleting old message pdf file {pdfFileOldPath} by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
                     _logger.Error($"Error deleting old message pdf file {pdfFileOldPath}: {ex.Message.Substring(0, 200)}", ex, User, "WebOrdering");
-                    return RedirectToAction("Index", new { response = "Failure", message = "Failure deleting old message pdf file: " + pdfFileOldPath + ": " + ex.Message.Substring(0, 200) });
+                    TempData["response"] = "Failure"; TempData["message"] = "Failure deleting old message pdf file: " + pdfFileOldPath + ": " + ex.Message.Substring(0, 200);
+                    return RedirectToAction("Index");
                 }
 
                 try
@@ -206,7 +202,8 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                 {
                     Log.Logger.Error($"Error uploading generic message pdf file: {fileName} by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
                     _logger.Error($"Error uploading generic message pdf file: {fileName}: {ex.Message.Substring(0, 200)}", ex, User, "WebOrdering");
-                    return RedirectToAction("Index", new { response = "Failure", message = "Failure uploading generic message pdf file: " + fileName + ": " + ex.Message.Substring(0, 200) });
+                    TempData["response"] = "Failure"; TempData["message"] = "Failure uploading generic message pdf file: " + fileName + ": " + ex.Message.Substring(0, 200);
+                    return RedirectToAction("Index");
                 }
             }
 
@@ -226,18 +223,20 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             {
                 Log.Logger.Error($"Error updating Message_Generic, subject: {subject} by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
                 _logger.Error($"Error updating Message_Generic, subject: {subject}: {ex.Message.Substring(0, 200)}", ex, User, "WebOrdering");
-                return RedirectToAction("Index", new { response = "Failure", message = "Failure updating Message_Generic, subject:: " + subject + ": " + ex.Message.Substring(0, 200) });
+                TempData["response"] = "Failure"; TempData["message"] = "Failure updating Message_Generic, subject:: " + subject + ": " + ex.Message.Substring(0, 200);
+                return RedirectToAction("Index");
             }
 
             Log.Logger.Information($"{User.Identity.Name.Substring(7).ToLower()} edited generic message: {subject} successfully");
             _logger.Information($"Edited generic message: {subject}, successfully", null, User, "WebOrdering");
-            return RedirectToAction("Index", new { response = "Success", message = "Generic message: " + subject + " was edited successfully! " });
+            TempData["response"] = "Success"; TempData["message"] = "Generic message: " + subject + " was edited successfully! ";
+            return RedirectToAction("Index");
         }
 
         [HttpPost]
         public async Task<ActionResult> DeleteMessageAsync(int messageId)
         {
-            Message_Generic message = await _genericMessageService.GetGenericMessageById(messageId);
+            var message = await _genericMessageService.GetGenericMessageById(messageId);
 
             message.Subject = message.Subject;
             message.GenericBody = message.GenericBody;
@@ -255,12 +254,14 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             {
                 Log.Logger.Error($"Error deleting Message_Generic, subject: {message.Subject} by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
                 _logger.Error($"Error deleting Message_Generic, subject: {message.Subject}: {ex.Message.Substring(0, 200)}", ex, User, "WebOrdering");
-                return RedirectToAction("Index", new { response = "Failure", message = "Failure deleting Message_Generic, subject:: " + message.Subject.Substring(0, 200) + ": " + ex.Message });
+                TempData["response"] = "Failure"; TempData["message"] = "Failure deleting Message_Generic, subject:: " + message.Subject.Substring(0, 200) + ": " + ex.Message;
+                return RedirectToAction("Index");
             }
 
             Log.Logger.Information($"{User.Identity.Name.Substring(7).ToLower()} deleted generic message: {message.Subject} successfully");
             _logger.Information($"Deleted generic message: {message.Subject}, successfully", null, User, "WebOrdering");
-            return RedirectToAction("Index", new { response = "Success", message = "Generic message: " + message.Subject + " was deleted successfully! " });
+            TempData["response"] = "Success"; TempData["message"] = "Generic message: " + message.Subject + " was deleted successfully! ";
+            return RedirectToAction("Index");
         }
 
 
