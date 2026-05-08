@@ -13,8 +13,8 @@ namespace Wddc.WebContentManager.Services.WebContent.Videos
         Task<List<VID002>> GetVID002ByCTGY_NBR(int CTGY_NBR);
         Task<VID001> CreateVID001(VID001 VID001);
         Task<VID002> CreateVID002(VID002 VID002);
-        Task UpdateVID001(VID001 VID001, int CTGY_NBR);
-        Task UpdateVID002(VID002 VID002, int ID);
+        Task<VID001> UpdateVID001(int CTGY_NBR, VID001 VID001);
+        Task<VID002> UpdateVID002(int ID, VID002 VID002);
         Task DeleteVID001(int CTGY_NBR);
         Task DeleteVID002(int ID);
         Task ReorderVID001s(IEnumerable<VID001> VID001s);

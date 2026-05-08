@@ -3,9 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Wddc.PurchasingOrderApp.Services;
-using Wddc.Core.Domain.Webserver.WebOrdering;
-using Kendo.Mvc.Extensions;
 using Microsoft.AspNetCore.Http;
 using System.IO;
 using PagedList;
@@ -15,6 +12,7 @@ using Wddc.WebContentManager.Models;
 using Serilog;
 using Microsoft.AspNetCore.Hosting;
 using Wddc.WebContentManager.Services.WebContent.Newsletter;
+using Wddc.PurchasingOrderApp.Services;
 using PDFtoImage;
 using SkiaSharp;
 
@@ -24,14 +22,14 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
     {
         private readonly LogManager _loggerManager;
         private readonly Services.Logging.ILogger _logger;
-        private readonly INewsletterService _newsletterService;
+        private readonly IInsiderNewsletterService _insiderNewsletterService;
         private readonly IHostingEnvironment _hostingEnvironment;
 
-        public InsiderNewsletterController(INewsletterService newsletterService, Services.Logging.ILogger logger, IHostingEnvironment hostingEnvironment)
+        public InsiderNewsletterController(IInsiderNewsletterService insiderNewsletterService, Services.Logging.ILogger logger, IHostingEnvironment hostingEnvironment)
         {
             _loggerManager = new LogManager();
             _logger = logger;
-            _newsletterService = newsletterService;
+            _insiderNewsletterService = insiderNewsletterService;
             _hostingEnvironment = hostingEnvironment;
         }
 
@@ -43,13 +41,13 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
         public async Task<JsonResult> GetWebInsiderNewsAsync()
         {
             Log.Logger.Information("The system is getting web Insider newsletters");
-            List<Web_News> results = await _newsletterService.GetWebInsiderNews();
+            List<WebNewsDto> results = await _insiderNewsletterService.GetWebInsiderNews();
             return Json(results.OrderByDescending(_ => _.IssueDate));
         }
 
         public async Task<JsonResult> GetWebInsiderNewsByIdAsync(int ID)
         {
-            Web_News webInsiderNews = await _newsletterService.GetWebInsiderNewsById(ID);
+            WebNewsDto webInsiderNews = await _insiderNewsletterService.GetWebInsiderNewsById(ID);
 
             string fileName = webInsiderNews.IssueNumber + ".jpg";
             string sourcePath = "\\\\WEBsrvr\\WDDCMembers\\WDDCWebPages\\wddc_members\\CS\\Newsletter\\INSIDER";
@@ -123,9 +121,9 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
         {
             Log.Logger.Information(User.Identity.Name.Substring(7).ToLower() + " is adding a new Insider newsletter with description: " + newDescription);
 
-            List<Web_News> webInsiderNews = await _newsletterService.GetWebInsiderNews();
+            List<WebNewsDto> webInsiderNews = await _insiderNewsletterService.GetWebInsiderNews();
 
-            foreach (Web_News webInsider in webInsiderNews)
+            foreach (WebNewsDto webInsider in webInsiderNews)
             {
                 if (webInsider.IssueDate == newIssueDate)
                 {
@@ -142,7 +140,7 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                 return RedirectToAction("Index");
             }
 
-            Web_News lastWebInsiderNews = await _newsletterService.GetLastWebInsiderNews();
+            WebNewsDto lastWebInsiderNews = await _insiderNewsletterService.GetLastWebInsiderNews();
             int newIssueNumber = Int32.Parse(lastWebInsiderNews.IssueNumber) + 1;
 
             if (newInfoFileUrl != null)
@@ -192,18 +190,18 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                         }
                     }
 
-                    Web_News newWeb_News = new Web_News();
-                    newWeb_News.Category = 2;
-                    newWeb_News.IssueNumber = newIssueNumber.ToString();
-                    newWeb_News.IssueDate = newIssueDate;
-                    newWeb_News.Description = newDescription.Trim();
-                    newWeb_News.Status = (byte?)(newStatus == "yes" ? 1 : 0);
+                    WebNewsDto newWebNews = new WebNewsDto();
+                    newWebNews.Category = 2;
+                    newWebNews.IssueNumber = newIssueNumber.ToString();
+                    newWebNews.IssueDate = newIssueDate;
+                    newWebNews.Description = newDescription.Trim();
+                    newWebNews.Status = (byte?)(newStatus == "yes" ? 1 : 0);
 
-                    Log.Logger.Information(User.Identity.Name.Substring(7).ToLower() + " is adding a new Insider newsletter: {@newWeb_News}", newWeb_News);
+                    Log.Logger.Information(User.Identity.Name.Substring(7).ToLower() + " is adding a new Insider newsletter: {@newWebNews}", newWebNews);
 
-                    newWeb_News = await _newsletterService.CreateWebInsiderNews(newWeb_News);
+                    newWebNews = await _insiderNewsletterService.CreateWebInsiderNews(newWebNews);
 
-                    Log.Logger.Information($"{User.Identity.Name.Substring(7).ToLower()} added new Insider newsletter id: {newWeb_News.ID} successfully");
+                    Log.Logger.Information($"{User.Identity.Name.Substring(7).ToLower()} added new Insider newsletter id: {newWebNews.ID} successfully");
                     _logger.Information($"Added Insider newsletter successfully: {newDescription}", null, User, "WebOrdering");
 
                     TempData["AlertType"] = "Success";
@@ -231,9 +229,9 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
         {
             Log.Logger.Information(User.Identity.Name.Substring(7).ToLower() + " is updating the Insider newsletter with ID: " + updatedNewsletterId);
 
-            List<Web_News> webInsiderNews = await _newsletterService.GetWebInsiderNews();
+            List<WebNewsDto> webInsiderNews = await _insiderNewsletterService.GetWebInsiderNews();
 
-            foreach (Web_News webInsider in webInsiderNews)
+            foreach (WebNewsDto webInsider in webInsiderNews)
             {
                 if (webInsider.IssueDate == updatedIssueDate && webInsider.ID != updatedNewsletterId)
                 {
@@ -243,7 +241,7 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                 }
             }
 
-            Web_News toUpdateWebInsiderNews = await _newsletterService.GetWebInsiderNewsById(updatedNewsletterId);
+            WebNewsDto toUpdateWebInsiderNews = await _insiderNewsletterService.GetWebInsiderNewsById(updatedNewsletterId);
 
             int issueNumber = Int32.Parse(toUpdateWebInsiderNews.IssueNumber);
 
@@ -322,7 +320,7 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
 
             try
             {
-                await _newsletterService.UpdateWebInsiderNews(toUpdateWebInsiderNews, toUpdateWebInsiderNews.ID);
+                await _insiderNewsletterService.UpdateWebInsiderNews(toUpdateWebInsiderNews.ID, toUpdateWebInsiderNews);
 
                 Log.Logger.Information($"{User.Identity.Name.Substring(7).ToLower()} updated the Insider newsletter id: {toUpdateWebInsiderNews.ID} successfully");
                 _logger.Information($"Updated Insider newsletter successfully: {updatedDescription}", null, User, "WebOrdering");
@@ -347,7 +345,7 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
         {
             Log.Logger.Information(User.Identity.Name.Substring(7).ToLower() + " is deleting the new Insider newsletter with ID: " + deletedNewsletterId);
 
-            Web_News toDeleteWebInsiderNews = await _newsletterService.GetWebInsiderNewsById(deletedNewsletterId);
+            WebNewsDto toDeleteWebInsiderNews = await _insiderNewsletterService.GetWebInsiderNewsById(deletedNewsletterId);
 
             string fileName = toDeleteWebInsiderNews.IssueNumber.ToString() + ".pdf";
             string insiderPath = "\\\\WEBsrvr\\WDDCMembers\\WDDCWebPages\\wddc_members\\CS\\Newsletter\\INSIDER";
@@ -362,7 +360,7 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
 
             try
             {
-                await _newsletterService.DeleteWebInsiderNews(toDeleteWebInsiderNews.ID);
+                await _insiderNewsletterService.DeleteWebInsiderNews(toDeleteWebInsiderNews.ID);
 
                 Log.Logger.Information($"{User.Identity.Name.Substring(7).ToLower()} deleted the Insider newsletter id: {toDeleteWebInsiderNews.ID} successfully");
                 _logger.Information($"Deleted Insider newsletter successfully: {toDeleteWebInsiderNews.Description}", null, User, "WebOrdering");

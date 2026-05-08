@@ -5,22 +5,16 @@
 }
 
 @section Styles {
-
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://kendo.cdn.telerik.com/2021.2.511/styles/kendo.default.min.css" rel="stylesheet" />
     <link href="https://kendo.cdn.telerik.com/2021.2.511/styles/kendo.bootstrap-v4.min.css" rel="stylesheet" type="text/css" />
-
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
 }
 
 @section Scripts {
-
-    <script src="http://ajax.aspnetcdn.com/ajax/jquery.validate/1.11.0/jquery.validate.min.js"></script>
-    <script src="http://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script>
-
+    <script src="https://ajax.aspnetcdn.com/ajax/jquery.validate/1.11.0/jquery.validate.min.js"></script>
     <script src="https://kendo.cdn.telerik.com/2021.2.511/js/kendo.all.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-    <script src="~/js/pagination/pagination.min.js"></script>
-    <script src="~/js/pagination/pagination.custom.js"></script>
 
     <script>
 
@@ -29,32 +23,16 @@
 
         $(document).ready(function () {
 
-            prepareLogList();
+            // Handle alerts
+            var alertType = '@ViewBag.response';
+            var alertMessage = '@ViewBag.Message';
 
-            if('@ViewBag.response') {
-                if ('@ViewBag.response' == "Success") {
-                    document.getElementById("danger-alert").style.display = "none";
-                    document.getElementById("success-alert").style.display = "inline-block";
-                    var alertText = '<strong>Success! </strong>';
-                    alertText += '@ViewBag.Message';
-                    $("#success-alert").html(alertText);
-                    $("#success-alert").fadeTo(8000, 500).slideUp(500, function() {
-                        $("#success-alert").slideUp(500);
-                    });
+            if (alertType && alertMessage) {
+                if (alertType === "Success") {
+                    Swal.fire({ icon: 'success', title: 'Success!', text: alertMessage, showConfirmButton: false, timer: 3000, timerProgressBar: true });
+                } else {
+                    Swal.fire({ icon: 'error', title: 'Error!', text: alertMessage, confirmButtonColor: '#1a73e8' });
                 }
-                else {
-                    document.getElementById("success-alert").style.display = "none";
-                    document.getElementById("danger-alert").style.display = "inline-block";
-                    var alertText = '<strong>Failure! </strong>';
-                    alertText += '@ViewBag.Message';
-                    $("#danger-alert").html(alertText);
-                    $("#danger-alert").fadeTo(8000, 500).slideUp(500, function() {
-                        $("#danger-alert").slideUp(500);
-                    });
-                }
-            } else {
-                document.getElementById("success-alert").style.display = "none";
-                document.getElementById("danger-alert").style.display = "none";
             }
 
             if (@Model.AffinityPrograms.Count() > 0) {
@@ -160,7 +138,7 @@
 
             var programName = document.forms["addNewProgramForm"]["newProgramName"].value;
             if (programName.trim() == "") {
-                alert("Program Name must be filled out");
+                Swal.fire({ icon: 'warning', title: 'Missing Field', text: 'Program Name must be filled out', confirmButtonColor: '#1a73e8' });
                 return false;
             }
 
@@ -179,102 +157,165 @@
 
             var deletedProgramName = document.getElementById("programName").value;
 
-            var confirmDelete = confirm("Confirm deleting affinity program (" + deletedProgramName + ")?");
-            if (confirmDelete == true) {
-                $.post('@Url.Action("DeleteAffinityProgram", "AffinityPrograms")?programId=' + parseInt(clickedActiveProgramId), (result) => {
-                      if (result.success) {
-                          alert("Affinity Program: " + deletedProgramName + " was deleted successfully! ");
-                          window.location.href = "@Url.Action("Index", "AffinityPrograms")";
-                      } else {
-                          alert("Failure deleting affinity program: " + deletedProgramName);
-                          prepareLogList();
-                      }
+            Swal.fire({
+                title: 'Confirm Delete',
+                text: 'Are you sure you want to delete affinity program (' + deletedProgramName + ')?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, Delete',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.post('@Url.Action("DeleteAffinityProgram", "AffinityPrograms")?programId=' + parseInt(clickedActiveProgramId), (result) => {
+                          if (result.success) {
+                              Swal.fire({ icon: 'success', title: 'Deleted!', text: 'Affinity Program: ' + deletedProgramName + ' was deleted successfully!', showConfirmButton: false, timer: 2500, timerProgressBar: true }).then(() => {
+                                  window.location.href = "@Url.Action("Index", "AffinityPrograms")";
+                              });
+                          } else {
+                              Swal.fire({ icon: 'error', title: 'Error!', text: 'Failure deleting affinity program: ' + deletedProgramName, confirmButtonColor: '#1a73e8' });
+                          }
 
-                }).fail((xhr, textStatus, errorThrown) => {
-                    alert("Failure deleting affinity program: " + deletedProgramName + ". " + `${textStatus} : ${errorThrown}`);
-                    prepareLogList();
-                });
-            }
+                    }).fail((xhr, textStatus, errorThrown) => {
+                        Swal.fire({ icon: 'error', title: 'Error!', text: 'Failure deleting affinity program: ' + deletedProgramName + '. ' + textStatus + ' : ' + errorThrown, confirmButtonColor: '#1a73e8' });
+                    });
+                }
+            });
         });
 
-        function prepareLogList() {
-            setupPagination('log', 'log-list', '@Url.Action("Log", "AffinityPrograms")?referrerUrl=AffinityPrograms', ['Log', 'Username', 'Created'], 7);
+        var activityLogGrid;
+
+        function loadActivityLog() {
+            $.ajax({
+                url: '@Url.Action("Log", "AffinityPrograms")',
+                type: 'GET',
+                data: { referrerUrl: 'AffinityPrograms', pageNumber: 1, pageSize: 100 },
+                success: function (response) {
+                    initActivityLogGrid(response && response.Results ? response.Results : []);
+                },
+                error: function () { initActivityLogGrid([]); }
+            });
         }
 
+        function initActivityLogGrid(logData) {
+            if (activityLogGrid) {
+                activityLogGrid.destroy();
+                $('#gridActivityLog').empty();
+            }
+            activityLogGrid = $('#gridActivityLog').kendoGrid({
+                dataSource: {
+                    data: logData,
+                    pageSize: 20,
+                    schema: {
+                        model: {
+                            fields: {
+                                Text: { type: 'string' },
+                                User: { type: 'string' },
+                                Created: { type: 'string' }
+                            }
+                        }
+                    }
+                },
+                height: 400,
+                scrollable: true,
+                sortable: true,
+                pageable: { refresh: true, pageSizes: [10, 20, 50, 100], buttonCount: 5 },
+                filterable: { mode: 'row' },
+                resizable: true,
+                columns: [
+                    {
+                        field: 'Text', title: 'Log Message', width: '55%',
+                        filterable: { cell: { operator: 'contains', showOperators: false } },
+                        template: function (dataItem) {
+                            return '<div style="white-space: pre-wrap; word-wrap: break-word; line-height: 1.5;">' + kendo.htmlEncode(dataItem.Text || '') + '</div>';
+                        }
+                    },
+                    {
+                        field: 'User', title: 'Username', width: '20%',
+                        filterable: { cell: { operator: 'contains', showOperators: false } }
+                    },
+                    {
+                        field: 'Created', title: 'Date', width: '25%',
+                        filterable: false
+                    }
+                ]
+            }).data('kendoGrid');
+        }
+
+        function toggleLog() {
+            var container = $('#logContainer');
+            var toggleText = $('#logToggleText');
+            if (container.is(':visible')) {
+                container.slideUp(300);
+                toggleText.text('Show Activity Log');
+            } else {
+                container.slideDown(300);
+                toggleText.text('Hide Activity Log');
+                loadActivityLog();
+            }
+        }
 
     </script>
 }
 
-<div class="wrapper wrapper-content animated fadeInRight">
-    <div class="row">
-        <div class="col-12 col-lg-12 col-sm-12 col-xl-12 content-center">
-            <div class="alert alert-success" id="success-alert" style="display:none"></div>
-            <div class="alert alert-danger" id="danger-alert" style="display:none"></div>
-        </div>
+<div class="modern-wrapper">
+    <!-- Header Section -->
+    <div class="page-header-banner">
+        <h2>
+            <i class="fa fa-handshake"></i> Affinity Programs Management
+        </h2>
+        <p class="subtitle">
+            Manage affinity program details, logos, and info files
+        </p>
     </div>
-    <div class="row">
-        <div class="col-lg-12">
-            <div class="ibox">
-                <div class="ibox-content">
-                    <div class="row">
-                        <div class="col-lg-4">
-                            <div class="row">
-                                <div class="col-lg-12">
-                                    <div class="data-container">
-                                        <div class="panel panel-default">
-                                            <div>
-                                                <ul id="active-ads" class="list-group">
-                                                    @foreach (var webAffinityProgram in Model.AffinityPrograms)
-                                                    {
-                                                        @if (Model.AffinityPrograms.First() == webAffinityProgram)
-                                                        {
-                                                            <li class="list-group-item active" onclick="displayActiveListItem(this, '@webAffinityProgram.ProgramID')">@webAffinityProgram.ProgramName</li>
-                                                        }
-                                                        else
-                                                        {
-                                                            <li class="list-group-item" onclick="displayActiveListItem(this, '@webAffinityProgram.ProgramID')">@webAffinityProgram.ProgramName</li>
-                                                        }
-                                                    }
-                                                </ul>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-lg-8" style="padding-left: 0px;">
-                            <div class="row">
-                                <div class="col-lg-12">
-                                    <div class="data-container">
-                                        <div class="row tools-row">
-                                            <div class="col-lg-12 content-center">
-                                                <button type="button" id="new-program-btn" class="btn btn-primary" data-toggle="modal" data-target="#addNewProgramModal"><span class="glyphicon glyphicon-file"></span><span class="icon-description">New</span></button>
-                                                <button type="button" id="save-program-btn" class="btn btn-primary" disabled><span class="glyphicon glyphicon-floppy-disk"></span><span class="icon-description">Save</span></button>
-                                                <button type="button" id="delete-program-btn" class="btn btn-primary"><span class="glyphicon glyphicon-trash"></span><span class="icon-description">Delete</span></button>
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <div>
-                                                <div id="details-section">
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+
+    <!-- Main Content -->
+    <div class="container-fluid">
+        <div class="action-card mb-4">
+            <div class="card-body-modern">
+                <div class="row">
+                    <div class="col-lg-4">
+                        <div class="program-list-panel">
+                            <ul id="active-ads" class="program-list">
+                                @foreach (var webAffinityProgram in Model.AffinityPrograms)
+                                {
+                                    @if (Model.AffinityPrograms.First() == webAffinityProgram)
+                                    {
+                                        <li class="program-list-item active" onclick="displayActiveListItem(this, '@webAffinityProgram.ProgramID')">@webAffinityProgram.ProgramName</li>
+                                    }
+                                    else
+                                    {
+                                        <li class="program-list-item" onclick="displayActiveListItem(this, '@webAffinityProgram.ProgramID')">@webAffinityProgram.ProgramName</li>
+                                    }
+                                }
+                            </ul>
                         </div>
                     </div>
-                    <div class="row" style="margin-top: 30px;">
-                        <div class="col-lg-2"></div>
-                        <div class="col-lg-8">
-                            <div id="log" class="content-center">
-                                <div class="bs-ObjectList-rows" id="log-list">
-                                </div>
+                    <div class="col-lg-8" style="padding-left: 0px;">
+                        <div class="program-detail-panel">
+                            <div class="toolbar-row">
+                                <button type="button" id="new-program-btn" class="btn btn-primary btn-modern btn-sm" data-toggle="modal" data-target="#addNewProgramModal"><i class="fa fa-plus"></i> New</button>
+                                <button type="button" id="save-program-btn" class="btn btn-primary btn-modern btn-sm" disabled><i class="fa fa-save"></i> Save</button>
+                                <button type="button" id="delete-program-btn" class="btn btn-danger btn-modern btn-sm"><i class="fa fa-trash"></i> Delete</button>
+                            </div>
+                            <div id="details-section">
                             </div>
                         </div>
-                        <div class="col-lg-2"></div>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- Log Section -->
+        <div class="log-section">
+            <div class="log-header">
+                <button type="button" class="btn-toggle-log" onclick="toggleLog()">
+                    <i class="fa fa-history"></i> <span id="logToggleText">Show Activity Log</span>
+                </button>
+            </div>
+            <div id="logContainer" style="display: none; margin-top: 15px;">
+                <div id="gridActivityLog"></div>
             </div>
         </div>
     </div>
@@ -443,79 +484,177 @@
 </div>
 
 <style>
-
-    .content-center {
-        margin: 0px auto 0px auto;
-        text-align: center;
+    /* ===== GLOBAL & LAYOUT ===== */
+    #page-heading, .breadcrumb {
+        display: none;
     }
 
-    .wrapper-content {
-        padding: 10px 10px 20px;
+    .modern-wrapper {
+        background: #f8f9fa;
+        min-height: 100vh;
+        padding: 15px 20px 30px;
     }
 
-    .ibox-title {
-        padding: 15px 0px 15px;
-        color: #1565C0;
-        border: none;
+    /* ===== PAGE HEADER BANNER ===== */
+    .page-header-banner {
+        background: linear-gradient(135deg, #3182ce 0%, #2c5282 100%);
+        color: white;
+        padding: 12px 20px;
+        margin-bottom: 20px;
+        border-radius: 6px;
+        box-shadow: 0 2px 10px rgba(49, 130, 206, 0.3);
     }
 
-    .ibox-content {
-        padding: 7px 15px 15px 15px;
+    .page-header-banner h2 {
+        margin: 0 0 2px 0;
+        font-size: 20px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: white;
     }
 
-    .data-container {
-        padding: 0px 0px 15px 0px;
+    .page-header-banner h2 i {
+        font-size: 20px;
+        opacity: 0.9;
     }
 
-    .list-group {
-        min-height: 850px;
-        max-height: 850px;
+    .page-header-banner .subtitle {
+        margin: 0;
+        font-size: 13px;
+        opacity: 0.85;
+        font-weight: 400;
     }
 
-    .list-group {
-        overflow-y: scroll;
+    /* ===== ACTION CARDS ===== */
+    .action-card {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+        overflow: hidden;
+        margin-bottom: 16px;
+    }
+
+    .card-body-modern {
+        padding: 20px;
+    }
+
+    /* ===== PROGRAM LIST PANEL ===== */
+    .program-list-panel {
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        overflow: hidden;
+    }
+
+    .program-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        min-height: 750px;
+        max-height: 750px;
+        overflow-y: auto;
         overflow-x: hidden;
     }
 
-    .list-group-item {
+    .program-list-item {
+        padding: 10px 14px;
+        border-bottom: 1px solid #f0f0f0;
+        cursor: pointer;
+        font-size: 13px;
+        color: #4a5568;
+        transition: background 0.15s ease, color 0.15s ease;
         white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
-    .tools-row {
-        padding: 0px 0px 20px 0px;
+    .program-list-item:hover {
+        background: #edf2f7;
     }
 
-    /*input[type="radio"] {
-        margin: 2px 0 0;
-    }*/
-
-    .k-button {
-        font-size: 1.5rem;
+    .program-list-item.active {
+        background: #3182ce;
+        color: white;
+        font-weight: 600;
     }
 
-    /*.k-combobox {
-        font-size: 1.2rem;
+    /* ===== DETAIL PANEL ===== */
+    .program-detail-panel {
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 16px;
+        min-height: 750px;
     }
 
-    .k-dropdown, .k-dropdowntree {
-        font-size: 1.2rem;
+    .toolbar-row {
+        text-align: center;
+        padding-bottom: 16px;
+        margin-bottom: 16px;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        justify-content: center;
+        gap: 8px;
     }
 
-    .k-colorpicker {
-        font-size: 1.2rem;
+    /* ===== BUTTONS ===== */
+    .btn-modern {
+        border-radius: 6px;
+        padding: 8px 20px;
+        font-weight: 600;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        transition: all 0.2s ease;
+        border: none;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
 
-    .k-datepicker, .k-timepicker {
-        font-size: 1.3rem;
-    }*/
+    .btn-modern:hover {
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        transform: translateY(-1px);
+    }
 
-    /*.k-calendar {
-        font-size: 1.3rem;
-    }*/
+    .btn-modern i {
+        margin-right: 6px;
+    }
 
-    .data-container .btn {
+    .btn-sm {
+        padding: 6px 14px;
         font-size: 11px;
-        margin: 0px 2px;
+    }
+
+    .btn-light {
+        color: #4a5568;
+        background-color: white;
+        border: 1px solid #d1d5db;
+        padding: 6px 14px;
+        border-radius: 4px;
+        font-weight: 600;
+        font-size: 12px;
+    }
+
+    .btn-light:hover {
+        background-color: #f7f9fc;
+        border-color: #3182ce;
+        color: #3182ce;
+    }
+
+    .btn-primary.disabled, .btn-primary[disabled] {
+        color: #fff;
+        background-color: #6c757d;
+        border-color: #6c757d;
+    }
+
+    /* ===== MODAL ===== */
+    .modal-lg {
+        width: 65%;
+    }
+
+    .modal-title {
+        color: #2c5282;
+        font-size: 15px;
+        font-weight: 600;
     }
 
     .modal-body .btn {
@@ -523,35 +662,7 @@
         margin: 0px 2px;
     }
 
-    .data-container h5 {
-        color: #484848;
-    }
-
-    .icon-description {
-        margin-left: 5px;
-    }
-
-    textarea {
-        border: none;
-    }
-
-    .k-calendar td.k-state-selected .k-link {
-        border-color: #005dc2;
-        background-color: #007bff;
-    }
-
-    .k-popup .k-group-header, .k-popup .k-header {
-        font-size: 1.3rem;
-    }
-
-    .breadcrumb {
-        display: none;
-    }
-
-    label {
-        margin-bottom: 0px;
-    }
-
+    /* ===== FORMS ===== */
     .form-row {
         margin-top: 7px;
         vertical-align: central;
@@ -565,8 +676,9 @@
     }
 
     .control-label {
-        color: #556375;
-        font-size: 1.3rem;
+        color: #4a5568;
+        font-size: 13px;
+        font-weight: 600;
     }
 
     .control-label-center {
@@ -579,49 +691,90 @@
         display: flex;
     }
 
-    .control-label-top-small {
-        display: flex;
-        font-size: 1.2rem;
-    }
-
     .form-control {
-        font-size: 1.3rem;
-        border-color: #ddd;
+        font-size: 13px;
+        border-color: #d1d5db;
+        border-radius: 4px;
     }
 
-    /*.k-dateinput .k-dateinput-wrap, .k-datepicker .k-picker-wrap, .k-datetimepicker .k-picker-wrap, .k-timepicker .k-picker-wrap {
-        border-color: #ddd;
-        color: black;
-    }*/
-
-    /*.k-editor {
-        border-color: #ddd;
-    }*/
-
-    .btn-light {
-        color: #212529;
-        background-color: #e3e6e8;
-        border-color: #dae0e5;
-        padding: 8px 12px;
+    label {
+        margin-bottom: 0px;
     }
 
-        .btn-light:hover {
-            color: #212529;
-            background-color: #e2e6ea;
-            border-color: #dae0e5
-        }
+    textarea {
+        border: 1px solid #d1d5db;
+        border-radius: 4px;
+        resize: none;
+    }
 
-        .btn-light.focus, .btn-light:focus {
-            color: #212529;
-            background-color: #e2e6ea;
-            border-color: #dae0e5;
-            box-shadow: 0 0 0 .2rem rgba(216,217,219,.5)
-        }
+    /* ===== LOG SECTION ===== */
+    .log-section {
+        border-top: 2px solid #e7eaec;
+        padding-top: 20px;
+        padding-bottom: 20px;
+        margin-top: 20px;
+    }
 
-    .btn-primary.disabled, .btn-primary.disabled:hover, .btn-primary.disabled:focus, .btn-primary.disabled:active, .btn-primary.disabled.active, .btn-primary[disabled], .btn-primary[disabled]:hover, .btn-primary[disabled]:focus, .btn-primary[disabled]:active, .btn-primary.active[disabled], fieldset[disabled] .btn-primary, fieldset[disabled] .btn-primary:hover, fieldset[disabled] .btn-primary:focus, fieldset[disabled] .btn-primary:active, fieldset[disabled] .btn-primary.active {
-        color: #fff;
-        background-color: #6c757d;
-        border-color: #6c757d;
+    .log-header {
+        text-align: center;
+        margin-bottom: 15px;
+    }
+
+    .btn-toggle-log {
+        padding: 6px 16px;
+        background: linear-gradient(135deg, #2c5282 0%, #3182ce 100%);
+        color: #ffffff;
+        border: none;
+        border-radius: 16px;
+        font-weight: 600;
+        font-size: 11px;
+        cursor: pointer;
+        box-shadow: 0 2px 4px rgba(49, 130, 206, 0.3);
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .btn-toggle-log:hover {
+        background: linear-gradient(135deg, #2c5282 0%, #265080 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(49, 130, 206, 0.4);
+    }
+
+    #logContainer {
+        animation: slideDown 0.3s ease-out;
+    }
+
+    @@keyframes slideDown {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    #gridActivityLog {
+        border-radius: 6px;
+        border: 1px solid #e7eaec;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    #gridActivityLog .k-grid-header {
+        background: linear-gradient(to bottom, #f8f9fa 0%, #e9ecef 100%);
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    #gridActivityLog .k-grid-header .k-header {
+        font-weight: bold;
+        color: #495057;
+        font-size: 13px;
+    }
+
+    #gridActivityLog .k-grid-content td {
+        color: #333;
+    }
+
+    /* ===== KENDO OVERRIDES ===== */
+    .k-calendar td.k-state-selected .k-link {
+        background: #3182ce;
+        border-color: #3182ce;
     }
 
     #swal2-title {
@@ -632,67 +785,7 @@
         padding: 1.25em;
     }
 
-    .modal-lg {
-        width: 65%;
-    }
-
-    .modal-title {
-        color: #1565C0;
-        font-size: 14px;
-        font-weight: bold;
-    }
-
     #active-ads li {
         cursor: pointer;
     }
-
-    .bs-ObjectList-row {
-        border-radius: 0.25rem;
-    }
-
-    .bs-ObjectList-row--header {
-        position: relative;
-        background-color: #E8E8E8;
-    }
-
-        .bs-ObjectList-row--header .bs-ObjectList-cell {
-            font-weight: bold;
-        }
-
-    .bs-ObjectList-row .bs-ObjectList-cell {
-        width: 20%;
-        text-align: center;
-    }
-
-        .bs-ObjectList-row .bs-ObjectList-cell:last-child {
-            width: 20%;
-            text-align: center;
-        }
-
-        .bs-ObjectList-row .bs-ObjectList-cell:first-child {
-            width: 60%;
-            text-align: left;
-            white-space: pre-wrap;
-        }
-
-    .bs-ObjectList-child, .bs-ObjectList-parent, .bs-ObjectList-row {
-        display: table-row;
-        transition: background-color .15s ease 0s;
-    }
-
-    .bs-ObjectList-cell {
-        display: table-cell;
-        position: relative;
-        padding: 9px 10px;
-        color: #525f7f;
-        font-weight: 400;
-        line-height: 22px;
-        vertical-align: top;
-        white-space: nowrap;
-    }
-
-    textarea {
-      resize: none;
-    }
-
 </style>

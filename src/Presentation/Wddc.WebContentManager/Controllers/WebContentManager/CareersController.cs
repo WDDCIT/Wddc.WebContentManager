@@ -11,7 +11,7 @@ using Wddc.WebContentManager.Services.WebContent.Careers;
 using Microsoft.AspNetCore.Http;
 using System.IO;
 using Wddc.WebContentManager.Services.Logging;
-using Wddc.Api.Core.Domain.Entities.WebOrder;
+using WebOrderingLog = Wddc.Api.Core.Domain.Entities.WebOrder.WebOrderingLog;
 using Wddc.WebContentManager.Models;
 using PagedList;
 using System.Web;

@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Wddc.PurchasingOrderApp.Services;
 using Kendo.Mvc.Extensions;
 using Microsoft.AspNetCore.Http;
 using System.IO;
@@ -13,19 +12,14 @@ using Wddc.Api.Core.Domain.Entities.WebOrder;
 using Wddc.WebContentManager.Models;
 using Serilog;
 using Microsoft.AspNetCore.Hosting;
+using Wddc.PurchasingOrderApp.Services;
 using Wddc.WebContentManager.Services.WebContent.ClientVantageBanners;
-using static System.Net.WebRequestMethods;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
-using Wddc.Core.Domain.Media;
 using JsonResult = Microsoft.AspNetCore.Mvc.JsonResult;
 using ActionResult = Microsoft.AspNetCore.Mvc.ActionResult;
 using HttpPostAttribute = Microsoft.AspNetCore.Mvc.HttpPostAttribute;
-using System;
-using System.IO;
 using Path = System.IO.Path;
-using Wddc.Core.Domain.ClientVantage.Catalog;
-using Category = Wddc.Core.Domain.Media.Category;
 
 namespace Wddc.WebContentManager.Controllers.WebContentManager
 {
@@ -57,16 +51,16 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
 
         public async Task<JsonResult> GetCategoriesAsync()
         {
-            List<Category> categories = await _clientVantageBannersService.GetCategories();
+            List<BannerCategoryDto> categories = await _clientVantageBannersService.GetCategories();
 
             return Json(categories.OrderBy(_ => _.Name));
         }
 
         public async Task<JsonResult> GetBannersOfCategoryAsync(int categoryId)
         {
-            List<BannersOfCategory> banners = await _clientVantageBannersService.GetBannersOfCategory(categoryId);
+            List<BannersOfCategoryDto> banners = await _clientVantageBannersService.GetBannersOfCategory(categoryId);
 
-            List<Setting> settings = await _clientVantageBannersService.GetSettings();
+            List<MediaSettingDto> settings = await _clientVantageBannersService.GetSettings();
 
             var path = settings.SingleOrDefault(_ => _.Name == "banner.path").Value;
             var mobilePath = settings.SingleOrDefault(_ => _.Name == "banner.path.mobile").Value;
@@ -80,7 +74,7 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             Directory.CreateDirectory(tempPath);
             Directory.CreateDirectory(tempMobilePath);
 
-            foreach (BannersOfCategory banner in banners)
+            foreach (BannersOfCategoryDto banner in banners)
             {
                 FileInfo bannerFile = new FileInfo(path + "\\" + banner.Filename.Trim());
 
@@ -105,9 +99,9 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
 
         public async Task<JsonResult> GetBannerByIdAsync(int Id)
         {
-            Banner banner = await _clientVantageBannersService.GetBannerById(Id);
+            BannerDto banner = await _clientVantageBannersService.GetBannerById(Id);
 
-            List<Setting> settings = await _clientVantageBannersService.GetSettings();
+            List<MediaSettingDto> settings = await _clientVantageBannersService.GetSettings();
 
             var path = settings.SingleOrDefault(_ => _.Name == "banner.path").Value;
             var mobilePath = settings.SingleOrDefault(_ => _.Name == "banner.path.mobile").Value;
@@ -160,7 +154,7 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                 return RedirectToAction("Index");
             }
 
-            List<Banner> banners = await _clientVantageBannersService.GetBanners();
+            List<BannerDto> banners = await _clientVantageBannersService.GetBanners();
             if (banners.Any(b => b.Name.Trim().Equals(bannerName.Trim(), StringComparison.OrdinalIgnoreCase)))
             {
                 TempData["AlertType"] = "Failure";
@@ -168,8 +162,8 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                 return RedirectToAction("Index");
             }
 
-            List<Setting> settings = await _clientVantageBannersService.GetSettings();
-            List<Category> categories = await _clientVantageBannersService.GetCategories();
+            List<MediaSettingDto> settings = await _clientVantageBannersService.GetSettings();
+            List<BannerCategoryDto> categories = await _clientVantageBannersService.GetCategories();
             string category = categories.SingleOrDefault(c => c.Id == categoryId)?.Name ?? "Unknown";
 
             char[] invalidList = Path.GetInvalidFileNameChars();
@@ -185,14 +179,14 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             string bannerFileName = bannerName.Trim();
             string mobileBannerFileName = bannerName.Trim() + "-mobile";
 
-            Banner banner = new Banner
+            BannerDto banner = new BannerDto
             {
                 Name = bannerName,
                 Active = true,
                 IsNew = true
             };
 
-            Banner_Category_Mapping bannerCategoryMapping = new Banner_Category_Mapping
+            BannerCategoryMappingDto bannerCategoryMapping = new BannerCategoryMappingDto
             {
                 CategoryId = categoryId
             };
@@ -333,11 +327,11 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                 return RedirectToAction("Index");
             }
 
-            Banner banner = await _clientVantageBannersService.GetBannerById(bannerId);
+            BannerDto banner = await _clientVantageBannersService.GetBannerById(bannerId);
 
             Log.Logger.Information(User.Identity.Name.Substring(7).ToLower() + " is updating CV banner: " + banner.Name);
 
-            List<Setting> settings = await _clientVantageBannersService.GetSettings();
+            List<MediaSettingDto> settings = await _clientVantageBannersService.GetSettings();
 
             char[] invalidList = Path.GetInvalidFileNameChars();
             foreach (char c in invalidList)
@@ -579,12 +573,12 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                 // Update category mapping if changed
                 if (categoryId != selectedCategoryId)
                 {
-                    Banner_Category_Mapping bannerCategoryMapping = await _clientVantageBannersService.GetBannerCategoryMappingByBannerId(bannerId);
+                    BannerCategoryMappingDto bannerCategoryMapping = await _clientVantageBannersService.GetBannerCategoryMappingByBannerId(bannerId);
                     if (bannerCategoryMapping.CategoryId == selectedCategoryId)
                     {
                         await _clientVantageBannersService.DeleteBannerCategoryMapping(bannerCategoryMapping);
 
-                        bannerCategoryMapping = new Banner_Category_Mapping
+                        bannerCategoryMapping = new BannerCategoryMappingDto
                         {
                             BannerId = bannerId,
                             CategoryId = categoryId
@@ -614,7 +608,7 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
         [HttpPost]
         public async Task<ActionResult> DeleteCVBannerAsync(int bannerId)
         {
-            Banner banner = await _clientVantageBannersService.GetBannerById(bannerId);
+            BannerDto banner = await _clientVantageBannersService.GetBannerById(bannerId);
 
             Log.Logger.Information(User.Identity.Name.Substring(7).ToLower() + " is deleting CV banner: " + banner.Name);
 
@@ -629,7 +623,7 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                 return Json(new { success = false, message = "Failure deleting ClientVantage banner: " + banner.Name + " from db" });
             }
 
-            List<Setting> settings = await _clientVantageBannersService.GetSettings();
+            List<MediaSettingDto> settings = await _clientVantageBannersService.GetSettings();
 
             var bannerPath = settings.SingleOrDefault(_ => _.Name == "banner.path").Value;
             var bannerPathThumbnails = settings.SingleOrDefault(_ => _.Name == "banner.path.thumbnails").Value;

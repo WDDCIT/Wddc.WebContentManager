@@ -10,13 +10,13 @@ using Microsoft.AspNetCore.Http;
 using System.IO;
 using PagedList;
 using Wddc.WebContentManager.Services.Logging;
-using Wddc.Api.Core.Domain.Entities.WebOrder;
+using WebOrderingLog = Wddc.Api.Core.Domain.Entities.WebOrder.WebOrderingLog;
 using Wddc.WebContentManager.Models;
 using Serilog;
 using Microsoft.AspNetCore.Hosting;
 using IronPdf;
 using Wddc.WebContentManager.Services.WebContent.Newsletter;
-using Wddc.Core.Domain.AppData.Items;
+using Wddc.Api.Core.Models.Items;
 
 namespace Wddc.WebContentManager.Controllers.WebContentManager
 {
@@ -49,7 +49,7 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
         public async Task<JsonResult> GetItemsAsync()
         {
             Log.Logger.Information("The system is getting items");
-            List<Items> items = await _itemInfoService.GetItems();
+            List<ItemSummary> items = await _itemInfoService.GetItems();
             return Json(items);
         }
 

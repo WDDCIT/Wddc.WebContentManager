@@ -3,8 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Wddc.PurchasingOrderApp.Services;
-using Wddc.Core.Domain.Webserver.WebOrdering;
 using Microsoft.AspNetCore.Http;
 using System.IO;
 using PagedList;
@@ -14,6 +12,7 @@ using Wddc.WebContentManager.Models;
 using Serilog;
 using Microsoft.AspNetCore.Hosting;
 using Wddc.WebContentManager.Services.WebContent.Newsletter;
+using Wddc.PurchasingOrderApp.Services;
 using PDFtoImage;
 using SkiaSharp;
 
@@ -23,14 +22,14 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
     {
         private readonly LogManager _loggerManager;
         private readonly Services.Logging.ILogger _logger;
-        private readonly INewsletterService _newsletterService;
+        private readonly IFYINewsletterService _fyiNewsletterService;
         private readonly IHostingEnvironment _hostingEnvironment;
 
-        public FYINewsletterController(INewsletterService newsletterService, Services.Logging.ILogger logger, IHostingEnvironment hostingEnvironment)
+        public FYINewsletterController(IFYINewsletterService fyiNewsletterService, Services.Logging.ILogger logger, IHostingEnvironment hostingEnvironment)
         {
             _loggerManager = new LogManager();
             _logger = logger;
-            _newsletterService = newsletterService;
+            _fyiNewsletterService = fyiNewsletterService;
             _hostingEnvironment = hostingEnvironment;
         }
 
@@ -42,13 +41,13 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
         public async Task<JsonResult> GetWebFYINewsAsync()
         {
             Log.Logger.Information("The system is getting web fyi newsletters");
-            List<Web_News> results = await _newsletterService.GetWebFYINews();
+            List<WebNewsDto> results = await _fyiNewsletterService.GetWebFYINews();
             return Json(results.OrderByDescending(_ => _.IssueDate));
         }
 
         public async Task<JsonResult> GetWebFYINewsByIdAsync(int ID)
         {
-            Web_News webFYINews = await _newsletterService.GetWebFYINewsById(ID);
+            WebNewsDto webFYINews = await _fyiNewsletterService.GetWebFYINewsById(ID);
 
             string fileName = webFYINews.IssueNumber + ".jpg";
             string sourcePath = "\\\\WEBsrvr\\WDDCMembers\\WDDCWebPages\\wddc_members\\CS\\Newsletter\\FYI";
@@ -94,9 +93,9 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
         {
             Log.Logger.Information(User.Identity.Name.Substring(7).ToLower() + " is adding a new FYI newsletter with description: " + newDescription);
 
-            List<Web_News> webFYINews = await _newsletterService.GetWebFYINews();
+            List<WebNewsDto> webFYINews = await _fyiNewsletterService.GetWebFYINews();
 
-            foreach (Web_News webFY in webFYINews)
+            foreach (WebNewsDto webFY in webFYINews)
             {
                 if (webFY.IssueDate == newIssueDate)
                 {
@@ -113,7 +112,7 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                 return RedirectToAction("Index");
             }
 
-            Web_News lastWebFYINews = await _newsletterService.GetLastWebFYINews();
+            WebNewsDto lastWebFYINews = await _fyiNewsletterService.GetLastWebFYINews();
             int newIssueNumber = Int32.Parse(lastWebFYINews.IssueNumber) + 1;
 
             if (newInfoFileUrl != null)
@@ -163,18 +162,18 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                         }
                     }
 
-                    Web_News newWeb_News = new Web_News();
-                    newWeb_News.Category = 1;
-                    newWeb_News.IssueNumber = newIssueNumber.ToString();
-                    newWeb_News.IssueDate = newIssueDate;
-                    newWeb_News.Description = newDescription.Trim();
-                    newWeb_News.Status = (byte?)(newStatus == "yes" ? 1 : 0);
+                    WebNewsDto newWebNews = new WebNewsDto();
+                    newWebNews.Category = 1;
+                    newWebNews.IssueNumber = newIssueNumber.ToString();
+                    newWebNews.IssueDate = newIssueDate;
+                    newWebNews.Description = newDescription.Trim();
+                    newWebNews.Status = (byte?)(newStatus == "yes" ? 1 : 0);
 
-                    Log.Logger.Information(User.Identity.Name.Substring(7).ToLower() + " is adding a new FYI newsletter: {@newWeb_News}", newWeb_News);
+                    Log.Logger.Information(User.Identity.Name.Substring(7).ToLower() + " is adding a new FYI newsletter: {@newWebNews}", newWebNews);
 
-                    newWeb_News = await _newsletterService.CreateWebFYINews(newWeb_News);
+                    newWebNews = await _fyiNewsletterService.CreateWebFYINews(newWebNews);
 
-                    Log.Logger.Information($"{User.Identity.Name.Substring(7).ToLower()} added new FYI newsletter id: {newWeb_News.ID} successfully");
+                    Log.Logger.Information($"{User.Identity.Name.Substring(7).ToLower()} added new FYI newsletter id: {newWebNews.ID} successfully");
                     _logger.Information($"Added FYI newsletter successfully: {newDescription}", null, User, "WebOrdering");
 
                     TempData["AlertType"] = "Success";
@@ -202,9 +201,9 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
         {
             Log.Logger.Information(User.Identity.Name.Substring(7).ToLower() + " is updating the FYI newsletter with ID: " + updatedNewsletterId);
 
-            List<Web_News> webFYINews = await _newsletterService.GetWebFYINews();
+            List<WebNewsDto> webFYINews = await _fyiNewsletterService.GetWebFYINews();
 
-            foreach (Web_News webFY in webFYINews)
+            foreach (WebNewsDto webFY in webFYINews)
             {
                 if (webFY.IssueDate == updatedIssueDate && webFY.ID != updatedNewsletterId)
                 {
@@ -214,7 +213,7 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                 }
             }
 
-            Web_News toUpdateWebFYINews = await _newsletterService.GetWebFYINewsById(updatedNewsletterId);
+            WebNewsDto toUpdateWebFYINews = await _fyiNewsletterService.GetWebFYINewsById(updatedNewsletterId);
 
             int issueNumber = Int32.Parse(toUpdateWebFYINews.IssueNumber);
 
@@ -293,7 +292,7 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
 
             try
             {
-                await _newsletterService.UpdateWebFYINews(toUpdateWebFYINews, toUpdateWebFYINews.ID);
+                await _fyiNewsletterService.UpdateWebFYINews(toUpdateWebFYINews.ID, toUpdateWebFYINews);
 
                 Log.Logger.Information($"{User.Identity.Name.Substring(7).ToLower()} updated the FYI newsletter id: {toUpdateWebFYINews.ID} successfully");
                 _logger.Information($"Updated FYI newsletter successfully: {updatedDescription}", null, User, "WebOrdering");
@@ -318,7 +317,7 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
         {
             Log.Logger.Information(User.Identity.Name.Substring(7).ToLower() + " is deleting the new FYI newsletter with ID: " + deletedNewsletterId);
 
-            Web_News toDeleteWebFYINews = await _newsletterService.GetWebFYINewsById(deletedNewsletterId);
+            WebNewsDto toDeleteWebFYINews = await _fyiNewsletterService.GetWebFYINewsById(deletedNewsletterId);
 
             string fileName = toDeleteWebFYINews.IssueNumber.ToString() + ".pdf";
             string fyiPath = "\\\\WEBsrvr\\WDDCMembers\\WDDCWebPages\\wddc_members\\CS\\Newsletter\\FYI";
@@ -333,7 +332,7 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
 
             try
             {
-                await _newsletterService.DeleteWebFYINews(toDeleteWebFYINews.ID);
+                await _fyiNewsletterService.DeleteWebFYINews(toDeleteWebFYINews.ID);
 
                 Log.Logger.Information($"{User.Identity.Name.Substring(7).ToLower()} deleted the FYI newsletter id: {toDeleteWebFYINews.ID} successfully");
                 _logger.Information($"Deleted FYI newsletter successfully: {toDeleteWebFYINews.Description}", null, User, "WebOrdering");

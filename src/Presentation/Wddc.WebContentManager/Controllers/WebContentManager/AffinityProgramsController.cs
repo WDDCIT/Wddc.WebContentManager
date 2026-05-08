@@ -11,7 +11,7 @@ using System.IO;
 using Wddc.WebContentManager.Services.WebContent.Affinity;
 using PagedList;
 using Wddc.WebContentManager.Services.Logging;
-using Wddc.Api.Core.Domain.Entities.WebOrder;
+using WebOrderingLog = Wddc.Api.Core.Domain.Entities.WebOrder.WebOrderingLog;
 using Wddc.WebContentManager.Models;
 using Serilog;
 using Wddc.WebContentManager.Models.WebContent.AffinityPrograms;
@@ -449,7 +449,7 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
 
             try
             {
-                await _affinityService.UpdateWebAffinityProgram(toUpdateProgram, programId);
+                await _affinityService.UpdateWebAffinityProgram(programId, toUpdateProgram);
                 Log.Logger.Information($"{User.Identity.Name.Substring(7).ToLower()} updated affinity program id: {programId} successfully");
                 _logger.Information($"Updated affinity program: {toUpdateProgram.ProgramName} successfully", null, User, "WebOrdering");
                 return RedirectToAction("Index", new { response = "Success", message = "Affinity program (" + toUpdateProgram.ProgramName + ") was updated successfully! " });

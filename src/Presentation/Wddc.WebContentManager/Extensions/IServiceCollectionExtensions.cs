@@ -26,6 +26,7 @@ using Wddc.WebContentManager.Services.WebUser;
 using Wddc.WebContentManager.Services.WebContent.Affinity;
 using Wddc.WebContentManager.Services.WebContent.Newsletter;
 using Wddc.WebContentManager.Services.WebContent.ClientVantageBanners;
+using Wddc.WebContentManager.Services.WebContent.PriceSheet;
 using Wddc.WebContentManager.Services.WebContent.GenericMessage;
 using Wddc.WebContentManager.Services.WebContent.Vendors;
 
@@ -70,7 +71,10 @@ namespace Wddc.WebContentManager.Extensions
             services.TryAddSingleton<IWebUserLookupService, WebUserLookupService>();
             services.TryAddSingleton<IAffinityService, AffinityService>();
             services.TryAddSingleton<INewsletterService, NewsletterService>();
+            services.TryAddSingleton<IFYINewsletterService, FYINewsletterService>();
+            services.TryAddSingleton<IInsiderNewsletterService, InsiderNewsletterService>();
             services.TryAddSingleton<IClientVantageBannersService, ClientVantageBannersService>();
+            services.TryAddSingleton<IPriceSheetService, PriceSheetService>();
             services.TryAddSingleton<IGenericMessageService, GenericMessageService>();
             services.TryAddSingleton<IItemInfoService, ItemInfoService>();
             services.TryAddSingleton<IVendorListService, VendorListService>();

@@ -6,21 +6,21 @@ namespace Wddc.WebContentManager.Services.WebContent.Videos
 {
     public class VideosService : IVideosService
     {
-        private readonly IWddcApiService _apiService;
+        private readonly IWddcAppsApiService _apiService;
 
-        public VideosService(IWddcApiService apiService)
+        public VideosService(IWddcAppsApiService apiService)
         {
-            this._apiService = apiService;
+            _apiService = apiService;
         }
 
         public async Task<List<VID001>> GetAllVID001()
         {
-            return await _apiService.GetAsync<List<VID001>>($"/api/Videos/VID001");
+            return await _apiService.GetAsync<List<VID001>>("/api/Videos/VID001");
         }
 
         public async Task<List<VID002>> GetAllVID002()
         {
-            return await _apiService.GetAsync<List<VID002>>($"/api/Videos/VID002");
+            return await _apiService.GetAsync<List<VID002>>("/api/Videos/VID002");
         }
 
         public async Task<VID001> GetVID001ByCTGY_NBR(int CTGY_NBR)
@@ -40,37 +40,37 @@ namespace Wddc.WebContentManager.Services.WebContent.Videos
 
         public async Task<VID001> CreateVID001(VID001 VID001)
         {
-            return await _apiService.PostAsync<VID001>($"/api/Videos/VID001", VID001);
+            return await _apiService.PostAsync<VID001>("/api/Videos/VID001", VID001);
         }
 
         public async Task<VID002> CreateVID002(VID002 VID002)
         {
-            return await _apiService.PostAsync<VID002>($"/api/Videos/VID002", VID002);
+            return await _apiService.PostAsync<VID002>("/api/Videos/VID002", VID002);
         }
 
-        public async Task UpdateVID001(VID001 VID001, int CTGY_NBR)
+        public async Task<VID001> UpdateVID001(int CTGY_NBR, VID001 VID001)
         {
-            await _apiService.PostAsync($"/api/Videos/VID001/{CTGY_NBR}", VID001);
+            return await _apiService.PostAsync<VID001>($"/api/Videos/VID001/{CTGY_NBR}", VID001);
         }
 
-        public async Task UpdateVID002(VID002 VID002, int ID)
+        public async Task<VID002> UpdateVID002(int ID, VID002 VID002)
         {
-            await _apiService.PostAsync($"/api/Videos/VID002/{ID}", VID002);
+            return await _apiService.PostAsync<VID002>($"/api/Videos/VID002/{ID}", VID002);
         }
 
         public async Task DeleteVID001(int CTGY_NBR)
         {
-            await _apiService.DeleteAsync($"/api/Videos/VID001/{CTGY_NBR}");
+            await _apiService.DeleteAsync<object>($"/api/Videos/VID001/{CTGY_NBR}");
         }
 
         public async Task DeleteVID002(int ID)
         {
-            await _apiService.DeleteAsync($"/api/Videos/VID002/{ID}");
+            await _apiService.DeleteAsync<object>($"/api/Videos/VID002/{ID}");
         }
 
         public async Task ReorderVID001s(IEnumerable<VID001> VID001s)
         {
-            await _apiService.PostAsync($"/api/Videos/VID001s/Reorder", VID001s);
+            await _apiService.PostAsync<object>("/api/Videos/VID001s/Reorder", VID001s);
         }
     }
 }

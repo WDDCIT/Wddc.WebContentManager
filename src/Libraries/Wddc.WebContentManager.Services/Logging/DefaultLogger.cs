@@ -136,7 +136,11 @@ namespace Wddc.WebContentManager.Services.Logging
             if (logLevel.HasValue)
                 logLevelId = (int)logLevel.Value;
 
-            List<WebOrderingLog> query = await _appsApiService.GetAsync<List<WebOrderingLog>>($"/api/WebOrdering/Logs?fromUtc={fromUtc}&toUtc={toUtc}&message={message}&logLevelId={logLevelId}&referrerUrl={referrerUrl}");
+            List<WebOrderingLog> query = await _appsApiService.GetAsync<List<WebOrderingLog>>($"/api/WebOrdering/Logs?fromUtc={fromUtc}&toUtc={toUtc}&message={message}&logLevelId={logLevelId}&pageSize=500");
+
+            if (!string.IsNullOrEmpty(referrerUrl))
+                query = query.Where(l => l.ReferrerUrl != null && l.ReferrerUrl.Contains(referrerUrl, StringComparison.OrdinalIgnoreCase)).ToList();
+
             var log = query.ToPagedList(pageIndex, pageSize);
             return log;
         }

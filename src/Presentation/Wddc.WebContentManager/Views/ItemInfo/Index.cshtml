@@ -3,53 +3,44 @@
 }
 
 @section Styles {
-
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://kendo.cdn.telerik.com/2021.2.511/styles/kendo.default.min.css" rel="stylesheet" />
     <link href="https://kendo.cdn.telerik.com/2021.2.511/styles/kendo.bootstrap-v4.min.css" rel="stylesheet" type="text/css" />
-
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
 }
 
 @section Scripts {
-
-    <script src="http://ajax.aspnetcdn.com/ajax/jquery.validate/1.11.0/jquery.validate.min.js"></script>
-    <script src="http://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script>
-
+    <script src="https://ajax.aspnetcdn.com/ajax/jquery.validate/1.11.0/jquery.validate.min.js"></script>
     <script src="https://kendo.cdn.telerik.com/2021.2.511/js/kendo.all.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <script src="~/js/pagination/pagination.min.js"></script>
-    <script src="~/js/pagination/pagination.custom.js"></script>
-
     <script>
-
         $(document).ready(function () {
-            
-            prepareLogList(); 
 
-            if ('@ViewBag.Success') {
+            // Handle alerts via SweetAlert2
+            var success = '@ViewBag.Success';
+            var alertMessage = '@ViewBag.Message';
 
-                var alertMessage = '@ViewBag.Message';
-
-                if ('@ViewBag.Success' == 'True') {
-
-                    $('#alertContainer-success').text(alertMessage);
-                    $("#alertContainer-success").fadeIn(500);
-
-                    setTimeout(function () {
-                        $("#alertContainer-success").fadeOut();
-                    }, 5000);
-
-                } else {
-
-                    $('#alertContainer-danger').text(alertMessage);
-                    $("#alertContainer-danger").fadeIn(500);
-
-                    setTimeout(function () {
-                        $("#alertContainer-danger").fadeOut();
-                    }, 5000);
+            if (success && alertMessage) {
+                if (success === 'True') {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success!',
+                        text: alertMessage,
+                        showConfirmButton: false,
+                        timer: 3000,
+                        timerProgressBar: true
+                    });
+                } else if (success === 'False') {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error!',
+                        text: alertMessage,
+                        confirmButtonColor: '#1a73e8',
+                        confirmButtonText: 'OK'
+                    });
                 }
             }
-
 
             $("#itemNumber").kendoDropDownList({
                 filter: "contains",
@@ -80,9 +71,7 @@
                             dataType: "json"
                         }
                     },
-                    pageSize: 20,
-                    //serverPaging: true,
-                    //serverFiltering: true
+                    pageSize: 20
                 },
                 optionLabel: "Select an item ...",
                 filtering: function (ev) {
@@ -92,16 +81,8 @@
                     this.dataSource.filter({
                         logic: "or",
                         filters: [
-                            {
-                                field: "ItemNumber",
-                                operator: "contains",
-                                value: filterValue
-                            },
-                            {
-                                field: "ItemDescription",
-                                operator: "contains",
-                                value: filterValue
-                            }
+                            { field: "ItemNumber", operator: "contains", value: filterValue },
+                            { field: "ItemDescription", operator: "contains", value: filterValue }
                         ]
                     });
                 },
@@ -112,511 +93,858 @@
             });
 
             document.getElementById("delete-form-submit").addEventListener("click", function () {
-               
-                swal.fire({
-                    title: "Confirm deleting item info pdf file?",
-                    text: "Item: " + document.getElementById("itemNumber").value,
-                    icon: "question",
+                Swal.fire({
+                    title: 'Confirm Delete',
+                    html: 'Are you sure you want to <strong>permanently delete</strong> the info PDF file for item <strong>' + document.getElementById("itemNumber").value + '</strong>?',
+                    icon: 'warning',
                     showCancelButton: true,
-                    focusConfirm: true,
-                    allowEnterKey: true
-                }).then((name) => {
-                    if (!name.dismiss) {
+                    confirmButtonColor: '#dc3545',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Yes, Delete It',
+                    cancelButtonText: 'Cancel'
+                }).then((result) => {
+                    if (result.isConfirmed) {
                         document.getElementById("delete-form").submit();
                     }
-                    
-                })
+                });
             });
 
             $("#newInfoFileUrl").on("change", function (e) {
                 var fileName = $(this).val().split("\\").pop();
-                document.getElementById("newInfoFileUrlText").value = fileName;
-                document.getElementById("add-form-error").style.visibility = "hidden";
+                $("#newInfoFileUrlText").val(fileName);
+                $("#add-form-error").css("visibility", "hidden");
             });
-
-            $("#toggle-log-section").on("click", function () {
-                toggleLogSection();
-            });
-
-        })
-
-        
+        });
 
         function convertValues(value) {
             var data = {};
-
             value = $.isArray(value) ? value : [value];
-
             for (var idx = 0; idx < value.length; idx++) {
                 data["values[" + idx + "]"] = value[idx];
             }
-
             return data;
         }
 
         function checkItemInfo(selectedItemNumber) {
-
-            if(!selectedItemNumber) {
-                document.getElementById("temp-msg-row").style.display = "block";
-                document.getElementById("item-exists-row").style.display = "none";
-                document.getElementById("item-no-exists-row").style.display = "none";
+            if (!selectedItemNumber) {
+                $("#temp-msg-row").show();
+                $("#item-exists-row").hide();
+                $("#item-no-exists-row").hide();
             } else {
-
                 $.getJSON('@Url.Action("CheckItemFileInfo", "ItemInfo")?itemNumber=' + selectedItemNumber, function (result) {
                     if (!result.error) {
-                        document.getElementById("temp-msg-row").style.display = "none";
+                        $("#temp-msg-row").hide();
                         if (result.exists) {
-                            document.getElementById("item-exists-row").style.display = "block";
-                            document.getElementById("item-no-exists-row").style.display = "none";
-                            document.getElementById("file-exists-item").innerHTML = selectedItemNumber.trim();
-                            document.getElementById("file-exists-item").href = "https://webapp.wddcho.com/Items?ItemNumber=" + selectedItemNumber.trim();
-                            document.getElementById("toChangeItemInfoLogo").src = "../css/images/pdf-icon.png";
-                            document.getElementById("toChangeItemInfoPdf").href = "https://www.wddc.com/wddc_members/CS/Item Info/" + selectedItemNumber.trim() + ".pdf";
+                            $("#item-exists-row").show();
+                            $("#item-no-exists-row").hide();
+                            $("#file-exists-item").text(selectedItemNumber.trim()).attr("href", "https://webapp.wddcho.com/Items?ItemNumber=" + selectedItemNumber.trim());
+                            $("#toChangeItemInfoLogo").attr("src", "../css/images/pdf-icon.png");
+                            $("#toChangeItemInfoPdf").attr("href", "https://www.wddc.com/wddc_members/CS/Item Info/" + selectedItemNumber.trim() + ".pdf");
                             document.forms["delete-form"]["deleteItemNumber"].value = selectedItemNumber.trim();
-
                         } else {
-                            document.getElementById("item-exists-row").style.display = "none";
-                            document.getElementById("item-no-exists-row").style.display = "block";
-                            document.getElementById("no-file-item").innerHTML = selectedItemNumber.trim();
-                            document.getElementById("no-file-item").href = "https://webapp.wddcho.com/Items?ItemNumber=" + selectedItemNumber.trim();
+                            $("#item-exists-row").hide();
+                            $("#item-no-exists-row").show();
+                            $("#no-file-item").text(selectedItemNumber.trim()).attr("href", "https://webapp.wddcho.com/Items?ItemNumber=" + selectedItemNumber.trim());
                         }
                     } else {
-                        document.getElementById("temp-msg-row").style.display = "block";
-                        document.getElementById("item-exists-row").style.display = "none";
-                        document.getElementById("item-no-exists-row").style.display = "none";
-                        alert("Error! Contact System admin: " + result.error);
+                        $("#temp-msg-row").show();
+                        $("#item-exists-row").hide();
+                        $("#item-no-exists-row").hide();
+                        Swal.fire({ icon: 'error', title: 'Error', text: 'Contact System admin: ' + result.error, confirmButtonColor: '#1a73e8' });
                     }
-
                 });
             }
         }
 
-        function newInfoFileUrlClick() {
-            document.getElementById("newInfoFileUrl").click();
-        }
-
         function validateAddForm() {
-
             var newInfoFileUrl = document.forms["add-form"]["newInfoFileUrl"].value;
-            if (!newInfoFileUrl || newInfoFileUrl.length == 0 || newInfoFileUrl.trim() == "") {
-                document.getElementById("add-form-error").style.visibility = "visible";
+            if (!newInfoFileUrl || newInfoFileUrl.trim() === "") {
+                Swal.fire({ icon: 'warning', title: 'Missing File', text: 'You must choose a PDF file to upload', confirmButtonColor: '#1a73e8' });
                 return false;
             }
 
             document.forms["add-form"]["newItemNumber"].value = document.getElementById("itemNumber").value;
 
-            // var newExpiryDate = document.forms["add-form"]["newExpiryDate"].value;
-            // if (newExpiryDate == null || newExpiryDate.trim() == "") {
-            //     alert("Expiry Date must be filled out");
-            //     return false;
-            // }
+            event.preventDefault();
+            Swal.fire({
+                title: 'Confirm Upload',
+                html: 'Are you sure you want to upload this PDF info file for item <strong>' + document.getElementById("itemNumber").value + '</strong>?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#1a73e8',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, Upload It',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('add-form').submit();
+                }
+            });
 
-            return true;
+            return false;
         }
 
+        var activityLogGrid;
 
-        function prepareLogList() {
-            setupPagination('log', 'log-list', '@Url.Action("Log", "ItemInfo")?referrerUrl=ItemInfo', ['Log', 'Username', 'Created'], 7);
+        function loadActivityLog() {
+            $.ajax({
+                url: '@Url.Action("Log", "ItemInfo")',
+                type: 'GET',
+                data: { referrerUrl: 'ItemInfo', pageNumber: 1, pageSize: 100 },
+                success: function (response) {
+                    initActivityLogGrid(response && response.Results ? response.Results : []);
+                },
+                error: function () { initActivityLogGrid([]); }
+            });
         }
 
+        function initActivityLogGrid(logData) {
+            if (activityLogGrid) {
+                activityLogGrid.destroy();
+                $('#gridActivityLog').empty();
+            }
+            activityLogGrid = $('#gridActivityLog').kendoGrid({
+                dataSource: {
+                    data: logData,
+                    pageSize: 20,
+                    schema: {
+                        model: {
+                            fields: {
+                                Text: { type: 'string' },
+                                User: { type: 'string' },
+                                Created: { type: 'string' }
+                            }
+                        }
+                    }
+                },
+                height: 400,
+                scrollable: true,
+                sortable: true,
+                pageable: { refresh: true, pageSizes: [10, 20, 50, 100], buttonCount: 5 },
+                filterable: { mode: 'row' },
+                resizable: true,
+                columns: [
+                    {
+                        field: 'Text', title: 'Log Message', width: '55%',
+                        filterable: { cell: { operator: 'contains', showOperators: false } },
+                        template: function (dataItem) {
+                            return '<div style="white-space: pre-wrap; word-wrap: break-word; line-height: 1.5;">' + kendo.htmlEncode(dataItem.Text || '') + '</div>';
+                        },
+                        attributes: { style: 'white-space: normal; word-wrap: break-word;' }
+                    },
+                    {
+                        field: 'User', title: 'Username', width: '20%',
+                        filterable: { cell: { operator: 'contains', showOperators: false } },
+                        template: function (dataItem) { return dataItem.User || 'Unknown'; }
+                    },
+                    {
+                        field: 'Created', title: 'Date', width: '25%',
+                        filterable: false,
+                        template: function (dataItem) { return dataItem.Created || ''; }
+                    }
+                ]
+            }).data('kendoGrid');
+        }
 
-        // $("#newExpiryDate").kendoDatePicker({
-        //      format: "MMMM dd, yyyy",
-        //      value: new Date()
-        // });
-
-
-
+        function toggleLog() {
+            var container = $('#logContainer');
+            var toggleText = $('#logToggleText');
+            if (container.is(':visible')) {
+                container.slideUp(300);
+                toggleText.text('Show Activity Log');
+            } else {
+                container.slideDown(300);
+                toggleText.text('Hide Activity Log');
+                loadActivityLog();
+            }
+        }
     </script>
 }
 
-<div class="wrapper wrapper-content animated fadeInRight">
-    <div class="row">
-        <div class="col-12 col-lg-12 col-sm-12 col-xl-12 content-center">
-            <div id="alertContainer">
-                <div class="alert alert-success content-center" id="alertContainer-success" style="display: none;"></div>
-                <div class="alert alert-danger content-center" id="alertContainer-danger" style="display: none;"></div>
+<div class="modern-wrapper">
+    <!-- Header Section -->
+    <div class="page-header-banner">
+        <h2>
+            <i class="fa fa-file-pdf"></i> Item Info Management
+        </h2>
+        <p class="subtitle">
+            Upload and delete item information PDF files on the website
+        </p>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container-fluid">
+        <!-- Website Link Card -->
+        <div class="action-card mb-4">
+            <div class="website-link-section">
+                <a href="https://www.wddc.com/wddc_members/m_Item_Search.aspx" target="_blank" class="website-link">
+                    <img id="websiteImg" src="~/css/images/WDDC Product Search.png" alt="Visit WDDC Product Search">
+                    <div class="website-link-overlay">
+                        <i class="fa fa-external-link-alt"></i> Visit WDDC Product Search
+                    </div>
+                </a>
             </div>
         </div>
-    </div>
-    <div class="row">
-        <div class="col-lg-12">
-            <div class="ibox">
-                <div class="ibox-content">
-                    <div class="row">
-                        <div class="col-lg-12 content-center">
-                             <h4>
-                                 This tool is to upload/delete item information pdf files on the website
-                             </h4>
-                             <a href="https://www.wddc.com/wddc_members/m_Item_Search.aspx" target="_blank"><img id="websiteImg" src="~/css/images/WDDC Product Search.png" class="img-shadow" alt="Visit WDDC Product Search"></a>
+
+        <!-- Item Search Card -->
+        <div class="action-card mb-4">
+            <div class="search-card-header">
+                <i class="fa fa-search"></i> Search for an Item
+            </div>
+            <div class="search-card-body">
+                <div class="row justify-content-center">
+                    <div class="col-lg-8">
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">
+                                <i class="fa fa-box"></i> Item Number / Description
+                            </label>
+                            <input id="itemNumber" style="width: 100%;" />
                         </div>
                     </div>
-                    <div class="row" style="margin-top: 50px;">
-                        <div class="col-lg-12">
-                            <div class="row">
-                                <div class="col-3 col-lg-3 col-sm-3 col-xl-3"></div>
-                                <div class="col-6 col-lg-6 col-sm-6 col-xl-6 content-center">
-                                    <div class="demo-section k-content">
-                                        <input id="itemNumber" style="width: 100%;" />
-                                    </div>
-                                </div>
-                                <div class="col-3 col-lg-3 col-sm-3 col-xl-3"></div>
-                            </div>
-                            <div class="row" id="temp-msg-row" style="margin-top: 50px;">
-                                <div class="col-12 col-lg-12 col-sm-12 col-xl-12 content-center">
-                                    Information of selected item will be displayed here ...
-                                </div>
-                            </div>
-                            <div class="row" id="item-exists-row" style="display:none; margin-top: 50px;">
-                                <div class="col-12 col-lg-12 col-sm-12 col-xl-12 content-center">
-                                    <div class="row">
-                                        <div class="col-12 col-lg-12 col-sm-12 col-xl-12">
-                                            <div class="logo-description">
-                                                <span>Click on the below logo to display the current info PDF file of item <a id="file-exists-item" href="#" target="_blank"></a></span>
-                                            </div>
-                                            <div>
-                                                <a href="https://www.wddc.com/wddc_members/CS/Item Info/Test.pdf" id="toChangeItemInfoPdf" target="_blank"><img id="toChangeItemInfoLogo" alt="Visit WDDC Item Information File"></a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-12 col-lg-12 col-sm-12 col-xl-12">
-                                            <form id="delete-form" name="delete-form" method="post" action="@Url.Action("DeleteItemInfoFile", "ItemInfo")" enctype="multipart/form-data">
-                                                <input type="hidden" id="deleteItemNumber" name="deleteItemNumber">
-                                                <div class="row form-row" style="padding-top: 20px;">
-                                                    <div class="col-lg-12">
-                                                        <div class="logo-description">
-                                                            <span>Do you want to delete the current file?</span>
-                                                        </div>
-                                                        <div id="delete-form-submit" class="k-button k-primary submit-btn">Delete</div>
-                                                    </div>
-                                                </div>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="row" id="item-no-exists-row" style="display:none; margin-top: 50px;">
-                                <div class="col-12 col-lg-12 col-sm-12 col-xl-12 content-center">
-                                    <div class="row">
-                                        <div class="col-12 col-lg-12 col-sm-12 col-xl-12">
-                                            <div class="no-file-description">
-                                                <div>No info PDF file exists for item <a id="no-file-item" href="#" target="_blank"></a>. Use the below form to upload a new one:</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-lg-12 content-center">
-                                            <form id="add-form" name="add-form" method="post" action="@Url.Action("AddItemInfoFile", "ItemInfo")" enctype="multipart/form-data" onsubmit="return validateAddForm()">
-                                                <input type="hidden" id="newItemNumber" name="newItemNumber">
-                                                <div class="row form-row">
-                                                    <div class="col-lg-2"></div>
-                                                    <div class="col-lg-8">
-                                                        <div class="row" id="x1">
-                                                            <div class="col-lg-2 form-label-col" id="x2">
-                                                                <label for="newInfoFileUrlText" class="control-label control-label-center">PDF File:</label>
-                                                            </div>
-                                                            <div class="col-lg-10" style="text-align: left;">
-                                                                <div class="row">
-                                                                    <div class="col-lg-9">
-                                                                        <input id="newInfoFileUrlText" name="newInfoFileUrlText" class="form-control" type="text" value="" >
-                                                                        <small id="add-form-error" style="color: red; visibility: hidden;">You must choose a PDF file</small>
-                                                                    </div>
-                                                                    <div class="col-lg-3" style="text-align: left; padding-left: 0px;">
-                                                                        <input id="newInfoFileUrl" name="newInfoFileUrl" class="form-control" type="file" value="" style="display:none" >
-                                                                        <button type="button" class="btn btn-light" onclick="newInfoFileUrlClick();">Browse</button>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div class="col-lg-2"></div>
-                                                </div>
-                                                @* <div class="row form-row">
-                                                    <div class="col-lg-2"></div>
-                                                    <div class="col-lg-8">
-                                                        <div class="row">
-                                                            <div class="col-lg-2 form-label-col">
-                                                                <label for="newExpiryDate" class="control-label control-label-center">Expiry Date:</label>
-                                                            </div>
-                                                            <div class="col-lg-10" style="text-align: left;">
-                                                                <input id="newExpiryDate" name="newExpiryDate" style="width: 40%" />
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div class="col-lg-2"></div>
-                                                </div> *@
-                                                <div class="row form-row" style="padding-top: 20px;">
-                                                    <div class="col-lg-12">
-                                                        <button id="add-form-submit" type="submit" class="k-button k-primary submit-btn">Upload</button>
-                                                    </div>
-                                                </div>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                </div>
+
+                <!-- Placeholder message -->
+                <div id="temp-msg-row" class="result-placeholder">
+                    <i class="fa fa-info-circle"></i> Information of selected item will be displayed here ...
+                </div>
+
+                <!-- Item exists: show PDF preview + delete -->
+                <div id="item-exists-row" style="display: none;">
+                    <div class="item-result-container">
+                        <div class="result-status result-status-exists">
+                            <i class="fa fa-check-circle"></i> A PDF info file exists for item <a id="file-exists-item" href="#" target="_blank" class="item-link"></a>
                         </div>
-                    </div>
-                    <div class="row" style="padding-bottom:100px;">
-                        <div class="col-6 col-lg-6 col-sm-6 col-xl-6">
-                            <div class="toggle-log">
-                                <button id="toggle-log-section" class="btn btn-secondary">Show Log <i class='fa fa-chevron-down'></i></button>
-                            </div>
-                            <div id="log" class="content-center" style="display: none;">
-                                <div class="bs-ObjectList-rows" id="log-list">
+
+                        <div class="preview-section">
+                            <p class="preview-label">Current Item Info PDF</p>
+                            <a href="#" id="toChangeItemInfoPdf" target="_blank" class="preview-link">
+                                <img id="toChangeItemInfoLogo" class="preview-image-pdf" alt="Item Information File" />
+                                <div class="preview-overlay">
+                                    <i class="fa fa-external-link-alt"></i>
                                 </div>
+                            </a>
+                        </div>
+
+                        <form id="delete-form" name="delete-form" method="post" action="@Url.Action("DeleteItemInfoFile", "ItemInfo")" enctype="multipart/form-data">
+                            <input type="hidden" id="deleteItemNumber" name="deleteItemNumber">
+                            <div class="form-actions">
+                                <button type="button" id="delete-form-submit" class="btn btn-danger btn-modern btn-md">
+                                    <i class="fa fa-trash"></i> Delete Info PDF
+                                </button>
                             </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Item does not exist: show upload form -->
+                <div id="item-no-exists-row" style="display: none;">
+                    <div class="item-result-container">
+                        <div class="result-status result-status-missing">
+                            <i class="fa fa-exclamation-triangle"></i> No info PDF file exists for item <a id="no-file-item" href="#" target="_blank" class="item-link"></a>
+                        </div>
+
+                        <div class="upload-form-container">
+                            <h5 class="section-title">
+                                <i class="fa fa-cloud-upload-alt"></i> Upload New PDF
+                            </h5>
+                            <form id="add-form" name="add-form" method="post" action="@Url.Action("AddItemInfoFile", "ItemInfo")" enctype="multipart/form-data" onsubmit="return validateAddForm()">
+                                <input type="hidden" id="newItemNumber" name="newItemNumber">
+                                <div class="row justify-content-center">
+                                    <div class="col-lg-8">
+                                        <div class="form-group-modern form-group-large form-group-inline">
+                                            <label for="newInfoFileUrlText" class="form-label-modern form-label-large form-label-inline">
+                                                <i class="fa fa-file-pdf"></i> PDF File: <span class="text-danger">*</span>
+                                            </label>
+                                            <div class="form-input-inline">
+                                                <div class="file-upload-wrapper">
+                                                    <input id="newInfoFileUrlText" name="newInfoFileUrlText" class="form-control form-control-large" type="text" readonly placeholder="No file selected" />
+                                                    <input id="newInfoFileUrl" name="newInfoFileUrl" type="file" accept=".pdf" style="display:none" />
+                                                    <button type="button" class="btn btn-light" onclick="$('#newInfoFileUrl').click()">
+                                                        <i class="fa fa-cloud-upload-alt"></i> Browse
+                                                    </button>
+                                                </div>
+                                                <small id="add-form-error" class="text-danger" style="visibility: hidden;">You must choose a PDF file</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-actions">
+                                    <button id="add-form-submit" type="submit" class="btn btn-primary btn-modern btn-md">
+                                        <i class="fa fa-upload"></i> Upload PDF
+                                    </button>
+                                </div>
+                            </form>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+
+        <!-- Log Section -->
+        <div class="log-section">
+            <div class="log-header">
+                <button type="button" class="btn-toggle-log" onclick="toggleLog()">
+                    <i class="fa fa-history"></i> <span id="logToggleText">Show Activity Log</span>
+                </button>
+            </div>
+            <div id="logContainer" style="display: none; margin-top: 15px;">
+                <div id="gridActivityLog"></div>
+            </div>
+        </div>
     </div>
 </div>
 
-
-
 <style>
-
-    .content-center {
-        margin: 0px auto 0px auto;
-        text-align: center;
-    }
-
-    .wrapper-content {
-        padding: 10px 10px 20px;
-    }
-
-    .ibox-title {
-        padding: 15px 0px 15px;
-        color: #1565C0;
-        border: none;
-    }
-
-    .ibox-content {
-        padding: 7px 15px 15px 15px;
-    }
-
-    .k-button {
-        font-size: 1.5rem;
-    }
-
-    .k-calendar td.k-state-selected .k-link {
-        border-color: #005dc2;
-        background-color: #007bff;
-    }
-
-    .k-popup .k-group-header, .k-popup .k-header {
-        font-size: 1.3rem;
-    }
-
-    .breadcrumb {
+    /* ===== GLOBAL & LAYOUT ===== */
+    #page-heading, .breadcrumb {
         display: none;
     }
 
-    label {
-        margin-bottom: 0px;
+    .modern-wrapper {
+        background: #f8f9fa;
+        min-height: 100vh;
+        padding: 15px 20px 30px;
     }
 
-    .form-row {
-        margin-top: 20px;
+    .text-danger {
+        color: #dc3545;
     }
 
-    .form-label-col {
+    /* ===== PAGE HEADER BANNER ===== */
+    .page-header-banner {
+        background: linear-gradient(135deg, #3182ce 0%, #2c5282 100%);
+        color: white;
+        padding: 12px 20px;
+        margin-bottom: 20px;
+        border-radius: 6px;
+        box-shadow: 0 2px 10px rgba(49, 130, 206, 0.3);
+    }
+
+    .page-header-banner h2 {
+        margin: 0 0 2px 0;
+        font-size: 20px;
+        font-weight: 600;
         display: flex;
-        padding-right: 0;
-        justify-content: flex-end;
+        align-items: center;
+        gap: 10px;
+        color: white;
     }
 
-    .control-label {
-        color: #556375;
-        font-size: 1.3rem;
+    .page-header-banner h2 i {
+        font-size: 20px;
+        opacity: 0.9;
     }
 
-    .control-label-center {
-        margin-top: auto;
-        margin-bottom: auto;
-    }
-
-    .form-control {
-        font-size: 1.3rem;
-        border-color: #d5d5d5;
-    }
-
-    .btn-light {
-        color: #212529;
-        background-color: #e3e6e8;
-        border-color: #dae0e5;
-        margin: 2px ;
-        font-size: 12px;
-    }
-
-        .btn-light:hover {
-            color: #212529;
-            background-color: #e2e6ea;
-            border-color: #dae0e5
-        }
-
-        .btn-light.focus, .btn-light:focus {
-            color: #212529;
-            background-color: #e2e6ea;
-            border-color: #dae0e5;
-            box-shadow: 0 0 0 .2rem rgba(216,217,219,.5)
-        }
-
-    /* .btn-primary.disabled, .btn-primary.disabled:hover, .btn-primary.disabled:focus, .btn-primary.disabled:active, .btn-primary.disabled.active, .btn-primary[disabled], .btn-primary[disabled]:hover, .btn-primary[disabled]:focus, .btn-primary[disabled]:active, .btn-primary.active[disabled], fieldset[disabled] .btn-primary, fieldset[disabled] .btn-primary:hover, fieldset[disabled] .btn-primary:focus, fieldset[disabled] .btn-primary:active, fieldset[disabled] .btn-primary.active {
-        color: #fff;
-        background-color: #6c757d;
-        border-color: #6c757d;
-    } */
-
-    #swal2-title {
-        font-size: 15px;
-    }
-
-    .swal2-popup {
-        padding: 1.25em;
-    }
-
-    /* .modal-lg {
-        width: 65%;
-    }
-
-    .modal-title {
-        color: #1565C0;
-        font-size: 14px;
-        font-weight: bold;
-    } */
-
-    .bs-ObjectList-row {
-        border-radius: 0.25rem;
-    }
-
-    .bs-ObjectList-row--header {
-        position: relative;
-        background-color: #E8E8E8;
-    }
-
-        .bs-ObjectList-row--header .bs-ObjectList-cell {
-            font-weight: bold;
-        }
-
-    .bs-ObjectList-row .bs-ObjectList-cell {
-        width: 20%;
-        text-align: center;
-    }
-
-        .bs-ObjectList-row .bs-ObjectList-cell:last-child {
-            width: 20%;
-            text-align: center;
-        }
-
-        .bs-ObjectList-row .bs-ObjectList-cell:first-child {
-            width: 60%;
-            text-align: left;
-            white-space: pre-wrap;
-        }
-
-    .bs-ObjectList-child, .bs-ObjectList-parent, .bs-ObjectList-row {
-        display: table-row;
-        transition: background-color .15s ease 0s;
-    }
-
-    .bs-ObjectList-cell {
-        display: table-cell;
-        position: relative;
-        padding: 9px 10px;
-        color: #525f7f;
-        font-weight: 400;
-        line-height: 22px;
-        vertical-align: top;
-        white-space: nowrap;
-    }
-
-    h4 {
-        color: darkblue;
-    }
-
-    .btn {
-        padding: 4px 12px;
-    }
-
-
-    #websiteImg {
-       box-shadow: 0 15px 35px rgba(50,50,93,.1), 0 5px 15px rgba(0,0,0,.07);
-       width: 370px;
-       height: 250px;
-    }
-
-    #item-exists-row img {
-       width: 81px;
-       height: 100px;
-       margin-bottom: 20px;
-    }
-
-    .k-dropdown, .k-textbox {
-        font-size: 14px;
-    }
-
-    .submit-btn {
+    .page-header-banner .subtitle {
+        margin: 0;
         font-size: 13px;
+        opacity: 0.85;
+        font-weight: 400;
     }
 
-    .k-footer {
-        margin-top: 20px;
-        font-weight: bold;
-        font-size: 12px;
+    /* ===== ACTION CARDS ===== */
+    .action-card {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+        overflow: hidden;
+        margin-bottom: 16px;
     }
 
-    #delete-form-row {
-        margin-top: 40px;
+    /* ===== WEBSITE LINK SECTION ===== */
+    .website-link-section {
+        text-align: center;
+        padding: 24px 20px;
     }
 
-    .logo-description, .no-file-description {
-        margin-bottom: 5px;
+    .website-link {
+        display: inline-block;
+        position: relative;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(50,50,93,.1), 0 2px 8px rgba(0,0,0,.07);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
 
-    input[type=text]:disabled, .k-state-disabled {
-        color: grey;
+    .website-link:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(50,50,93,.15), 0 4px 12px rgba(0,0,0,.1);
+    }
+
+    .website-link img {
+        width: 370px;
+        height: 250px;
+        display: block;
+    }
+
+    .website-link-overlay {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: linear-gradient(transparent, rgba(44, 82, 130, 0.9));
+        color: white;
+        padding: 12px;
+        font-weight: 600;
+        font-size: 13px;
+        text-align: center;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+    }
+
+    .website-link:hover .website-link-overlay {
         opacity: 1;
     }
 
-    .img-shadow {
-         box-shadow: 0 15px 35px rgba(50,50,93,.1), 0 5px 15px rgba(0,0,0,.07);
-         margin-bottom: 20px;
+    /* ===== SEARCH CARD ===== */
+    .search-card-header {
+        background: #f7f9fc;
+        color: #2d3748;
+        border-bottom: 2px solid #e2e8f0;
+        padding: 12px 20px;
+        font-size: 13px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 10px;
     }
 
-    #newInfoFileUrlText {
-        height: auto;
+    .search-card-header i {
+        color: #3182ce;
     }
 
-    #newInfoFileUrlText:focus {
-        border-color: #80bdff;
-        box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+    .search-card-body {
+        padding: 20px;
     }
 
-    .toggle-log .btn-secondary {
-        color: #fff;
-        background-color: #9199a1;
-        border-color: #9199a1;
+    /* ===== RESULT SECTIONS ===== */
+    .result-placeholder {
+        text-align: center;
+        padding: 30px 20px;
+        color: #718096;
+        font-size: 13px;
+    }
+
+    .result-placeholder i {
+        margin-right: 6px;
+        color: #a0aec0;
+    }
+
+    .item-result-container {
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid #e2e8f0;
+    }
+
+    .result-status {
+        text-align: center;
+        padding: 12px 20px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 500;
+        margin-bottom: 20px;
+    }
+
+    .result-status-exists {
+        background: #f0fff4;
+        color: #276749;
+        border: 1px solid #c6f6d5;
+    }
+
+    .result-status-exists i {
+        color: #38a169;
+        margin-right: 6px;
+    }
+
+    .result-status-missing {
+        background: #fffbeb;
+        color: #92400e;
+        border: 1px solid #fde68a;
+    }
+
+    .result-status-missing i {
+        color: #d69e2e;
+        margin-right: 6px;
+    }
+
+    .item-link {
+        font-weight: 700;
+        color: #3182ce;
+        text-decoration: none;
+    }
+
+    .item-link:hover {
+        text-decoration: underline;
+        color: #2c5282;
+    }
+
+    /* ===== PREVIEW SECTION ===== */
+    .preview-section {
+        text-align: center;
+        margin-bottom: 16px;
+        padding: 16px;
+        background: #f8f9fa;
+        border-radius: 6px;
+    }
+
+    .preview-label {
+        font-weight: 600;
+        color: #4a5568;
+        margin-bottom: 8px;
+        font-size: 13px;
+    }
+
+    .preview-link {
+        display: inline-block;
+        position: relative;
+        border-radius: 6px;
+        overflow: hidden;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .preview-link:hover {
+        transform: scale(1.03);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    }
+
+    .preview-image-pdf {
+        width: 81px;
+        height: 100px;
+        object-fit: cover;
+        display: block;
+        border: 3px solid white;
+    }
+
+    .preview-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(49, 130, 206, 0.85);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+        color: white;
+        font-size: 2rem;
+    }
+
+    .preview-link:hover .preview-overlay {
+        opacity: 1;
+    }
+
+    /* ===== UPLOAD FORM ===== */
+    .upload-form-container {
+        padding: 20px 24px;
+        border-radius: 8px;
+        margin-top: 16px;
+        background: #fafbfd;
+        border: 1px solid #e3e6ef;
+    }
+
+    .section-title {
+        font-size: 15px;
+        font-weight: 600;
+        color: #2d3748;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding-bottom: 14px;
+        border-bottom: 2px solid #3182ce;
+    }
+
+    .section-title i {
+        color: #3182ce;
+    }
+
+    /* ===== FORMS ===== */
+    .form-group-modern {
+        margin-bottom: 16px;
+    }
+
+    .form-group-large {
+        margin-bottom: 5px;
+    }
+
+    .form-group-inline {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .form-label-modern {
+        font-weight: 600;
+        color: #4a5568;
+        margin-bottom: 6px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+    }
+
+    .form-label-large {
+        font-size: 13px !important;
+        font-weight: 600;
+    }
+
+    .form-label-inline {
+        margin-bottom: 0 !important;
+        min-width: 150px;
+        flex-shrink: 0;
+        justify-content: flex-start;
+    }
+
+    .form-input-inline {
+        flex: 1;
+        text-align: left;
+    }
+
+    .form-control-modern,
+    #add-form .form-control,
+    #add-form .form-control-large {
+        width: 100%;
+        border-radius: 4px;
+        border: 1px solid #d1d5db !important;
+        padding: 6px 12px;
+        font-size: 13px;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .form-control-modern:focus {
+        border-color: #3182ce !important;
+        box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.15) !important;
+    }
+
+    .file-upload-wrapper {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .form-actions {
+        text-align: center;
+        margin-top: 20px;
+        padding-top: 16px;
+        border-top: 1px solid #e2e8f0;
+    }
+
+    /* ===== BUTTONS ===== */
+    .btn-modern {
+        border-radius: 6px;
+        padding: 8px 20px;
+        font-weight: 600;
         font-size: 12px;
-        width: 140px;
-        padding: 4px 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        transition: all 0.2s ease;
+        border: none;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
 
-        .toggle-log .btn-secondary:hover {
-            background-color: #6c757d;
-            color: white;
+    .btn-modern:hover {
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        transform: translateY(-1px);
+    }
+
+    .btn-modern i {
+        margin-right: 6px;
+    }
+
+    .btn-light {
+        color: #4a5568;
+        background-color: white;
+        border: 1px solid #d1d5db;
+        padding: 6px 14px;
+        border-radius: 4px;
+        font-weight: 600;
+        font-size: 12px;
+    }
+
+    .btn-light:hover {
+        background-color: #f7f9fc;
+        border-color: #3182ce;
+        color: #3182ce;
+    }
+
+    /* ===== LOG SECTION ===== */
+    .log-section {
+        border-top: 2px solid #e7eaec;
+        padding-top: 20px;
+        padding-bottom: 20px;
+        margin-top: 20px;
+    }
+
+    .log-header {
+        text-align: center;
+        margin-bottom: 15px;
+    }
+
+    .btn-toggle-log {
+        padding: 6px 16px;
+        background: linear-gradient(135deg, #2c5282 0%, #3182ce 100%);
+        color: #ffffff;
+        border: none;
+        border-radius: 16px;
+        font-weight: 600;
+        font-size: 11px;
+        cursor: pointer;
+        box-shadow: 0 2px 4px rgba(49, 130, 206, 0.3);
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .btn-toggle-log:hover {
+        background: linear-gradient(135deg, #2c5282 0%, #265080 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(49, 130, 206, 0.4);
+    }
+
+    #logContainer {
+        animation: slideDown 0.3s ease-out;
+    }
+
+    @@keyframes slideDown {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    #gridActivityLog {
+        border-radius: 6px;
+        border: 1px solid #e7eaec;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    #gridActivityLog .k-grid-header {
+        background: linear-gradient(to bottom, #f8f9fa 0%, #e9ecef 100%);
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    #gridActivityLog .k-grid-header .k-header {
+        font-weight: bold;
+        color: #495057;
+        font-size: 13px;
+    }
+
+    #gridActivityLog .k-grid-content td {
+        color: #333;
+    }
+
+    /* ===== KENDO UI OVERRIDES ===== */
+    .k-calendar td.k-state-selected .k-link {
+        background: #3182ce;
+        border-color: #3182ce;
+    }
+
+    /* DropDownList Styling */
+    .search-card-body .k-dropdown {
+        border: 1px solid #d1d5db !important;
+        border-radius: 4px !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        font-size: 13px;
+    }
+
+    .search-card-body .k-dropdown:hover {
+        border-color: #3182ce !important;
+    }
+
+    .search-card-body .k-dropdown.k-state-focused,
+    .search-card-body .k-dropdown.k-state-hover {
+        border-color: #3182ce !important;
+        box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.15) !important;
+    }
+
+    .search-card-body .k-dropdown .k-dropdown-wrap {
+        border: none !important;
+        box-shadow: none !important;
+        padding: 6px 12px !important;
+    }
+
+    .search-card-body .k-dropdown .k-dropdown-wrap.k-state-default,
+    .search-card-body .k-dropdown .k-dropdown-wrap.k-state-hover,
+    .search-card-body .k-dropdown .k-dropdown-wrap.k-state-focused {
+        border: none !important;
+        background: transparent !important;
+    }
+
+    .search-card-body .k-dropdown .k-input {
+        border: none !important;
+        padding: 0 !important;
+        font-size: 13px;
+    }
+
+    .search-card-body .k-dropdown .k-select {
+        border: none !important;
+        border-left: 1px solid #e2e8f0 !important;
+        background: transparent;
+        padding: 0 8px;
+    }
+
+    .search-card-body .k-dropdown:hover .k-select {
+        border-left-color: #3182ce !important;
+    }
+
+    /* DropDownList Popup */
+    .k-list-container.k-list-container {
+        border: 1px solid #d1d5db !important;
+        border-radius: 6px !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+        margin-top: 4px !important;
+    }
+
+    .k-list .k-item {
+        padding: 6px 12px !important;
+        border: none !important;
+        font-size: 13px !important;
+    }
+
+    .k-list .k-item:hover {
+        background-color: #f7f9fc !important;
+        border: none !important;
+    }
+
+    .k-list .k-item.k-state-selected {
+        background-color: #3182ce !important;
+        color: white !important;
+        border: none !important;
+    }
+
+    .k-footer {
+        font-weight: bold;
+        font-size: 12px;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @@media (max-width: 768px) {
+        .page-header-banner h2 {
+            font-size: 16px;
         }
 
-    .toggle-log {
-        padding-left: 15px;
-        margin-top: 100px;
-    }
+        .page-header-banner .subtitle {
+            font-size: 12px;
+        }
 
-    .fa-chevron-up, .fa-chevron-down {
-        margin-left: 10px;
-    }
+        .website-link img {
+            width: 280px;
+            height: 190px;
+        }
 
+        .search-card-body {
+            padding: 16px;
+        }
+
+        .form-group-inline {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 6px;
+        }
+
+        .form-label-inline {
+            min-width: auto;
+        }
+    }
 </style>

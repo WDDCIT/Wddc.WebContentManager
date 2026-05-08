@@ -5,368 +5,488 @@
 }
 
 @section Styles {
-
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://kendo.cdn.telerik.com/2021.2.511/styles/kendo.default.min.css" rel="stylesheet" />
     <link href="https://kendo.cdn.telerik.com/2021.2.511/styles/kendo.bootstrap-v4.min.css" rel="stylesheet" type="text/css" />
-
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
 }
 
 @section Scripts {
-
-    <script src="http://ajax.aspnetcdn.com/ajax/jquery.validate/1.11.0/jquery.validate.min.js"></script>
-    <script src="http://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script>
-
+    <script src="https://ajax.aspnetcdn.com/ajax/jquery.validate/1.11.0/jquery.validate.min.js"></script>
     <script src="https://kendo.cdn.telerik.com/2021.2.511/js/kendo.all.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <script src="~/js/pagination/pagination.min.js"></script>
-    <script src="~/js/pagination/pagination.custom.js"></script>
-
     <script>
-
         $(document).ready(function () {
+            // Handle alerts
+            var alertType = '@ViewBag.response';
+            var alertMessage = '@ViewBag.Message';
 
-            prepareLogList(); 
-
-            if('@ViewBag.response') {
-                if ('@ViewBag.response' == "Success") {
-                    document.getElementById("danger-alert").style.display = "none";
-                    document.getElementById("success-alert").style.display = "inline-block";
-                    var alertText = '<strong>Success! </strong>';
-                    alertText += '@ViewBag.Message';
-                    $("#success-alert").html(alertText);
-                    $("#success-alert").fadeTo(8000, 500).slideUp(500, function() {
-                        $("#success-alert").slideUp(500);
-                    });
+            if (alertType && alertMessage) {
+                if (alertType === "Success") {
+                    Swal.fire({ icon: 'success', title: 'Success!', text: alertMessage, showConfirmButton: false, timer: 3000, timerProgressBar: true });
+                } else {
+                    Swal.fire({ icon: 'error', title: 'Error!', text: alertMessage, confirmButtonColor: '#1a73e8' });
                 }
-                else {
-                    document.getElementById("success-alert").style.display = "none";
-                    document.getElementById("danger-alert").style.display = "inline-block";
-                    var alertText = '<strong>Failure! </strong>';
-                    alertText += '@ViewBag.Message';
-                    $("#danger-alert").html(alertText);
-                    $("#danger-alert").fadeTo(8000, 500).slideUp(500, function() {
-                        $("#danger-alert").slideUp(500);
-                    });
-                }
-            } else {
-                document.getElementById("success-alert").style.display = "none";
-                document.getElementById("danger-alert").style.display = "none";
             }
 
             $("#infoFileUrl").on("change", function (e) {
-
                 var fileName = $(this).val().split("\\").pop();
-                document.getElementById("infoFileUrlText").value = fileName;
-                document.forms["upload-form"]["upload-form-submit"].disabled = false;
+                $("#infoFileUrlText").val(fileName);
+                $("#upload-form-submit").prop("disabled", false);
             });
-        })
+        });
 
         function performClick() {
             document.getElementById("infoFileUrl").click();
         }
 
         function validateUpdateForm() {
-
             var infoFileUrl = document.forms["upload-form"]["infoFileUrl"].value;
             if (!infoFileUrl || infoFileUrl.length == 0 || infoFileUrl.trim() == "") {
-                alert("A new File must be chosen!")
+                Swal.fire({ icon: 'warning', title: 'Missing File', text: 'A new file must be chosen!', confirmButtonColor: '#1a73e8' });
                 return false;
             }
 
-            return true;
+            event.preventDefault();
+            Swal.fire({
+                title: 'Confirm Upload',
+                text: 'Are you sure you want to update the Affinity Programs list?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#1a73e8',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, Upload',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('upload-form').submit();
+                }
+            });
+
+            return false;
         }
 
-        function prepareLogList() {
-            setupPagination('log', 'log-list', '@Url.Action("Log", "AffinityPrograms")?referrerUrl=AffinityPrograms', ['Log', 'Username', 'Created'], 7);
+        var activityLogGrid;
+
+        function loadActivityLog() {
+            $.ajax({
+                url: '@Url.Action("Log", "AffinityPrograms")',
+                type: 'GET',
+                data: { referrerUrl: 'AffinityPrograms', pageNumber: 1, pageSize: 100 },
+                success: function (response) {
+                    initActivityLogGrid(response && response.Results ? response.Results : []);
+                },
+                error: function () { initActivityLogGrid([]); }
+            });
         }
 
+        function initActivityLogGrid(logData) {
+            if (activityLogGrid) {
+                activityLogGrid.destroy();
+                $('#gridActivityLog').empty();
+            }
+            activityLogGrid = $('#gridActivityLog').kendoGrid({
+                dataSource: {
+                    data: logData,
+                    pageSize: 20,
+                    schema: {
+                        model: {
+                            fields: {
+                                Text: { type: 'string' },
+                                User: { type: 'string' },
+                                Created: { type: 'string' }
+                            }
+                        }
+                    }
+                },
+                height: 400,
+                scrollable: true,
+                sortable: true,
+                pageable: { refresh: true, pageSizes: [10, 20, 50, 100], buttonCount: 5 },
+                filterable: { mode: 'row' },
+                resizable: true,
+                columns: [
+                    {
+                        field: 'Text', title: 'Log Message', width: '55%',
+                        filterable: { cell: { operator: 'contains', showOperators: false } },
+                        template: function (dataItem) {
+                            return '<div style="white-space: pre-wrap; word-wrap: break-word; line-height: 1.5;">' + kendo.htmlEncode(dataItem.Text || '') + '</div>';
+                        }
+                    },
+                    {
+                        field: 'User', title: 'Username', width: '20%',
+                        filterable: { cell: { operator: 'contains', showOperators: false } }
+                    },
+                    {
+                        field: 'Created', title: 'Date', width: '25%',
+                        filterable: false
+                    }
+                ]
+            }).data('kendoGrid');
+        }
 
+        function toggleLog() {
+            var container = $('#logContainer');
+            var toggleText = $('#logToggleText');
+            if (container.is(':visible')) {
+                container.slideUp(300);
+                toggleText.text('Show Activity Log');
+            } else {
+                container.slideDown(300);
+                toggleText.text('Hide Activity Log');
+                loadActivityLog();
+            }
+        }
     </script>
 }
 
-<div class="wrapper wrapper-content animated fadeInRight">
-    <div class="row">
-        <div class="col-12 col-lg-12 col-sm-12 col-xl-12 content-center">
-            <div class="alert alert-success" id="success-alert" style="display:none"></div>
-            <div class="alert alert-danger" id="danger-alert" style="display:none"></div>
-        </div>
+<div class="modern-wrapper">
+    <!-- Header Section -->
+    <div class="page-header-banner">
+        <h2>
+            <i class="fa fa-file-pdf"></i> Affinity Programs List
+        </h2>
+        <p class="subtitle">
+            Update the affinity programs PDF list on the website
+        </p>
     </div>
-    <div class="row">
-        <div class="col-lg-12">
-            <div class="ibox">
-                <div class="ibox-content">
-                    <div class="row">
-                        <div class="col-lg-12 content-center">
-                            <h4>This tool is to update the affinity programs pdf list on the website </h4>
-                        </div>
-                    </div>
-                    <div class="row" style="margin-top: 20px;">
-                        <div class="col-lg-12 content-center">
-                            <a href="https://www.wddc.com/wddc_members/CS/Affinity%20Programs/Affinity_Programs.pdf" target="_blank" class="btn btn-primary">View Current List</a>
-                        </div>
-                    </div>
-                    <div class="row" style="margin-top: 120px;">
-                        <div class="col-lg-12 content-center">
-                            <form id="upload-form" name="upload-form" method="post" action="@Url.Action("UpdateAffinityProgramsList", "AffinityPrograms")" enctype="multipart/form-data" onsubmit="return validateUpdateForm()">
-                                <div class="row form-row" >
-                                    <div class="col-lg-2"></div>
-                                    <div class="col-lg-8">
-                                        <div class="row" style="display: flex;">
-                                            <div class="col-lg-11">
-                                                <input id="infoFileUrlText" name="infoFileUrlText" class="form-control" type="text" value="" maxlength="100">
-                                            </div>
-                                            <div class="col-lg-1 control-label-center" style="justify-content: flex-end; padding-left:0px;">
-                                                <input id="infoFileUrl" name="infoFileUrl" class="form-control" type="file" value="" style="display:none">
-                                                <button type="button" class="btn btn-light" onclick="performClick();" >Browse</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-lg-2"></div>
-                                </div>
-                                <div class="row form-row" style="padding-top: 20px;">
-                                    <div class="col-lg-12">
-                                        <button id="upload-form-submit" type="submit" class="btn btn-primary" disabled>Upload</button>
-                                    </div>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                    <div class="row" style="margin-top: 180px;">
+
+    <!-- Main Content -->
+    <div class="container-fluid">
+        <!-- View Current List -->
+        <div class="action-card mb-4">
+            <div class="card-body text-center" style="padding: 20px;">
+                <a href="https://www.wddc.com/wddc_members/CS/Affinity%20Programs/Affinity_Programs.pdf" target="_blank" class="btn btn-primary btn-modern">
+                    <i class="fa fa-external-link-alt"></i> View Current List
+                </a>
+            </div>
+        </div>
+
+        <!-- Upload New List Section -->
+        <div class="action-card mb-4">
+            <button type="button" class="collapsible-btn active">
+                <i class="fa fa-cloud-upload-alt"></i>
+                <span>Upload New List</span>
+                <i class="fa fa-chevron-down float-end toggle-icon"></i>
+            </button>
+            <div class="collapsible-content" style="max-height: 10000px; padding: 20px;">
+                <form id="upload-form" name="upload-form" method="post" action="@Url.Action("UpdateAffinityProgramsList", "AffinityPrograms")" enctype="multipart/form-data" onsubmit="return validateUpdateForm()">
+                    <div class="row justify-content-center">
                         <div class="col-lg-2"></div>
-                        <div class="col-lg-8 content-center">
-                            <div id="log" class="content-center">
-                                <div class="bs-ObjectList-rows" id="log-list">
+                        <div class="col-lg-8">
+                            <div class="form-group-modern form-group-large form-group-inline">
+                                <label for="infoFileUrlText" class="form-label-modern form-label-large form-label-inline">
+                                    <i class="fa fa-file-pdf"></i> PDF File: <span class="text-danger">*</span>
+                                </label>
+                                <div class="form-input-inline">
+                                    <div class="file-upload-wrapper">
+                                        <input id="infoFileUrlText" name="infoFileUrlText" class="form-control form-control-large" type="text" readonly placeholder="No file selected" maxlength="100" />
+                                        <input id="infoFileUrl" name="infoFileUrl" type="file" accept=".pdf" style="display:none" />
+                                        <button type="button" class="btn btn-light" onclick="performClick()">
+                                            <i class="fa fa-cloud-upload-alt"></i> Browse
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                         <div class="col-lg-2"></div>
                     </div>
-                </div>
+
+                    <div class="form-actions">
+                        <button id="upload-form-submit" type="submit" class="btn btn-primary btn-modern btn-md" disabled>
+                            <i class="fa fa-upload"></i> Upload
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Log Section -->
+        <div class="log-section">
+            <div class="log-header">
+                <button type="button" class="btn-toggle-log" onclick="toggleLog()">
+                    <i class="fa fa-history"></i> <span id="logToggleText">Show Activity Log</span>
+                </button>
+            </div>
+            <div id="logContainer" style="display: none; margin-top: 15px;">
+                <div id="gridActivityLog"></div>
             </div>
         </div>
     </div>
 </div>
 
-
-
 <style>
-
-    .content-center {
-        margin: 0px auto 0px auto;
-        text-align: center;
-    }
-
-    .wrapper-content {
-        padding: 10px 10px 20px;
-    }
-
-    .ibox-title {
-        padding: 15px 0px 15px;
-        color: #1565C0;
-        border: none;
-    }
-
-    .ibox-content {
-        padding: 7px 15px 15px 15px;
-    }
-
-    .data-container {
-        padding: 0px 0px 15px 0px;
-    }
-
-    .list-group {
-        min-height: 850px;
-        max-height: 850px;
-    }
-
-    .list-group {
-        overflow-y: scroll;
-        overflow-x: hidden;
-    }
-
-    .list-group-item {
-        white-space: nowrap;
-    }
-
-    .tools-row {
-        padding: 0px 0px 20px 0px;
-    }
-
-    /*input[type="radio"] {
-        margin: 2px 0 0;
-    }*/
-
-    .k-button {
-        font-size: 1.5rem;
-    }
-
-    .icon-description {
-        margin-left: 5px;
-    }
-
-    textarea {
-        border: none;
-    }
-
-    .k-calendar td.k-state-selected .k-link {
-        border-color: #005dc2;
-        background-color: #007bff;
-    }
-
-    .k-popup .k-group-header, .k-popup .k-header {
-        font-size: 1.3rem;
-    }
-
-    .breadcrumb {
+    /* ===== GLOBAL & LAYOUT ===== */
+    #page-heading, .breadcrumb {
         display: none;
     }
 
-    label {
-        margin-bottom: 0px;
+    .modern-wrapper {
+        background: #f8f9fa;
+        min-height: 100vh;
+        padding: 15px 20px 30px;
     }
 
-    .form-row {
-        margin-top: 7px;
-        vertical-align: central;
+    .text-danger {
+        color: #dc3545;
+    }
+
+    /* ===== PAGE HEADER BANNER ===== */
+    .page-header-banner {
+        background: linear-gradient(135deg, #3182ce 0%, #2c5282 100%);
+        color: white;
+        padding: 12px 20px;
+        margin-bottom: 20px;
+        border-radius: 6px;
+        box-shadow: 0 2px 10px rgba(49, 130, 206, 0.3);
+    }
+
+    .page-header-banner h2 {
+        margin: 0 0 2px 0;
+        font-size: 20px;
+        font-weight: 600;
         display: flex;
+        align-items: center;
+        gap: 10px;
+        color: white;
     }
 
-    .form-label-col {
+    .page-header-banner h2 i {
+        font-size: 20px;
+        opacity: 0.9;
+    }
+
+    .page-header-banner .subtitle {
+        margin: 0;
+        font-size: 13px;
+        opacity: 0.85;
+        font-weight: 400;
+    }
+
+    /* ===== ACTION CARDS & COLLAPSIBLE ===== */
+    .action-card {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+        overflow: hidden;
+        margin-bottom: 16px;
+    }
+
+    .collapsible-btn {
+        width: 100%;
+        background: #f7f9fc;
+        color: #2d3748;
+        border: none;
+        border-bottom: 2px solid #e2e8f0;
+        padding: 12px 20px;
+        font-size: 13px;
+        font-weight: 600;
+        text-align: left;
+        cursor: pointer;
+        transition: background 0.2s ease;
         display: flex;
-        padding-right: 0;
-        justify-content: flex-end;
+        align-items: center;
+        gap: 10px;
     }
 
-    .control-label {
-        color: #556375;
-        font-size: 1.3rem;
+    .collapsible-btn:hover {
+        background: #edf2f7;
     }
 
-    .control-label-center {
+    .collapsible-btn.active {
+        background: #edf2f7;
+        border-bottom-color: #3182ce;
+    }
+
+    .collapsible-btn .toggle-icon {
+        transition: transform 0.3s ease;
+        color: #3182ce;
+    }
+
+    .collapsible-btn.active .toggle-icon {
+        transform: rotate(180deg);
+    }
+
+    .collapsible-btn i:first-child {
+        color: #3182ce;
+    }
+
+    .collapsible-content {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.4s ease-in-out, padding 0.4s ease-in-out;
+        padding: 0 20px;
+        background: white;
+    }
+
+    .action-card .collapsible-btn.active + .collapsible-content {
+        padding: 20px;
+    }
+
+    /* ===== FORMS ===== */
+    .form-group-modern {
+        margin-bottom: 16px;
+    }
+
+    .form-group-large {
+        margin-bottom: 5px;
+    }
+
+    .form-group-inline {
         display: flex;
-        margin-top: auto;
-        margin-bottom: auto;
+        align-items: center;
+        gap: 16px;
     }
 
-    .control-label-top {
+    .form-label-modern {
+        font-weight: 600;
+        color: #4a5568;
+        margin-bottom: 6px;
         display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
     }
 
-    .control-label-top-small {
+    .form-label-large {
+        font-size: 13px !important;
+        font-weight: 600;
+    }
+
+    .form-label-inline {
+        margin-bottom: 0 !important;
+        min-width: 150px;
+        flex-shrink: 0;
+        justify-content: flex-start;
+    }
+
+    .form-input-inline {
+        flex: 1;
+        text-align: left;
+    }
+
+    .form-control-modern,
+    .file-upload-wrapper .form-control {
+        width: 100%;
+        border-radius: 4px;
+        border: 1px solid #d1d5db !important;
+        padding: 6px 12px;
+        font-size: 13px;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .file-upload-wrapper {
         display: flex;
-        font-size: 1.2rem;
+        gap: 0.5rem;
     }
 
-    .form-control {
-        font-size: 1.3rem;
-        border-color: #ddd;
+    .form-actions {
+        text-align: center;
+        margin-top: 20px;
+        padding-top: 16px;
+        border-top: 1px solid #e2e8f0;
+    }
+
+    /* ===== BUTTONS ===== */
+    .btn-modern {
+        border-radius: 6px;
+        padding: 8px 20px;
+        font-weight: 600;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        transition: all 0.2s ease;
+        border: none;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .btn-modern:hover {
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        transform: translateY(-1px);
+    }
+
+    .btn-modern i {
+        margin-right: 6px;
     }
 
     .btn-light {
-        color: #212529;
-        background-color: #e3e6e8;
-        border-color: #dae0e5;
-        padding: 8px 12px;
+        color: #4a5568;
+        background-color: white;
+        border: 1px solid #d1d5db;
+        padding: 6px 14px;
+        border-radius: 4px;
+        font-weight: 600;
+        font-size: 12px;
     }
 
-        .btn-light:hover {
-            color: #212529;
-            background-color: #e2e6ea;
-            border-color: #dae0e5
-        }
-
-        .btn-light.focus, .btn-light:focus {
-            color: #212529;
-            background-color: #e2e6ea;
-            border-color: #dae0e5;
-            box-shadow: 0 0 0 .2rem rgba(216,217,219,.5)
-        }
-
-    .btn-primary.disabled, .btn-primary.disabled:hover, .btn-primary.disabled:focus, .btn-primary.disabled:active, .btn-primary.disabled.active, .btn-primary[disabled], .btn-primary[disabled]:hover, .btn-primary[disabled]:focus, .btn-primary[disabled]:active, .btn-primary.active[disabled], fieldset[disabled] .btn-primary, fieldset[disabled] .btn-primary:hover, fieldset[disabled] .btn-primary:focus, fieldset[disabled] .btn-primary:active, fieldset[disabled] .btn-primary.active {
-        color: #fff;
-        background-color: #6c757d;
-        border-color: #6c757d;
+    .btn-light:hover {
+        background-color: #f7f9fc;
+        border-color: #3182ce;
+        color: #3182ce;
     }
 
-    #swal2-title {
-        font-size: 15px;
+    /* ===== LOG SECTION ===== */
+    .log-section {
+        border-top: 2px solid #e7eaec;
+        padding-top: 20px;
+        padding-bottom: 20px;
+        margin-top: 20px;
     }
 
-    .swal2-popup {
-        padding: 1.25em;
-    }
-
-    .modal-lg {
-        width: 65%;
-    }
-
-    .modal-title {
-        color: #1565C0;
-        font-size: 14px;
-        font-weight: bold;
-    }
-
-    #active-ads li {
-        cursor: pointer;
-    }
-
-    .bs-ObjectList-row {
-        border-radius: 0.25rem;
-    }
-
-    .bs-ObjectList-row--header {
-        position: relative;
-        background-color: #E8E8E8;
-    }
-
-        .bs-ObjectList-row--header .bs-ObjectList-cell {
-            font-weight: bold;
-        }
-
-    .bs-ObjectList-row .bs-ObjectList-cell {
-        width: 20%;
+    .log-header {
         text-align: center;
+        margin-bottom: 15px;
     }
 
-        .bs-ObjectList-row .bs-ObjectList-cell:last-child {
-            width: 20%;
-            text-align: center;
-        }
-
-        .bs-ObjectList-row .bs-ObjectList-cell:first-child {
-            width: 60%;
-            text-align: left;
-            white-space: pre-wrap;
-        }
-
-    .bs-ObjectList-child, .bs-ObjectList-parent, .bs-ObjectList-row {
-        display: table-row;
-        transition: background-color .15s ease 0s;
+    .btn-toggle-log {
+        padding: 6px 16px;
+        background: linear-gradient(135deg, #2c5282 0%, #3182ce 100%);
+        color: #ffffff;
+        border: none;
+        border-radius: 16px;
+        font-weight: 600;
+        font-size: 11px;
+        cursor: pointer;
+        box-shadow: 0 2px 4px rgba(49, 130, 206, 0.3);
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
     }
 
-    .bs-ObjectList-cell {
-        display: table-cell;
-        position: relative;
-        padding: 9px 10px;
-        color: #525f7f;
-        font-weight: 400;
-        line-height: 22px;
-        vertical-align: top;
-        white-space: nowrap;
+    .btn-toggle-log:hover {
+        background: linear-gradient(135deg, #2c5282 0%, #265080 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(49, 130, 206, 0.4);
     }
 
-    textarea {
-      resize: none;
+    #logContainer {
+        animation: slideDown 0.3s ease-out;
     }
 
-
-    h4 {
-        color: darkblue;
+    @@keyframes slideDown {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
     }
 
-    .btn {
-        padding: 4px 12px;
+    #gridActivityLog {
+        border-radius: 6px;
+        border: 1px solid #e7eaec;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     }
 
+    #gridActivityLog .k-grid-header {
+        background: linear-gradient(to bottom, #f8f9fa 0%, #e9ecef 100%);
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    #gridActivityLog .k-grid-header .k-header {
+        font-weight: bold;
+        color: #495057;
+        font-size: 13px;
+    }
+
+    #gridActivityLog .k-grid-content td {
+        color: #333;
+    }
 </style>

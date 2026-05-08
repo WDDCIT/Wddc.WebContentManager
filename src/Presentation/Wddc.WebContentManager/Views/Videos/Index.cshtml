@@ -5,31 +5,22 @@
 }
 
 @section Styles {
-
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://kendo.cdn.telerik.com/2021.2.511/styles/kendo.default.min.css" rel="stylesheet" />
     <link href="https://kendo.cdn.telerik.com/2021.2.511/styles/kendo.bootstrap-v4.min.css" rel="stylesheet" type="text/css" />
-
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
 }
 
 @section Scripts {
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
-    <script src="http://ajax.aspnetcdn.com/ajax/jquery.validate/1.11.0/jquery.validate.min.js"></script>
-    <script src="http://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script>
-
+    <script src="https://ajax.aspnetcdn.com/ajax/jquery.validate/1.11.0/jquery.validate.min.js"></script>
     <script src="https://kendo.cdn.telerik.com/2021.2.511/js/kendo.all.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/2.4.0/jszip.js"></script>
-
-    <script src="~/js/pagination/pagination.min.js"></script>
-    <script src="~/js/pagination/pagination.custom.js"></script>
 
     <script>
 
         var categoriesDataSource, albumsDataSource, selectedCategoryNumber, selectedCategoryName, selectedAlbumId, selectedAlbumName, selectedAlbumNumber;
 
         $(document).ready(function () {
-
-            prepareLogList();
 
             categoriesDataSource = new kendo.data.DataSource({
                 transport: {
@@ -131,8 +122,6 @@
                     }
                 }
 
-                prepareLogList();
-
             });
 
 
@@ -179,10 +168,9 @@
                         VID001s: JSON.parse(JSON.stringify(categoriesItems))
                     }
                 }, (result) => {
-                    prepareLogList();
+                    // reorder complete
                 }).fail((xhr, textStatus, errorThrown) => {
-                    alert("Failure sorting videos: " + `${textStatus} : ${errorThrown}`);
-                    prepareLogList();
+                    Swal.fire({ icon: 'error', title: 'Error!', text: 'Failure sorting videos: ' + textStatus + ' : ' + errorThrown, confirmButtonColor: '#1a73e8' });
                 });
             }
 
@@ -248,250 +236,300 @@
         });
 
         function validateAddCategoryForm() {
-
             var newCategoryName = document.forms["addCategoryForm"]["newCategoryName"].value;
             if (newCategoryName.trim() == "") {
-                alert("Category name must be filled out");
+                Swal.fire({ icon: 'warning', title: 'Missing Field', text: 'Category name must be filled out', confirmButtonColor: '#1a73e8' });
                 document.getElementById("newCategoryName").focus();
                 return false;
             }
         }
 
         function validateEditCategoryForm() {
-
             var categoryName = document.forms["editCategoryForm"]["categoryName"].value;
             if (categoryName.trim() == "") {
-                alert("Category name must be filled out");
+                Swal.fire({ icon: 'warning', title: 'Missing Field', text: 'Category name must be filled out', confirmButtonColor: '#1a73e8' });
                 document.getElementById("categoryName").focus();
                 return false;
             }
         }
 
         function validateAddAlbumForm() {
-
             var newAlbumName = document.forms["addAlbumForm"]["newAlbumName"].value;
             if (newAlbumName.trim() == "") {
-                alert("Album name must be filled out");
+                Swal.fire({ icon: 'warning', title: 'Missing Field', text: 'Album name must be filled out', confirmButtonColor: '#1a73e8' });
                 document.getElementById("newAlbumName").focus();
                 return false;
             }
 
             var newAlbumNumber = document.forms["addAlbumForm"]["newAlbumNumber"].value;
             if (newAlbumNumber.trim() == "") {
-                alert("Vimeo album number must be filled out");
+                Swal.fire({ icon: 'warning', title: 'Missing Field', text: 'Vimeo album number must be filled out', confirmButtonColor: '#1a73e8' });
                 document.getElementById("newAlbumNumber").focus();
                 return false;
             }
 
             var numbers = /^[0-9]+$/;
             if (!newAlbumNumber.match(numbers)) {
-                alert("Album Vimeo number is not valid");
+                Swal.fire({ icon: 'warning', title: 'Invalid Input', text: 'Album Vimeo number is not valid', confirmButtonColor: '#1a73e8' });
                 document.getElementById("newAlbumNumber").focus();
                 return false;
             }
         }
 
         function validateEditAlbumForm() {
-
             var albumName = document.forms["editAlbumForm"]["albumName"].value;
             if (albumName.trim() == "") {
-                alert("Album name must be filled out");
+                Swal.fire({ icon: 'warning', title: 'Missing Field', text: 'Album name must be filled out', confirmButtonColor: '#1a73e8' });
                 document.getElementById("albumName").focus();
                 return false;
             }
 
             var albumNumber = document.forms["editAlbumForm"]["albumNumber"].value;
             if (albumNumber.trim() == "") {
-                alert("Vimeo album number must be filled out");
+                Swal.fire({ icon: 'warning', title: 'Missing Field', text: 'Vimeo album number must be filled out', confirmButtonColor: '#1a73e8' });
                 document.getElementById("albumNumber").focus();
                 return false;
             }
 
             var numbers = /^[0-9]+$/;
             if (!albumNumber.match(numbers)) {
-                alert("Album Vimeo number is not valid");
+                Swal.fire({ icon: 'warning', title: 'Invalid Input', text: 'Album Vimeo number is not valid', confirmButtonColor: '#1a73e8' });
                 document.getElementById("albumNumber").focus();
                 return false;
             }
         }
 
         $("#delete-category").click(function () {
-
-            var confirmDelete = confirm("Are you sure you want to remove category '" + selectedCategoryName + "'?");
-            if (confirmDelete == true) {
-
-                $.getJSON('@Url.Action("GetAlbumsByCategory", "Videos")?CTGY_NBR=' + parseInt(selectedCategoryNumber), function (json) {
-                    if (json.length > 0) {
-                        alert("There are items assigned to category '" + selectedCategoryName + "'. Please remove or move them to a different category before removing this category.")
-                    }
-                    else {
-                         $.post('@Url.Action("DeleteCategory", "Videos")?CTGY_NBR=' + parseInt(selectedCategoryNumber), (result) => {
-                              if (result.success) {
-                                  window.location.href = "@Url.Action("Index", "Videos")";
-                              } else {
-                                  alert("Failure deleting Wddc video category '" + selectedCategoryName + "'!");
-                                  prepareLogList();
-                              }
-
-                        }).fail((xhr, textStatus, errorThrown) => {
-                            alert("Failure deleting Wddc video category '" + selectedCategoryName + "'. " + `${textStatus} : ${errorThrown}`);
-                            prepareLogList();
-                        });
-                    }
-                });
-
-
-            }
-
+            Swal.fire({
+                title: 'Confirm Delete',
+                text: "Are you sure you want to remove category '" + selectedCategoryName + "'?",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, Delete',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.getJSON('@Url.Action("GetAlbumsByCategory", "Videos")?CTGY_NBR=' + parseInt(selectedCategoryNumber), function (json) {
+                        if (json.length > 0) {
+                            Swal.fire({ icon: 'warning', title: 'Cannot Delete', text: "There are items assigned to category '" + selectedCategoryName + "'. Please remove or move them to a different category first.", confirmButtonColor: '#1a73e8' });
+                        } else {
+                            $.post('@Url.Action("DeleteCategory", "Videos")?CTGY_NBR=' + parseInt(selectedCategoryNumber), (res) => {
+                                if (res.success) {
+                                    Swal.fire({ icon: 'success', title: 'Deleted!', text: "Category '" + selectedCategoryName + "' was deleted successfully!", showConfirmButton: false, timer: 2000, timerProgressBar: true }).then(() => {
+                                        window.location.href = "@Url.Action("Index", "Videos")";
+                                    });
+                                } else {
+                                    Swal.fire({ icon: 'error', title: 'Error!', text: "Failure deleting video category '" + selectedCategoryName + "'!", confirmButtonColor: '#1a73e8' });
+                                }
+                            }).fail((xhr, textStatus, errorThrown) => {
+                                Swal.fire({ icon: 'error', title: 'Error!', text: "Failure deleting video category '" + selectedCategoryName + "'. " + textStatus + ' : ' + errorThrown, confirmButtonColor: '#1a73e8' });
+                            });
+                        }
+                    });
+                }
+            });
         });
 
         $("#edit-video").click(function () {
-
             $.getJSON('@Url.Action("GetAlbumsByCategory", "Videos")?CTGY_NBR=' + parseInt(selectedCategoryNumber), function (json) {
                 if (json.length == 0) {
-                    alert("There are no items assigned to category '" + selectedCategoryName + "'.")
-                }
-                else {
+                    Swal.fire({ icon: 'info', title: 'No Videos', text: "There are no videos assigned to category '" + selectedCategoryName + "'.", confirmButtonColor: '#1a73e8' });
+                } else {
                     $('#editAlbumModal').modal('show');
                 }
             });
-
         });
 
         $("#delete-video").click(function () {
-
             $.getJSON('@Url.Action("GetAlbumsByCategory", "Videos")?CTGY_NBR=' + parseInt(selectedCategoryNumber), function (json) {
                 if (json.length == 0) {
-                    alert("There are no items assigned to category '" + selectedCategoryName + "'.")
-                }
-                else {
-                    var confirmDelete = confirm("Are you sure you want to remove video '" + selectedAlbumName + "'?");
-                    if (confirmDelete == true) {
-                        $.post('@Url.Action("DeleteAlbum", "Videos")?ID=' + parseInt(selectedAlbumId), (result) => {
-                              if (result.success) {
-                                  window.location.href = "@Url.Action("Index", "Videos")";
-                              } else {
-                                  alert("Failure deleting Wddc video '" + selectedAlbumName + "'!");
-                                  prepareLogList();
-                              }
-
-                        }).fail((xhr, textStatus, errorThrown) => {
-                            alert("Failure deleting Wddc video category '" + selectedAlbumName + "'. " + `${textStatus} : ${errorThrown}`);
-                            prepareLogList();
-                        });
-                    }
+                    Swal.fire({ icon: 'info', title: 'No Videos', text: "There are no videos assigned to category '" + selectedCategoryName + "'.", confirmButtonColor: '#1a73e8' });
+                } else {
+                    Swal.fire({
+                        title: 'Confirm Delete',
+                        text: "Are you sure you want to remove video '" + selectedAlbumName + "'?",
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#dc3545',
+                        cancelButtonColor: '#6c757d',
+                        confirmButtonText: 'Yes, Delete',
+                        cancelButtonText: 'Cancel'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            $.post('@Url.Action("DeleteAlbum", "Videos")?ID=' + parseInt(selectedAlbumId), (res) => {
+                                if (res.success) {
+                                    Swal.fire({ icon: 'success', title: 'Deleted!', text: "Video '" + selectedAlbumName + "' was deleted successfully!", showConfirmButton: false, timer: 2000, timerProgressBar: true }).then(() => {
+                                        window.location.href = "@Url.Action("Index", "Videos")";
+                                    });
+                                } else {
+                                    Swal.fire({ icon: 'error', title: 'Error!', text: "Failure deleting video '" + selectedAlbumName + "'!", confirmButtonColor: '#1a73e8' });
+                                }
+                            }).fail((xhr, textStatus, errorThrown) => {
+                                Swal.fire({ icon: 'error', title: 'Error!', text: "Failure deleting video '" + selectedAlbumName + "'. " + textStatus + ' : ' + errorThrown, confirmButtonColor: '#1a73e8' });
+                            });
+                        }
+                    });
                 }
             });
-
         });
 
         $("#test-link").click(function () {
-
             var newAlbumNumber = document.forms["addAlbumForm"]["newAlbumNumber"].value;
             if (newAlbumNumber.trim() == "") {
-                alert("Vimeo album number must be filled out");
+                Swal.fire({ icon: 'warning', title: 'Missing Field', text: 'Vimeo album number must be filled out', confirmButtonColor: '#1a73e8' });
                 document.getElementById("newAlbumNumber").focus();
-            }
-            else {
+            } else {
                 window.open('https://vimeo.com/showcase/' + newAlbumNumber, '_blank');
             }
-
         });
 
         $("#test-link2").click(function () {
-
             var albumNumber = document.forms["editAlbumForm"]["albumNumber"].value;
             if (albumNumber.trim() == "") {
-                alert("Vimeo album number must be filled out");
+                Swal.fire({ icon: 'warning', title: 'Missing Field', text: 'Vimeo album number must be filled out', confirmButtonColor: '#1a73e8' });
                 document.getElementById("albumNumber").focus();
-            }
-            else {
+            } else {
                 window.open('https://vimeo.com/showcase/' + albumNumber, '_blank');
             }
-
         });
 
-        function prepareLogList() {
-            setupPagination('log', 'log-list', '@Url.Action("Log", "Videos")?referrerUrl=Videos', ['Log', 'Username', 'Created'], 7);
+        var activityLogGrid;
+
+        function loadActivityLog() {
+            $.ajax({
+                url: '@Url.Action("Log", "Videos")',
+                type: 'GET',
+                data: { referrerUrl: 'Videos', pageNumber: 1, pageSize: 100 },
+                success: function (response) {
+                    initActivityLogGrid(response && response.Results ? response.Results : []);
+                },
+                error: function () { initActivityLogGrid([]); }
+            });
+        }
+
+        function initActivityLogGrid(logData) {
+            if (activityLogGrid) {
+                activityLogGrid.destroy();
+                $('#gridActivityLog').empty();
+            }
+            activityLogGrid = $('#gridActivityLog').kendoGrid({
+                dataSource: {
+                    data: logData,
+                    pageSize: 20,
+                    schema: {
+                        model: {
+                            fields: {
+                                Text: { type: 'string' },
+                                User: { type: 'string' },
+                                Created: { type: 'string' }
+                            }
+                        }
+                    }
+                },
+                height: 400,
+                scrollable: true,
+                sortable: true,
+                pageable: { refresh: true, pageSizes: [10, 20, 50, 100], buttonCount: 5 },
+                filterable: { mode: 'row' },
+                resizable: true,
+                columns: [
+                    {
+                        field: 'Text', title: 'Log Message', width: '55%',
+                        filterable: { cell: { operator: 'contains', showOperators: false } },
+                        template: function (dataItem) {
+                            return '<div style="white-space: pre-wrap; word-wrap: break-word; line-height: 1.5;">' + kendo.htmlEncode(dataItem.Text || '') + '</div>';
+                        }
+                    },
+                    {
+                        field: 'User', title: 'Username', width: '20%',
+                        filterable: { cell: { operator: 'contains', showOperators: false } }
+                    },
+                    {
+                        field: 'Created', title: 'Date', width: '25%',
+                        filterable: false
+                    }
+                ]
+            }).data('kendoGrid');
+        }
+
+        function toggleLog() {
+            var container = $('#logContainer');
+            var toggleText = $('#logToggleText');
+            if (container.is(':visible')) {
+                container.slideUp(300);
+                toggleText.text('Show Activity Log');
+            } else {
+                container.slideDown(300);
+                toggleText.text('Hide Activity Log');
+                loadActivityLog();
+            }
         }
 
     </script>
 }
 
-<div class="wrapper wrapper-content animated fadeInRight">
-    <div class="row">
-        <div class="col-lg-12">
-            <div class="ibox">
-                <div class="ibox-content main-container">
-                    <div class="row">
-                        <div class="col-lg-12">
-                            <div class="row">
-                                <div class="col-lg-5">
-                                    <div class="row tool-row">
-                                        <div class="col-lg-6">
-                                            <label for="categoriesList" id="categories">Categories</label>
-                                        </div>
-                                        <div class="col-lg-6">
-                                            <div class="ibox-tools">
-                                                <a data-placement="top" title="Add" id="add-category" data-toggle="modal" data-target="#addCategoryModal">
-                                                    <i class="fa fa-plus fa-2x"></i>
-                                                </a>
-                                                <a data-placement="top" title="Edit" id="edit-category" data-toggle="modal" data-target="#editCategoryModal">
-                                                    <i class="fa fa-pencil fa-2x"></i>
-                                                </a>
-                                                <a data-placement="top" title="Delete" id="delete-category">
-                                                    <i class="fa fa-trash fa-2x"></i>
-                                                </a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-lg-12">
-                                            <select id="categoriesList">
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-lg-7">
-                                    <div class="row tool-row">
-                                        <div class="col-lg-6">
-                                            <label for="albumsList" id="albums">Vimeo Albums</label>
-                                        </div>
-                                        <div class="col-lg-6">
-                                            <div class="ibox-tools">
-                                                <a data-placement="top" title="Add" id="add-video" data-toggle="modal" data-target="#addAlbumModal">
-                                                    <i class="fa fa-plus fa-2x"></i>
-                                                </a>
-                                                <a data-placement="top" title="Edit" id="edit-video" @*data-toggle="modal" data-target="#editAlbumModal"*@>
-                                                    <i class="fa fa-pencil fa-2x"></i>
-                                                </a>
-                                                <a data-placement="top" title="Delete" id="delete-video">
-                                                    <i class="fa fa-trash fa-2x"></i>
-                                                </a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-lg-12">
-                                            <select id="albumsList">
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
+<div class="modern-wrapper">
+    <!-- Header -->
+    <div class="page-header-banner">
+        <h2><i class="fa fa-film"></i> Videos Management</h2>
+        <p class="subtitle">Manage video categories and Vimeo albums</p>
+    </div>
+
+    <div class="container-fluid">
+        <div class="action-card mb-4">
+            <div class="card-body-modern">
+                <div class="row">
+                    <!-- Categories -->
+                    <div class="col-lg-5">
+                        <div class="panel-header">
+                            <span class="panel-title"><i class="fa fa-folder"></i> Categories</span>
+                            <div class="panel-tools">
+                                <button type="button" class="btn btn-primary btn-modern btn-sm" id="add-category" data-toggle="modal" data-target="#addCategoryModal">
+                                    <i class="fa fa-plus"></i> Add
+                                </button>
+                                <button type="button" class="btn btn-secondary btn-modern btn-sm" id="edit-category" data-toggle="modal" data-target="#editCategoryModal">
+                                    <i class="fa fa-pencil-alt"></i> Edit
+                                </button>
+                                <button type="button" class="btn btn-danger btn-modern btn-sm" id="delete-category">
+                                    <i class="fa fa-trash"></i> Delete
+                                </button>
                             </div>
                         </div>
+                        <select id="categoriesList"></select>
                     </div>
-                    <div class="row" style="margin-top: 30px;">
-                        <div class="col-lg-2"></div>
-                        <div class="col-lg-8">
-                            <div id="log" class="content-center">
-                                <div class="bs-ObjectList-rows" id="log-list">
-                                </div>
+                    <!-- Albums -->
+                    <div class="col-lg-7">
+                        <div class="panel-header">
+                            <span class="panel-title"><i class="fa fa-play-circle"></i> Vimeo Albums</span>
+                            <div class="panel-tools">
+                                <button type="button" class="btn btn-primary btn-modern btn-sm" id="add-video" data-toggle="modal" data-target="#addAlbumModal">
+                                    <i class="fa fa-plus"></i> Add
+                                </button>
+                                <button type="button" class="btn btn-secondary btn-modern btn-sm" id="edit-video">
+                                    <i class="fa fa-pencil-alt"></i> Edit
+                                </button>
+                                <button type="button" class="btn btn-danger btn-modern btn-sm" id="delete-video">
+                                    <i class="fa fa-trash"></i> Delete
+                                </button>
                             </div>
                         </div>
-                        <div class="col-lg-2"></div>
+                        <select id="albumsList"></select>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- Log Section -->
+        <div class="log-section">
+            <div class="log-header">
+                <button type="button" class="btn-toggle-log" onclick="toggleLog()">
+                    <i class="fa fa-history"></i> <span id="logToggleText">Show Activity Log</span>
+                </button>
+            </div>
+            <div id="logContainer" style="display: none; margin-top: 15px;">
+                <div id="gridActivityLog"></div>
             </div>
         </div>
     </div>
@@ -670,159 +708,188 @@
 </div>
 
 <style>
+    /* ===== GLOBAL ===== */
+    #page-heading, .breadcrumb { display: none; }
 
+    .modern-wrapper {
+        background: #f8f9fa;
+        min-height: 100vh;
+        padding: 15px 20px 30px;
+        font-family: 'Inter', sans-serif;
+    }
+
+    /* ===== HEADER BANNER ===== */
+    .page-header-banner {
+        background: linear-gradient(135deg, #3182ce 0%, #2c5282 100%);
+        color: white;
+        padding: 12px 20px;
+        margin-bottom: 20px;
+        border-radius: 6px;
+        box-shadow: 0 2px 10px rgba(49,130,206,0.3);
+    }
+    .page-header-banner h2 {
+        margin: 0 0 2px 0;
+        font-size: 20px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: white;
+    }
+    .page-header-banner .subtitle {
+        margin: 0;
+        font-size: 13px;
+        opacity: 0.85;
+    }
+
+    /* ===== ACTION CARD ===== */
+    .action-card {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        overflow: hidden;
+        margin-bottom: 16px;
+    }
+    .card-body-modern { padding: 20px; }
+
+    /* ===== PANEL HEADER ===== */
+    .panel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 10px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    .panel-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: #2c5282;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .panel-tools { display: flex; gap: 6px; }
+
+    /* ===== BUTTONS ===== */
+    .btn-modern {
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        transition: all 0.2s ease;
+        border: none;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .btn-modern:hover {
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        transform: translateY(-1px);
+    }
+    .btn-sm { padding: 5px 12px; }
+    .btn-modern i { margin-right: 4px; }
+
+    /* ===== KENDO LISTBOX ===== */
     .k-listbox {
         width: 100%;
-        height: 350px;
+        height: 380px;
         font-size: 13px;
+        border-radius: 4px;
     }
+    .k-item { font-size: 13px; color: #333; }
+    .k-list .k-item, .k-list-optionlabel { padding: 6px 1rem; }
 
-    .main-container {
-        width: 90%;
-        margin: 0px auto;
-    }
+    .errorRow { background-color: #FFC0CB; }
 
-    .content-center {
-        margin: 0px auto;
-        text-align: center;
-    }
-
-    .ibox-content label {
-        margin-bottom: 5px;
-        margin-top: 5px;
-    }
-
-    .ibox-content .k-icon {
-        font-size: 22px;
-    }
-
-    .ibox-tools a {
-        color: #337ab7;
-        margin-right: 5px;
-    }
-
-    .tool-row {
-        margin-bottom: 10px;
-    }
-
-    .k-item {
-        font-size: 14px;
-    }
-
-    .k-list .k-item, .k-list-optionlabel {
-        padding: 5px 1.5rem;
-    }
-
-    .control-label {
-        /*color: #505050;*/
-        font-size: 13px;
-    }
-
-    .wrapper-content {
-        padding: 10px 10px 20px;
-    }
-
-    .modal-lg {
-        max-width: 700px;
-    }
-
-    .modal-title {
-        color: #1565C0;
-        font-size: 14px;
-        font-weight: bold;
-    }
-
-    .modal-dialog {
-        margin: 200px auto;
-    }
-
+    /* ===== FORMS (modals) ===== */
     .form-row {
         margin-top: 7px;
-        vertical-align: central;
         display: flex;
     }
-
     .form-label-col {
         display: flex;
         padding-right: 0;
         justify-content: flex-end;
     }
-
+    .control-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: #4a5568;
+    }
     .control-label-center {
         display: flex;
         margin-top: auto;
         margin-bottom: auto;
     }
-
-    .k-header .k-link {
-        text-align: center;
-        font-weight: bold;
-        font-size: 11px;
+    .form-control {
+        font-size: 13px;
+        border-color: #d1d5db;
+        border-radius: 4px;
     }
+    label { margin-bottom: 0; }
 
-    .errorRow {
-        background-color: #FFC0CB;
-    }
-
-    .form-control[disabled] {
-        color: #6b7c93;
+    /* ===== MODALS ===== */
+    .modal-lg { max-width: 700px; }
+    .modal-title {
+        color: #2c5282;
+        font-size: 15px;
+        font-weight: 600;
     }
 
     .btn-outline-secondary {
-        margin-top: 15px;
+        margin-top: 10px;
         color: #fff;
         background-color: #6c757d;
         border-color: #6c757d;
-        padding: 2px 8px;
+        padding: 4px 10px;
         font-size: 12px;
+        border-radius: 4px;
     }
+    .btn-outline-secondary:hover { color: #fff; background-color: #5a6268; }
 
-        .btn-outline-secondary:hover, .btn-outline-secondary:focus {
-            color: #fff;
-        }
-
-    .bs-ObjectList-row {
-        border-radius: 0.25rem;
+    /* ===== LOG SECTION ===== */
+    .log-section {
+        border-top: 2px solid #e7eaec;
+        padding-top: 20px;
+        padding-bottom: 20px;
+        margin-top: 20px;
     }
-
-    .bs-ObjectList-row--header {
-        position: relative;
-        background-color: #E8E8E8;
+    .log-header { text-align: center; margin-bottom: 15px; }
+    .btn-toggle-log {
+        padding: 6px 16px;
+        background: linear-gradient(135deg, #2c5282 0%, #3182ce 100%);
+        color: white;
+        border: none;
+        border-radius: 16px;
+        font-weight: 600;
+        font-size: 11px;
+        cursor: pointer;
+        box-shadow: 0 2px 4px rgba(49,130,206,0.3);
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
     }
-
-        .bs-ObjectList-row--header .bs-ObjectList-cell {
-            font-weight: bold;
-        }
-
-    .bs-ObjectList-row .bs-ObjectList-cell {
-        width: 20%;
-        text-align: center;
+    .btn-toggle-log:hover {
+        background: linear-gradient(135deg, #2c5282 0%, #265080 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(49,130,206,0.4);
     }
-
-        .bs-ObjectList-row .bs-ObjectList-cell:last-child {
-            width: 20%;
-            text-align: center;
-        }
-
-        .bs-ObjectList-row .bs-ObjectList-cell:first-child {
-            width: 60%;
-            text-align: left;
-            white-space: pre-wrap;
-        }
-
-    .bs-ObjectList-child, .bs-ObjectList-parent, .bs-ObjectList-row {
-        display: table-row;
-        transition: background-color .15s ease 0s;
+    #gridActivityLog {
+        border-radius: 6px;
+        border: 1px solid #e7eaec;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     }
-
-    .bs-ObjectList-cell {
-        display: table-cell;
-        position: relative;
-        padding: 9px 10px;
-        color: #525f7f;
-        font-weight: 400;
-        line-height: 22px;
-        vertical-align: top;
-        white-space: nowrap;
+    #gridActivityLog .k-grid-header {
+        background: linear-gradient(to bottom, #f8f9fa 0%, #e9ecef 100%);
+        border-bottom: 1px solid #dee2e6;
     }
+    #gridActivityLog .k-grid-header .k-header {
+        font-weight: bold;
+        color: #495057;
+        font-size: 13px;
+    }
+    #gridActivityLog .k-grid-content td { color: #333; }
+
+    #swal2-title { font-size: 15px; }
+    .swal2-popup { padding: 1.25em; }
 </style>

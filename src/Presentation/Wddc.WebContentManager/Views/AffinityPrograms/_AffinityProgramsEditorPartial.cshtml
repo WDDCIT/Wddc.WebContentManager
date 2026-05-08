@@ -144,7 +144,7 @@
 
         var programName = document.forms["updatedProgramForm"]["programName"].value;
         if (programName.trim() == "") {
-            alert("Program Name must be filled out");
+            Swal.fire({ icon: 'warning', title: 'Missing Field', text: 'Program Name must be filled out', confirmButtonColor: '#1a73e8' });
             return false;
         }
 

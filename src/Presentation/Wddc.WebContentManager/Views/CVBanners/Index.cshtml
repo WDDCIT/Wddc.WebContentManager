@@ -13,12 +13,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script>
     <script src="https://kendo.cdn.telerik.com/2021.2.511/js/kendo.all.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="~/js/pagination/pagination.min.js"></script>
-    <script src="~/js/pagination/pagination.custom.js"></script>
 
     <script>
         $(document).ready(function () {
-            prepareLogList();
+            // log loaded on demand
 
             // UPDATED: Handle success/error alerts from TempData (one-time only)
             var alertType = '@TempData["AlertType"]';
@@ -200,35 +198,70 @@
         }
 
         function renderUpdateBanners(results, $list) {
-            for (let i = 0; i < results.length; i += 3) {
-                const $row = $('<div>').addClass('row img-row content-center');
-                let columns = '';
-
-                for (let j = 0; j < 3 && i + j < results.length; j++) {
-                    const banner = results[i + j];
-                    columns += createBannerCard(banner, 'update');
-                }
-
-                $row.html(columns);
+            results.forEach((banner, index) => {
+                const mobileHtml = banner.MobileFilename
+                    ? `<div class="update-card-preview">
+                           <span class="update-card-label"><i class="fa fa-mobile-alt"></i> Mobile</span>
+                           <img class="banner-img-mobile" src="../img/banners/mobile/${banner.MobileFilename}" alt="${banner.Name} Mobile">
+                       </div>`
+                    : '';
+                const $row = $('<div>').addClass('banner-update-item');
+                $row.html(`
+                    <div class="update-card-header">
+                        <span class="update-card-title"><i class="fa fa-image"></i> ${banner.Name}</span>
+                        <span class="update-card-status ${banner.Active ? 'status-active' : 'status-inactive'}">${banner.Active ? 'Active' : 'Inactive'}</span>
+                    </div>
+                    <div class="update-card-body">
+                        <div class="update-card-previews">
+                            <div class="update-card-preview">
+                                <span class="update-card-label"><i class="fa fa-desktop"></i> Desktop</span>
+                                <img class="banner-img" src="../img/banners/${banner.Filename}" alt="${banner.Name}">
+                            </div>
+                            ${mobileHtml}
+                        </div>
+                        <div class="update-card-actions">
+                            <div id="spinningWheelSelectBanner-${banner.Id}"></div>
+                            <button type="button" class="btn btn-outline-primary btn-sm btn-select-banner" onclick="selectBannerToUpdate('${banner.Id}')">
+                                <i class="fa fa-pencil-alt"></i> Edit
+                            </button>
+                        </div>
+                    </div>
+                    ${index < results.length - 1 ? '<hr class="update-separator">' : ''}
+                `);
                 $list.append($row);
-            }
+            });
         }
 
         function renderDeleteBanners(results, $list) {
-            results.forEach(banner => {
-                const $row = $('<div>').addClass('row img-row-delete content-center');
+            results.forEach((banner, index) => {
+                const mobileHtml = banner.MobileFilename
+                    ? `<div class="delete-card-preview">
+                           <span class="delete-card-label"><i class="fa fa-mobile-alt"></i> Mobile</span>
+                           <img class="banner-img-mobile" src="../img/banners/mobile/${banner.MobileFilename}" alt="${banner.Name} Mobile">
+                       </div>`
+                    : '';
+                const $row = $('<div>').addClass('banner-delete-item');
                 $row.html(`
-                    <div class="col-lg-12 banner-delete-card">
-                        <div class="banner-name">${banner.Name}</div>
-                        <div class="banner-images">
-                            <img class="banner-img" src="../img/banners/${banner.Filename}" alt="${banner.Name}">
-                            <img class="banner-img-mobile" src="../img/banners/mobile/${banner.MobileFilename}" alt="${banner.Name} Mobile">
-                        </div>
-                        <div id="spinningWheelDeleteBanner-${banner.Id}"></div>
-                        <button type="button" class="btn btn-danger btn-modern" onclick="deleteBanner('${banner.Name}', '${banner.Id}')">
-                            <i class="fa fa-trash"></i> Delete Banner
-                        </button>
+                    <div class="delete-card-header">
+                        <span class="delete-card-title"><i class="fa fa-image"></i> ${banner.Name}</span>
+                        <span class="delete-card-status ${banner.Active ? 'status-active' : 'status-inactive'}">${banner.Active ? 'Active' : 'Inactive'}</span>
                     </div>
+                    <div class="delete-card-body">
+                        <div class="delete-card-previews">
+                            <div class="delete-card-preview">
+                                <span class="delete-card-label"><i class="fa fa-desktop"></i> Desktop</span>
+                                <img class="banner-img" src="../img/banners/${banner.Filename}" alt="${banner.Name}">
+                            </div>
+                            ${mobileHtml}
+                        </div>
+                        <div class="delete-card-actions">
+                            <div id="spinningWheelDeleteBanner-${banner.Id}"></div>
+                            <button type="button" class="btn btn-outline-danger btn-sm btn-delete-banner" onclick="deleteBanner('${banner.Name}', '${banner.Id}')">
+                                <i class="fa fa-trash"></i> Delete
+                            </button>
+                        </div>
+                    </div>
+                    ${index < results.length - 1 ? '<hr class="delete-separator">' : ''}
                 `);
                 $list.append($row);
             });
@@ -260,7 +293,7 @@
 
             $.getJSON(`@Url.Action("GetBannerById", "CVBanners")?Id=${bannerId}`, function (result) {
                 const $list = $('#banners-update-list');
-                $list.html(createBannerCard(result, 'update'));
+                renderUpdateBanners([result], $list);
                 // Update count to show 1 banner when filtered
                 $('#update-banner-count').text('1 banner found (filtered)').show();
                 $("#search-results-update-row").css('visibility', 'visible');
@@ -359,12 +392,12 @@
                                 .then(() => window.location.href = "@Url.Action("Index", "CVBanners")");
                         } else {
                             Swal.fire('Error', response.message, 'error');
-                            prepareLogList();
+                            loadActivityLog();
                             stopSpinner(spinner, `spinningWheelDeleteBanner-${bannerId}`);
                         }
                     }).fail((xhr, status, error) => {
                         Swal.fire('Error', `Failed to delete banner: ${error}`, 'error');
-                        prepareLogList();
+                        loadActivityLog();
                         stopSpinner(spinner, `spinningWheelDeleteBanner-${bannerId}`);
                     });
                 }
@@ -393,15 +426,79 @@
             }
         });
 
-        function prepareLogList() {
-            setupPagination('log', 'log-list', '@Url.Action("Log", "CVBanners")?referrerUrl=CVBanners', 
-                ['Log', 'Username', 'Created'], 7);
+        var activityLogGrid;
+
+        function loadActivityLog() {
+            $.ajax({
+                url: '@Url.Action("Log", "CVBanners")',
+                type: 'GET',
+                data: { referrerUrl: 'CVBanners', pageNumber: 1, pageSize: 100 },
+                success: function (response) {
+                    initActivityLogGrid(response && response.Results ? response.Results : []);
+                },
+                error: function () { initActivityLogGrid([]); }
+            });
+        }
+
+        function initActivityLogGrid(logData) {
+            if (activityLogGrid) {
+                activityLogGrid.destroy();
+                $('#gridActivityLog').empty();
+            }
+            activityLogGrid = $('#gridActivityLog').kendoGrid({
+                dataSource: {
+                    data: logData,
+                    pageSize: 20,
+                    schema: {
+                        model: {
+                            fields: {
+                                Text: { type: 'string' },
+                                User: { type: 'string' },
+                                Created: { type: 'string' }
+                            }
+                        }
+                    }
+                },
+                height: 400,
+                scrollable: true,
+                sortable: true,
+                pageable: { refresh: true, pageSizes: [10, 20, 50, 100], buttonCount: 5 },
+                filterable: { mode: 'row' },
+                resizable: true,
+                columns: [
+                    {
+                        field: 'Text', title: 'Log Message', width: '55%',
+                        filterable: { cell: { operator: 'contains', showOperators: false } },
+                        template: function (dataItem) {
+                            return '<div style="white-space: pre-wrap; word-wrap: break-word; line-height: 1.5;">' + kendo.htmlEncode(dataItem.Text || '') + '</div>';
+                        },
+                        attributes: { style: 'white-space: normal; word-wrap: break-word;' }
+                    },
+                    {
+                        field: 'User', title: 'Username', width: '20%',
+                        filterable: { cell: { operator: 'contains', showOperators: false } },
+                        template: function (dataItem) { return dataItem.User || 'Unknown'; }
+                    },
+                    {
+                        field: 'Created', title: 'Date', width: '25%',
+                        filterable: false,
+                        template: function (dataItem) { return dataItem.Created || ''; }
+                    }
+                ]
+            }).data('kendoGrid');
         }
 
         function toggleLog() {
-            $('#log-section').toggleClass('hidden');
-            const isHidden = $('#log-section').hasClass('hidden');
-            $('#toggle-log-btn').html(`<i class="fa fa-${isHidden ? 'eye' : 'eye-slash'}"></i> ${isHidden ? 'Show' : 'Hide'} Log`);
+            var container = $('#logContainer');
+            var toggleText = $('#logToggleText');
+            if (container.is(':visible')) {
+                container.slideUp(300);
+                toggleText.text('Show Activity Log');
+            } else {
+                container.slideDown(300);
+                toggleText.text('Hide Activity Log');
+                loadActivityLog();
+            }
         }
 
         function scrollToElement(selector) {
@@ -474,19 +571,14 @@
 
 <div class="modern-wrapper">
     <!-- Header Section -->
-    <div class="page-header">
-        <div class="container-fluid">
-            <div class="row align-items-center">
-                <div class="col-12">
-                    <h2 class="page-title">
-                        <i class="fa fa-flag"></i> ClientVantage Banners Management
-                    </h2>
-                    <p class="page-subtitle">
-                        Upload, edit, and delete ClientVantage banners on <span class="highlight-red">VantageSuite</span> website
-                    </p>
-                </div>
-            </div>
-        </div>
+    <div class="page-header-banner">
+        <h2>
+            <i class="fa fa-flag"></i>
+            ClientVantage Banners Management
+        </h2>
+        <p class="subtitle">
+            Upload, edit, and delete ClientVantage banners on <span style="font-weight:600;">VantageSuite</span> website
+        </p>
     </div>
 
     <!-- Alerts -->
@@ -761,17 +853,14 @@
         </div>
 
         <!-- Log Section -->
-        <div class="log-section-container mt-5">
-            <div class="text-center mb-3">
-                <button type="button" id="toggle-log-btn" class="btn btn-outline-secondary btn-sm" 
-                        onclick="toggleLog()">
-                    <i class="fa fa-eye"></i> Show Log
+        <div class="log-section">
+            <div class="log-header">
+                <button type="button" class="btn-toggle-log" id="toggle-log-btn" onclick="toggleLog()">
+                    <i class="fa fa-history"></i> <span id="logToggleText">Show Activity Log</span>
                 </button>
             </div>
-            <div id="log-section" class="log-content hidden">
-                <div id="log">
-                    <div class="bs-ObjectList-rows" id="log-list"></div>
-                </div>
+            <div id="logContainer" style="display: none; margin-top: 15px;">
+                <div id="gridActivityLog"></div>
             </div>
         </div>
     </div>
@@ -779,150 +868,153 @@
 
 <style>
 
-    #page-heading {
+    #page-heading, .breadcrumb {
         display: none;
     }
 
-    /* Modern Layout */
+    /* ===== Page Layout ===== */
     .modern-wrapper {
         background: #f8f9fa;
         min-height: 100vh;
-        padding-bottom: 40px;
+        padding: 15px 20px 30px;
     }
 
-    .page-header {
-        background: transparent;
-        color: #333;
-        padding: 20px 0;
-        margin-bottom: 10px;
-        margin-top: 5px;
-        padding-left: 15px;  /* ADD THIS LINE - matches Bootstrap container-fluid padding */
+    /* ===== Page Header Banner ===== */
+    .page-header-banner {
+        background: linear-gradient(135deg, #3182ce 0%, #2c5282 100%);
+        color: white;
+        padding: 12px 20px;
+        margin-bottom: 20px;
+        border-radius: 6px;
+        box-shadow: 0 2px 10px rgba(49, 130, 206, 0.3);
     }
 
-    .page-title {
-        font-size: 2rem;
-        font-weight: 600;
-        margin: 0;
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        color: #1a73e8;
-    }
+        .page-header-banner h2 {
+            margin: 0 0 2px 0;
+            font-size: 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: white;
+        }
 
-    .page-subtitle {
-        margin: 10px 0 0 0;
-        color: #666;
-        font-size: 1.1rem;
-    }
+            .page-header-banner h2 i {
+                font-size: 20px;
+                opacity: 0.9;
+            }
 
-    .highlight-red {
-        color: #ff6b6b;
-        font-weight: 600;
-    }
+        .page-header-banner .subtitle {
+            margin: 0;
+            font-size: 13px;
+            opacity: 0.85;
+            font-weight: 400;
+        }
 
-    /* Modern Alerts */
+    /* ===== Modern Alerts ===== */
     .modern-alert {
-        border-radius: 12px;
+        border-radius: 6px;
         border: none;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        font-size: 1rem;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+        font-size: 13px;
     }
 
-    /* Action Cards */
-    /* Action Cards */
+    /* ===== Action Cards ===== */
     .action-card {
         background: white;
-        border-radius: 15px;
-        box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
         overflow: hidden;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-        margin-bottom: 30px;  /* Change from mb-4 inline style to CSS - increase from ~24px to 30px */
+        margin-bottom: 16px;
     }
 
-    .action-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 20px rgba(0,0,0,0.12);
-    }
-
-    /* Collapsible Button */
+    /* ===== Collapsible Button ===== */
     .collapsible-btn {
         width: 100%;
-        background: linear-gradient(135deg, #2e6da4 0%, #3d7fb8 100%);
-        color: white;
+        background: #f7f9fc;
+        color: #2d3748;
         border: none;
-        padding: 20px 30px;
-        font-size: 15px;
+        border-bottom: 2px solid #e2e8f0;
+        padding: 12px 20px;
+        font-size: 13px;
         font-weight: 600;
         text-align: left;
         cursor: pointer;
-        transition: all 0.3s ease;
+        transition: background 0.2s ease;
         display: flex;
         align-items: center;
-        gap: 15px;
+        gap: 10px;
     }
 
         .collapsible-btn:hover {
-            background: linear-gradient(135deg, #245682 0%, #2e6da4 100%);
+            background: #edf2f7;
         }
 
         .collapsible-btn.active {
-            background: linear-gradient(135deg, #245682 0%, #2e6da4 100%);
+            background: #edf2f7;
+            border-bottom-color: #3182ce;
         }
 
     .collapsible-btn .toggle-icon {
         transition: transform 0.3s ease;
+        color: #3182ce;
     }
 
     .collapsible-btn.active .toggle-icon {
         transform: rotate(180deg);
     }
 
-    /* Collapsible Content */
+    .collapsible-btn i:first-child {
+        color: #3182ce;
+    }
+
+    /* ===== Collapsible Content ===== */
     .collapsible-content {
         max-height: 0;
         overflow: hidden;
         transition: max-height 0.4s ease-in-out, padding 0.4s ease-in-out;
-        padding: 0 30px;
+        padding: 0 20px;
         background: white;
     }
 
     .action-card .collapsible-btn.active + .collapsible-content {
-        padding: 30px;
+        padding: 20px;
     }
 
-    /* Modern Form Groups */
+    /* ===== Form Groups ===== */
     .form-group-modern {
-        margin-bottom: 25px;
+        margin-bottom: 16px;
     }
 
     .form-label-modern {
         font-weight: 600;
-        color: #495057;
-        margin-bottom: 8px;
+        color: #4a5568;
+        margin-bottom: 6px;
         display: flex;
         align-items: center;
-        gap: 8px;
-        font-size: 1.05rem;
+        gap: 6px;
+        font-size: 13px;
     }
 
     .form-control-modern {
         width: 100%;
-        border-radius: 8px;
-        border: 2px solid #e9ecef;
-        padding: 10px 15px;
-        transition: all 0.3s ease;
+        border-radius: 4px;
+        border: 1px solid #d1d5db;
+        padding: 6px 12px;
+        font-size: 13px;
+        transition: border-color 0.2s, box-shadow 0.2s;
     }
 
     .form-control-modern:focus {
-        border-color: #1a73e8;
-        box-shadow: 0 0 0 0.2rem rgba(26, 115, 232, 0.25);
+        border-color: #3182ce;
+        box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.15);
     }
 
-    /* Image Previews */
+    /* ===== Image Previews ===== */
     .image-preview-section {
-        background: #f8f9fa;
-        padding: 20px;
-        border-radius: 12px;
+        background: #fafbfd;
+        padding: 16px;
+        border-radius: 6px;
     }
 
     .preview-group {
@@ -931,75 +1023,83 @@
 
     .img-preview {
         border: 2px solid #dee2e6;
-        border-radius: 8px;
-        transition: transform 0.3s ease;
-        cursor: pointer;
-    }
-
-    .img-preview:hover {
-        transform: scale(1.05);
-        box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        border-radius: 4px;
     }
 
     .img-preview-banner {
-        height: 100px;
+        height: 80px;
         width: auto;
         max-width: 100%;
     }
 
     .img-preview-mobile {
-        height: 150px;
+        height: 120px;
         width: auto;
         max-width: 100%;
     }
 
-    /* Modern Buttons */
-    /* Modern Buttons */
+    /* ===== Modern Buttons ===== */
     .btn-modern {
-        border-radius: 8px;
-        padding: 12px 30px;
+        border-radius: 4px;
+        padding: 8px 20px;
         font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        transition: all 0.3s ease;
+        font-size: 12px;
+        transition: all 0.2s ease;
         border: none;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
 
         .btn-modern:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            transform: translateY(-1px);
+            box-shadow: 0 3px 8px rgba(0,0,0,0.2);
         }
 
         .btn-modern:disabled {
             opacity: 0.6;
             cursor: not-allowed;
             transform: none;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             background-color: #6c757d !important;
             border-color: #6c757d !important;
         }
 
     .btn-modern i {
-        margin-right: 8px;
+        margin-right: 6px;
     }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #3182ce 0%, #2c5282 100%) !important;
+        border: none !important;
+    }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #2c5282 0%, #1a365d 100%) !important;
+        }
+
+    .btn-danger {
+        background: #e53e3e !important;
+        border: none !important;
+    }
+
+        .btn-danger:hover {
+            background: #c53030 !important;
+        }
 
     .form-actions {
         text-align: center;
-        margin-top: 30px;
-        padding-top: 20px;
-        border-top: 2px solid #e9ecef;
+        margin-top: 20px;
+        padding-top: 16px;
+        border-top: 1px solid #e3e6ef;
         position: relative;
     }
 
-    /* Search Section */
+    /* ===== Search Section ===== */
     .search-section {
-        padding: 20px 0;
+        padding: 16px 0;
     }
 
     .filter-section {
         text-align: center;
-        margin-bottom: 20px;
+        margin-bottom: 16px;
     }
 
     .filter-section input {
@@ -1007,93 +1107,246 @@
         margin: 0 auto;
     }
 
-    /* Banner Cards */
+    /* ===== Banner Cards (Update) ===== */
     .banners-grid {
-        margin-top: 30px;
-        padding: 20px;
-        background: #f8f9fa;
-        border-radius: 12px;
-        max-height: 600px;
+        margin-top: 10px;
+        max-height: 700px;
         overflow-y: auto;
-        border: 1px solid #ced4da; /* Added: Same darker border */
-        box-shadow: 0 4px 20px rgba(0,0,0,0.25); /* Added: Same stronger shadow */
-    }
-
-    .banner-card {
-        margin-bottom: 20px;
-    }
-
-    .banner-card .card {
-        border: none;
-        border-radius: 12px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-
-    .banner-card .card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-    }
-
-    .banner-card .card-body {
-        padding: 20px;
-        text-align: center;
-    }
-
-    .banner-card .card-title {
-        font-weight: 600;
-        color: #495057;
-        margin-bottom: 15px;
-    }
-
-    .banner-card .card-img {
-        width: 100%;
-        height: 80px;
-        object-fit: contain;
+        padding: 20px 24px;
+        background: #fafbfd;
         border-radius: 8px;
-        margin-bottom: 15px;
+        border: 1px solid #e3e6ef;
     }
 
-    /* Delete Banners */
+    .banner-update-item {
+        padding: 0;
+    }
+
+    .update-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+
+    .update-card-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #2d3748;
+    }
+
+    .update-card-title i {
+        color: #718096;
+        margin-right: 6px;
+    }
+
+    .update-card-status {
+        font-size: 11px;
+        font-weight: 600;
+        padding: 3px 10px;
+        border-radius: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .update-card-body {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .update-card-previews {
+        display: flex;
+        align-items: flex-end;
+        gap: 24px;
+    }
+
+    .update-card-preview {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .update-card-label {
+        font-size: 11px;
+        font-weight: 500;
+        color: #a0aec0;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .update-card-label i {
+        margin-right: 3px;
+    }
+
+    .update-card-actions {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-select-banner {
+        font-size: 12px;
+        font-weight: 500;
+        padding: 6px 16px;
+        border-radius: 6px;
+        transition: all 0.2s ease;
+    }
+
+    .btn-select-banner:hover {
+        background: #3182ce;
+        color: white;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(49, 130, 206, 0.3);
+    }
+
+    .update-separator {
+        border: none;
+        border-top: 1px solid #e2e8f0;
+        margin: 18px 0;
+    }
+
+    /* ===== Delete Banners ===== */
     .banners-delete-grid {
         margin-top: 10px;
         max-height: 700px;
         overflow-y: auto;
-        padding: 20px;
-        background: #f8f9fa;
+        padding: 20px 24px;
+        background: #fafbfd;
+        border-radius: 8px;
+        border: 1px solid #e3e6ef;
+    }
+
+    .banner-delete-item {
+        padding: 0;
+    }
+
+    .delete-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+
+    .delete-card-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #2d3748;
+    }
+
+    .delete-card-title i {
+        color: #718096;
+        margin-right: 6px;
+    }
+
+    .delete-card-status {
+        font-size: 11px;
+        font-weight: 600;
+        padding: 3px 10px;
         border-radius: 12px;
-        border: 1px solid #ced4da; /* Added: Same lighter grey border */
-        box-shadow: 0 4px 20px rgba(0,0,0,0.25); /* Added: Same stronger shadow */
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .status-active {
+        background: #e6ffed;
+        color: #22543d;
+    }
+
+    .status-inactive {
+        background: #fff5f5;
+        color: #9b2c2c;
+    }
+
+    .delete-card-body {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .delete-card-previews {
+        display: flex;
+        align-items: flex-end;
+        gap: 24px;
+    }
+
+    .delete-card-preview {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .delete-card-label {
+        font-size: 11px;
+        font-weight: 500;
+        color: #a0aec0;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .delete-card-label i {
+        margin-right: 3px;
+    }
+
+    .delete-card-actions {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-delete-banner {
+        font-size: 12px;
+        font-weight: 500;
+        padding: 6px 16px;
+        border-radius: 6px;
+        transition: all 0.2s ease;
+    }
+
+    .btn-delete-banner:hover {
+        background: #e53e3e;
+        color: white;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(229, 62, 62, 0.3);
+    }
+
+    .delete-separator {
+        border: none;
+        border-top: 1px solid #e2e8f0;
+        margin: 18px 0;
     }
 
     .banner-delete-card {
         text-align: center;
-        padding: 30px;
+        padding: 20px;
         background: white;
-        border-radius: 12px;
-        margin-bottom: 20px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-        transition: transform 0.3s ease;
+        border-radius: 6px;
+        margin-bottom: 16px;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.08);
     }
 
     .banner-delete-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+        box-shadow: 0 3px 10px rgba(0,0,0,0.12);
     }
 
     .banner-name {
-        font-size: 1.1rem;
+        font-size: 13px;
         font-weight: 600;
-        color: #495057;
-        margin-bottom: 20px;
+        color: #4a5568;
+        margin-bottom: 14px;
     }
 
     .banner-images {
         display: flex;
         justify-content: center;
         align-items: center;
-        gap: 30px;
-        margin-bottom: 20px;
+        gap: 20px;
+        margin-bottom: 14px;
     }
 
     .banner-img {
@@ -1101,8 +1354,7 @@
         width: auto;
         max-width: 300px;
         border: 2px solid #dee2e6;
-        border-radius: 8px;
-        /* transition: transform 0.3s ease; */
+        border-radius: 4px;
     }
 
     .banner-img-mobile {
@@ -1110,8 +1362,7 @@
         width: auto;
         max-width: 150px;
         border: 2px solid #dee2e6;
-        border-radius: 8px;
-        /* transition: transform 0.3s ease; */
+        border-radius: 4px;
     }
 
     /* .banner-img:hover, .banner-img-mobile:hover {
@@ -1120,26 +1371,29 @@
         box-shadow: 0 8px 25px rgba(0,0,0,0.2);
     } */
 
-    /* Update Form Container - Modern style with darker border */
+    /* ===== Update Form Container ===== */
     .update-form-container {
-        /* background: #e9ecef; */
-        padding: 10px 30px;
-        border-radius: 12px;
-        margin-top: 20px;
-        border: 1px solid #ced4da; /* DARKER border - much more visible */
-        box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+        padding: 20px 24px;
+        border-radius: 8px;
+        margin-top: 16px;
+        background: #fafbfd;
+        border: 1px solid #e3e6ef;
     }
 
     .section-title {
-        font-size: 1.3rem;
+        font-size: 15px;
         font-weight: 600;
-        color: #495057;
-        margin-bottom: 25px;
+        color: #2d3748;
+        margin-bottom: 20px;
         display: flex;
         align-items: center;
-        gap: 10px;
-        padding-bottom: 15px;
-        border-bottom: 2px solid #ced4da; /* Match the darker border color */
+        gap: 8px;
+        padding-bottom: 14px;
+        border-bottom: 2px solid #3182ce;
+    }
+
+    .section-title i {
+        color: #3182ce;
     }
 
     /* Make update form fields match upload section */
@@ -1148,15 +1402,13 @@
     }
 
     #update-form .update-form-container .form-label-large {
-        font-size: 1.3rem !important;
-        font-weight: 700;
+        font-size: 13px !important;
+        font-weight: 600;
     }
 
-
-    /* Make update form labels inline like upload */
     #update-form .update-form-container .form-label-inline {
         margin-bottom: 0 !important;
-        min-width: 180px;
+        min-width: 150px;
         flex-shrink: 0;
         justify-content: flex-start;
     }
@@ -1165,89 +1417,105 @@
         flex: 1;
     }
 
-    /* Update section Kendo dropdowns to match upload styling */
-    #update-form .update-form-container #categoryId + .k-dropdown {
-        font-size: 1.2rem !important;
-        background: white; /* White background for dropdown */
+    /* ===== Log Section ===== */
+    .log-section {
+        border-top: 2px solid #e7eaec;
+        padding-top: 20px;
+        padding-bottom: 20px;
+        margin-top: 20px;
     }
 
-    #update-form .update-form-container #categoryId + .k-dropdown .k-dropdown-wrap {
-        font-size: 1.2rem !important;
-        background: white; /* White background */
-    }
-
-    #update-form .update-form-container #categoryId + .k-dropdown .k-input {
-        font-size: 1.2rem !important;
-    }
-
-    /* Update section textbox to match upload styling */
-    #update-form .update-form-container #bannerName + .k-textbox {
-        font-size: 1.2rem !important;
-        background: white; /* White background for textbox */
-    }
-
-    /* Log Section */
-    .log-section-container {
-        background: white;
-        padding: 20px;
-        border-radius: 15px;
-        box-shadow: 0 2px 15px rgba(0,0,0,0.08);
-    }
-
-    .log-content {
-        transition: all 0.4s ease-in-out;
-        opacity: 1;
-        max-height: 2000px;
-        overflow: hidden;
-    }
-
-    .log-content.hidden {
-        opacity: 0;
-        max-height: 0;
-        margin-top: 0 !important;
-        padding: 0;
-    }
-
-    /* Log Table */
-    .bs-ObjectList-rows {
-        display: table;
-        width: 100%;
-    }
-
-    .bs-ObjectList-row {
-        display: table-row;
-        transition: background-color 0.2s ease;
-    }
-
-    .bs-ObjectList-row--header {
-        background-color: #DCDCDC;
-        color: #707070;
-    }
-
-    .bs-ObjectList-row--header .bs-ObjectList-cell {
-        font-weight: 600;
-        padding: 10px 10px;
-    }
-
-    .bs-ObjectList-cell {
-        display: table-cell;
-        padding: 12px 10px;
-        vertical-align: middle;
-        border-bottom: 1px solid #e9ecef;
-    }
-
-    .bs-ObjectList-cell:first-child {
-        width: 60%;
-        text-align: left;
-        white-space: pre-wrap;
-    }
-
-    .bs-ObjectList-cell:not(:first-child) {
-        width: 20%;
+    .log-header {
         text-align: center;
+        margin-bottom: 15px;
     }
 
-    /* Scrollbars */
+    .btn-toggle-log {
+        padding: 6px 16px;
+        background: linear-gradient(135deg, #2c5282 0%, #3182ce 100%);
+        color: #ffffff;
+        border: none;
+        border-radius: 16px;
+        font-weight: 600;
+        font-size: 11px;
+        cursor: pointer;
+        box-shadow: 0 2px 4px rgba(49, 130, 206, 0.3);
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+        .btn-toggle-log:hover {
+            background: linear-gradient(135deg, #2c5282 0%, #265080 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(49, 130, 206, 0.4);
+        }
+
+    /* ===== Activity Log Grid ===== */
+    #logContainer {
+        animation: slideDown 0.3s ease-out;
+    }
+
+    @@keyframes slideDown {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    #gridActivityLog {
+        border-radius: 6px;
+        border: 1px solid #e7eaec;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+        #gridActivityLog .k-grid-header {
+            background: linear-gradient(to bottom, #f8f9fa 0%, #e9ecef 100%);
+            border-bottom: 1px solid #dee2e6;
+        }
+
+            #gridActivityLog .k-grid-header .k-header {
+                font-weight: bold;
+                color: #495057;
+                font-size: 13px;
+            }
+
+        #gridActivityLog tbody tr {
+            height: auto !important;
+        }
+
+            #gridActivityLog tbody tr:hover {
+                background-color: rgba(49, 130, 206, 0.05);
+            }
+
+        #gridActivityLog tbody td {
+            white-space: normal !important;
+            word-wrap: break-word !important;
+            word-break: break-word !important;
+            vertical-align: top !important;
+            padding: 8px 10px !important;
+        }
+
+            #gridActivityLog tbody td:first-child {
+                color: #2c3e50 !important;
+                text-align: left !important;
+                padding-left: 12px !important;
+                font-size: 12px !important;
+                line-height: 1.5 !important;
+            }
+
+            #gridActivityLog tbody td:not(:first-child) {
+                text-align: center !important;
+            }
+
+        #gridActivityLog .k-filter-row th {
+            border-color: #dee2e6 !important;
+            background: #f8f9fa !important;
+        }
+
+        #gridActivityLog .k-filter-row input.k-textbox {
+            border-color: #ced4da !important;
+        }
+
+    /* ===== Scrollbars ===== */
     .banners-grid::-webkit-scrollbar,
     .banners-delete-grid::-webkit-scrollbar {
         width: 8px;
@@ -1261,46 +1529,48 @@
 
     .banners-grid::-webkit-scrollbar-thumb,
     .banners-delete-grid::-webkit-scrollbar-thumb {
-        background: #1a73e8;
+        background: #3182ce;
         border-radius: 10px;
     }
 
     .banners-grid::-webkit-scrollbar-thumb:hover,
     .banners-delete-grid::-webkit-scrollbar-thumb:hover {
-        background: #1557b0;
+        background: #2c5282;
     }
 
-    /* Responsive */
+    /* ===== Responsive ===== */
     @@media (max-width: 768px) {
-        .page-title {
-            font-size: 1.5rem;
-        }
-
-        .page-subtitle {
-            font-size: 1rem;
-        }
-
         .banner-images {
             flex-direction: column;
-            gap: 15px;
+            gap: 10px;
+        }
+
+        .update-card-body,
+        .delete-card-body {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .update-card-previews,
+        .delete-card-previews {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .update-card-actions,
+        .delete-card-actions {
+            width: 100%;
+            align-items: flex-start;
+            margin-top: 8px;
         }
 
         .collapsible-btn {
-            padding: 15px 20px;
-            font-size: 1rem;
-        }
-
-        .collapsible-content {
-            padding: 0 20px;
+            padding: 10px 16px;
+            font-size: 12px;
         }
     }
 
-    /* Hide breadcrumb */
-    .breadcrumb {
-        display: none;
-    }
-
-    /* Spinner positioning */
+    /* ===== Spinner ===== */
     #spinningWheelUpload,
     #spinningWheelUpdate,
     #spinningWheelSearchUpdate,
@@ -1323,51 +1593,48 @@
         }
 
 
-    /* Large form elements for upload section */
+    /* ===== Large Form Elements ===== */
     .form-group-large {
-        margin-bottom: 5px; /* CHANGED: decreased from 35px to 20px */
+        margin-bottom: 5px;
     }
 
     .form-label-large {
-        font-size: 1.3rem !important;
-        font-weight: 700;
+        font-size: 13px !important;
+        font-weight: 600;
     }
 
     .form-control-large {
-        font-size: 1.2rem !important;
-       /*  padding: 14px 18px !important; */
-        /* min-height: 50px; */
+        font-size: 13px !important;
     }
 
     .img-preview-large {
-        border: 3px solid #dee2e6;
-        border-radius: 10px;
-        transition: none; /* CHANGED: removed transition */
-        cursor: default; /* CHANGED: changed from pointer to default */
+        border: 2px solid #dee2e6;
+        border-radius: 6px;
+        cursor: default;
     }
 
         .img-preview-large.img-preview-banner {
-            height: 80px; /* CHANGED: reduced from 120px to 80px */
+            height: 80px;
             width: auto;
             max-width: 100%;
         }
 
         .img-preview-large.img-preview-mobile {
-            height: 120px; /* CHANGED: reduced from 180px to 120px */
+            height: 120px;
             width: auto;
             max-width: 100%;
         }
 
-    /* Inline form layout for compact display */
+    /* ===== Inline Form Layout ===== */
     .form-group-inline {
         display: flex;
         align-items: center;
-        gap: 20px;
+        gap: 14px;
     }
 
     .form-label-inline {
         margin-bottom: 0 !important;
-        min-width: 180px;
+        min-width: 150px;
         flex-shrink: 0;
         justify-content: flex-start;
     }
@@ -1376,184 +1643,77 @@
         flex: 1;
     }
 
-    /* Validation styles */
+    /* ===== Validation ===== */
     .field-validation-error {
         display: block;
-        color: #dc3545;
-        font-size: 0.875rem;
-        margin-top: 5px;
+        color: #e53e3e;
+        font-size: 12px;
+        margin-top: 4px;
     }
 
     .text-danger {
-        color: #dc3545;
+        color: #e53e3e;
     }
 
     .form-control-modern.error,
     .k-dropdown.error .k-dropdown-wrap {
-        border-color: #dc3545 !important;
+        border-color: #e53e3e !important;
     }
 
     .form-control-modern:focus.error {
-        border-color: #dc3545 !important;
-        box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
+        border-color: #e53e3e !important;
+        box-shadow: 0 0 0 3px rgba(229, 62, 62, 0.15) !important;
     }
 
-    /* Make delete section category dropdown match upload section styling */
-    #delete-form #selectedCategoryId {
-        font-size: 1.2rem !important;
-    }
-
-    /* Match the Kendo dropdown wrapper for delete section */
-    #delete-form .k-dropdown {
-        font-size: 1.2rem !important;
-    }
-
-        #delete-form .k-dropdown .k-dropdown-wrap {
-            font-size: 1.2rem !important;
-            /* padding: 10px 15px !important; */
-        }
-
-        #delete-form .k-dropdown .k-input {
-            font-size: 1.2rem !important;
-        }
-
-    /* Make delete section banner filter dropdown wider */
-    #delete-form #selectedBannerId {
-        width: 100% !important;
-        max-width: 100% !important;
-        font-size: 1.1rem !important;
-    }
-
+    /* ===== Kendo Overrides - Delete Section ===== */
     #delete-form .filter-section {
-        text-align: left; /* Changed from center to left */
-        margin-bottom: 20px;
+        text-align: left;
+        margin-bottom: 16px;
     }
 
-        #delete-form .filter-section input {
+        #delete-form .filter-section input,
+        #delete-form #selectedBannerId {
             width: 100% !important;
             max-width: 100% !important;
-            margin: 0;
         }
 
-        /* Match Kendo dropdown styling for banner filter in delete section */
-        #delete-form #selectedBannerId + .k-dropdown,
         #delete-form .filter-section .k-dropdown {
             width: 100% !important;
             max-width: 100% !important;
         }
 
-            #delete-form #selectedBannerId + .k-dropdown .k-dropdown-wrap,
-            #delete-form .filter-section .k-dropdown .k-dropdown-wrap {
-                font-size: 1.1rem !important;
-                width: 100% !important;
-            }
-
-        #delete-form .filter-section .k-input {
-            font-size: 1.1rem !important;
-        }
-
-    /* Scrollbars - Enhanced for better visibility */
-    .banners-grid::-webkit-scrollbar,
-    .banners-delete-grid::-webkit-scrollbar {
-        width: 12px; /* Increased from 8px to 12px */
-    }
-
-    .banners-grid::-webkit-scrollbar-track,
-    .banners-delete-grid::-webkit-scrollbar-track {
-        background: #e9ecef; /* Changed from #f1f1f1 for better contrast */
-        border-radius: 10px;
-        border: 1px solid #dee2e6; /* Added border for definition */
-    }
-
-    .banners-grid::-webkit-scrollbar-thumb,
-    .banners-delete-grid::-webkit-scrollbar-thumb {
-        background: #2e6da4; /* Changed from #1a73e8 to match theme */
-        border-radius: 10px;
-        border: 2px solid #e9ecef; /* Added border for better visibility */
-    }
-
-        .banners-grid::-webkit-scrollbar-thumb:hover,
-        .banners-delete-grid::-webkit-scrollbar-thumb:hover {
-            background: #245682; /* Changed from #1557b0 to match theme */
-        }
-
-    /* Make delete section scrollbar even more prominent */
-    .banners-delete-grid::-webkit-scrollbar {
-        width: 14px; /* Even wider for delete section */
-    }
-
-    .banners-delete-grid::-webkit-scrollbar-thumb {
-        background: linear-gradient(180deg, #2e6da4 0%, #245682 100%);
-        box-shadow: inset 0 0 6px rgba(0,0,0,0.3);
-    }
-
-    /* Banner count note in delete section */
+    /* ===== Banner Count Note ===== */
     .banner-count-note {
-        background: #e3f2fd;
-        color: #1976d2;
+        background: #ebf8ff;
+        color: #2c5282;
         padding: 5px 10px;
-        border-radius: 8px;
-        margin-bottom: 5px;
-        font-size: 0.95rem;
+        border-radius: 4px;
+        margin-bottom: 8px;
+        font-size: 12px;
         font-weight: 600;
-        border-left: 4px solid #2196f3;
+        border-left: 3px solid #3182ce;
         text-align: left;
     }
 
         .banner-count-note i {
-            margin-right: 8px;
+            margin-right: 6px;
         }
 
-    /* Make update section category dropdown match upload/delete section styling */
-    #update-form #selectedCategoryId {
-        font-size: 1.2rem !important;
-    }
-
-    /* Match the Kendo dropdown wrapper for update section */
-    #update-form .k-dropdown {
-        font-size: 1.2rem !important;
-    }
-
-        #update-form .k-dropdown .k-dropdown-wrap {
-            font-size: 1.2rem !important;
-        }
-
-        #update-form .k-dropdown .k-input {
-            font-size: 1.2rem !important;
-        }
-
-    #update-form #selectedBannerId {
-        width: 100% !important;
-        max-width: 100% !important;
-        font-size: 1.1rem !important;
-    }
-
+    /* ===== Kendo Overrides - Update Section ===== */
     #update-form .filter-section {
         text-align: left;
-        margin-bottom: 20px;
+        margin-bottom: 16px;
     }
 
-        #update-form .filter-section input {
+        #update-form .filter-section input,
+        #update-form #selectedBannerId {
             width: 100% !important;
             max-width: 100% !important;
-            margin: 0;
         }
 
-        /* Match Kendo dropdown styling for banner filter in update section */
-        #update-form #selectedBannerId + .k-dropdown,
         #update-form .filter-section .k-dropdown {
             width: 100% !important;
             max-width: 100% !important;
-        }
-
-            #update-form #selectedBannerId + .k-dropdown .k-dropdown-wrap,
-            #update-form .filter-section .k-dropdown .k-dropdown-wrap {
-                font-size: 1.1rem !important;
-                width: 100% !important;
-            }
-
-        #update-form .filter-section .k-input {
-            font-size: 1.1rem !important;
         }
 
 </style>

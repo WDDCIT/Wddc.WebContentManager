@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Wddc.PurchasingOrderApp.Services;
-using Wddc.Core.Domain.Webserver.WebOrdering;
 using Kendo.Mvc.Extensions;
 using Microsoft.AspNetCore.Http;
 using System.IO;
@@ -14,7 +13,7 @@ using Wddc.Api.Core.Domain.Entities.WebOrder;
 using Wddc.WebContentManager.Models;
 using Serilog;
 using Microsoft.AspNetCore.Hosting;
-using Wddc.WebContentManager.Services.WebContent.Newsletter;
+using Wddc.WebContentManager.Services.WebContent.PriceSheet;
 
 namespace Wddc.WebContentManager.Controllers.WebContentManager
 {
@@ -22,14 +21,14 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
     {
         private readonly LogManager _loggerManager;
         private readonly Services.Logging.ILogger _logger;
-        private readonly INewsletterService _newsletterService;
+        private readonly IPriceSheetService _priceSheetService;
         private readonly IHostingEnvironment _hostingEnvironment;
 
-        public PriceSheetController(INewsletterService newsletterService, Services.Logging.ILogger logger, IHostingEnvironment hostingEnvironment)
+        public PriceSheetController(IPriceSheetService priceSheetService, Services.Logging.ILogger logger, IHostingEnvironment hostingEnvironment)
         {
             _loggerManager = new LogManager();
             _logger = logger;
-            _newsletterService = newsletterService;
+            _priceSheetService = priceSheetService;
             _hostingEnvironment = hostingEnvironment;
         }
 
@@ -41,13 +40,13 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
         public async Task<JsonResult> GetPriceSheetsAsync()
         {
             Log.Logger.Information("The system is getting the price sheets");
-            List<Web_News> results = await _newsletterService.GetPriceSheets();
+            List<PriceSheetDto> results = await _priceSheetService.GetPriceSheets();
             return Json(results.OrderByDescending(_ => _.Description));
         }
 
         public async Task<JsonResult> GetPriceSheetByIdAsync(int ID)
         {
-            Web_News priceSheet = await _newsletterService.GetPriceSheetById(ID);
+            PriceSheetDto priceSheet = await _priceSheetService.GetPriceSheetById(ID);
 
             string fileName = priceSheet.IssueNumber + ".pdf";
             string sourcePath = "\\\\WEBsrvr\\WDDCMembers\\WDDCWebPages\\wddc_members\\CS\\Price Lists";
@@ -87,18 +86,18 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                         await newInfoFileUrl.CopyToAsync(stream);
                     }
 
-                    Web_News newWeb_News = new Web_News();
-                    newWeb_News.Category = 3;
-                    newWeb_News.IssueNumber = Path.GetFileNameWithoutExtension(newInfoFileUrl.FileName).Trim();
-                    newWeb_News.IssueDate = newIssueDate;
-                    newWeb_News.Description = newDescription.Trim();
-                    newWeb_News.Status = (byte?)(newStatus == "yes" ? 1 : 0);
+                    PriceSheetDto newPriceSheet = new PriceSheetDto();
+                    newPriceSheet.Category = 3;
+                    newPriceSheet.IssueNumber = Path.GetFileNameWithoutExtension(newInfoFileUrl.FileName).Trim();
+                    newPriceSheet.IssueDate = newIssueDate;
+                    newPriceSheet.Description = newDescription.Trim();
+                    newPriceSheet.Status = (byte?)(newStatus == "yes" ? 1 : 0);
 
-                    Log.Logger.Information(User.Identity.Name.Substring(7).ToLower() + " is adding a new price sheet: {@newWeb_News}", newWeb_News);
+                    Log.Logger.Information(User.Identity.Name.Substring(7).ToLower() + " is adding a new price sheet: {@newPriceSheet}", newPriceSheet);
 
-                    newWeb_News = await _newsletterService.CreatePriceSheet(newWeb_News);
+                    newPriceSheet = await _priceSheetService.CreatePriceSheet(newPriceSheet);
 
-                    Log.Logger.Information($"{User.Identity.Name.Substring(7).ToLower()} added new price sheet id: {newWeb_News.ID} successfully");
+                    Log.Logger.Information($"{User.Identity.Name.Substring(7).ToLower()} added new price sheet id: {newPriceSheet.ID} successfully");
                     _logger.Information($"Added price sheet successfully: {newDescription}", null, User, "WebOrdering");
 
                     TempData["AlertType"] = "Success";
@@ -108,10 +107,10 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                 catch (Exception ex)
                 {
                     Log.Logger.Error($"Error adding price sheet, description: {newDescription} by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
-                    _logger.Error($"Error adding price sheet, description: {newDescription}: {ex.Message.Substring(0, 300)}", ex, User, "WebOrdering");
+                    _logger.Error($"Error adding price sheet, description: {newDescription}: {ex.Message.Substring(0, Math.Min(ex.Message.Length, 300))}", ex, User, "WebOrdering");
 
                     TempData["AlertType"] = "Error";
-                    TempData["AlertMessage"] = "Failure adding price sheet: " + ex.Message.Substring(0, 300);
+                    TempData["AlertMessage"] = "Failure adding price sheet: " + ex.Message.Substring(0, Math.Min(ex.Message.Length, 300));
                     return RedirectToAction("Index");
                 }
             }
@@ -147,15 +146,15 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                 catch (Exception ex)
                 {
                     Log.Logger.Error($"Error updating the pdf file of price sheet, description: {updatedDescription} by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
-                    _logger.Error($"Error updating pdf file of price sheet, description: {updatedDescription}: {ex.Message.Substring(0, 300)}", ex, User, "WebOrdering");
+                    _logger.Error($"Error updating pdf file of price sheet, description: {updatedDescription}: {ex.Message.Substring(0, Math.Min(ex.Message.Length, 300))}", ex, User, "WebOrdering");
 
                     TempData["AlertType"] = "Error";
-                    TempData["AlertMessage"] = "Failure updating pdf file of price sheet: " + ex.Message.Substring(0, 300);
+                    TempData["AlertMessage"] = "Failure updating pdf file of price sheet: " + ex.Message.Substring(0, Math.Min(ex.Message.Length, 300));
                     return RedirectToAction("Index");
                 }
             }
 
-            Web_News toUpdatePriceSheet = await _newsletterService.GetWebFYINewsById(updatedPriceSheetId);
+            PriceSheetDto toUpdatePriceSheet = await _priceSheetService.GetPriceSheetById(updatedPriceSheetId);
 
             toUpdatePriceSheet.Category = 3;
             toUpdatePriceSheet.IssueNumber = updatedInfoFileUrl == null ? toUpdatePriceSheet.IssueNumber : Path.GetFileNameWithoutExtension(updatedInfoFileUrl.FileName).Trim();
@@ -167,7 +166,7 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
 
             try
             {
-                await _newsletterService.UpdatePriceSheet(toUpdatePriceSheet, toUpdatePriceSheet.ID);
+                await _priceSheetService.UpdatePriceSheet(toUpdatePriceSheet.ID, toUpdatePriceSheet);
 
                 Log.Logger.Information($"{User.Identity.Name.Substring(7).ToLower()} updated price sheet, ID: {updatedPriceSheetId} successfully");
                 _logger.Information($"Updated price sheet successfully: {updatedDescription}", null, User, "WebOrdering");
@@ -179,10 +178,10 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             catch (Exception ex)
             {
                 Log.Logger.Error($"Error updating price sheet, ID: {updatedPriceSheetId} by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
-                _logger.Error($"Error updating price sheet, description: {updatedDescription}: {ex.Message.Substring(0, 300)}", ex, User, "WebOrdering");
+                _logger.Error($"Error updating price sheet, description: {updatedDescription}: {ex.Message.Substring(0, Math.Min(ex.Message.Length, 300))}", ex, User, "WebOrdering");
 
                 TempData["AlertType"] = "Error";
-                TempData["AlertMessage"] = "Failure updating price sheet: " + ex.Message.Substring(0, 300);
+                TempData["AlertMessage"] = "Failure updating price sheet: " + ex.Message.Substring(0, Math.Min(ex.Message.Length, 300));
                 return RedirectToAction("Index");
             }
 
@@ -193,7 +192,7 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
         {
             Log.Logger.Information(User.Identity.Name.Substring(7).ToLower() + " is deleting the price sheet with ID: " + deletedPriceSheetId);
 
-            Web_News toDeletePriceSheet = await _newsletterService.GetPriceSheetById(deletedPriceSheetId);
+            PriceSheetDto toDeletePriceSheet = await _priceSheetService.GetPriceSheetById(deletedPriceSheetId);
 
             string fileName = toDeletePriceSheet.IssueNumber.ToString() + ".pdf";
             string priceListPath = "\\\\WEBsrvr\\WDDCMembers\\WDDCWebPages\\wddc_members\\CS\\Price Lists";
@@ -208,7 +207,7 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
 
             try
             {
-                await _newsletterService.DeletePriceSheet(toDeletePriceSheet.ID);
+                await _priceSheetService.DeletePriceSheet(toDeletePriceSheet.ID);
 
                 Log.Logger.Information($"{User.Identity.Name.Substring(7).ToLower()} deleted price sheet Id: {toDeletePriceSheet.ID} successfully");
                 _logger.Information($"Deleted price sheet successfully, description: {toDeletePriceSheet.Description}", null, User, "WebOrdering");
@@ -220,10 +219,10 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             catch (Exception ex)
             {
                 Log.Logger.Error($"Error deleting price sheet, description: {toDeletePriceSheet.Description} by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
-                _logger.Error($"Error deleting price sheet, description: {toDeletePriceSheet.Description}: {ex.Message.Substring(0, 300)}", ex, User, "WebOrdering");
+                _logger.Error($"Error deleting price sheet, description: {toDeletePriceSheet.Description}: {ex.Message.Substring(0, Math.Min(ex.Message.Length, 300))}", ex, User, "WebOrdering");
 
                 TempData["AlertType"] = "Error";
-                TempData["AlertMessage"] = "Failure deleting price sheet: " + ex.Message.Substring(0, 300);
+                TempData["AlertMessage"] = "Failure deleting price sheet: " + ex.Message.Substring(0, Math.Min(ex.Message.Length, 300));
                 return RedirectToAction("Index");
             }
         }
@@ -249,7 +248,7 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                 {
                     try
                     {
-                        var priceSheet = await _newsletterService.GetPriceSheetById(priceSheetId);
+                        var priceSheet = await _priceSheetService.GetPriceSheetById(priceSheetId);
 
                         if (priceSheet == null)
                         {
@@ -282,7 +281,7 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                         }
 
                         // Delete from database
-                        await _newsletterService.DeletePriceSheet(priceSheet.ID);
+                        await _priceSheetService.DeletePriceSheet(priceSheet.ID);
 
                         // Log the deletion
                         Log.Logger.Information($"{User.Identity.Name.Substring(7).ToLower()} deleted price sheet Id: {priceSheet.ID} (Bulk Delete) successfully");

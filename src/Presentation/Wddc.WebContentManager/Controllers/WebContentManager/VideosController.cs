@@ -10,7 +10,7 @@ using Wddc.WebContentManager.Services.WebContent.Videos;
 using Wddc.WebContentManager.Models.WebContent.Videos;
 using Serilog;
 using Wddc.WebContentManager.Services.Logging;
-using Wddc.Api.Core.Domain.Entities.WebOrder;
+using WebOrderingLog = Wddc.Api.Core.Domain.Entities.WebOrder.WebOrderingLog;
 using Wddc.WebContentManager.Models;
 using PagedList;
 
@@ -140,7 +140,7 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
 
             try
             {
-                await _videosService.UpdateVID001(toUpdateCategory, categoryNumber);
+                await _videosService.UpdateVID001(categoryNumber, toUpdateCategory);
                 Log.Logger.Information($"{User.Identity.Name.Substring(7).ToLower()} updated Video Category successfully");
                 _logger.Information($"Updated Video Category successfully. Category name: {toUpdateCategory.VD01_CTGY_NAME}", null, User, "WebOrdering");
             }
@@ -168,7 +168,7 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
 
             try
             {
-                await _videosService.UpdateVID002(toUpdateAlbum, albumId);
+                await _videosService.UpdateVID002(albumId, toUpdateAlbum);
                 Log.Logger.Information($"{User.Identity.Name.Substring(7).ToLower()} updated Video Album successfully");
                 _logger.Information($"Updated Video Album successfully. Name: {toUpdateAlbum.VD02_NAME}", null, User, "WebOrdering");
             }

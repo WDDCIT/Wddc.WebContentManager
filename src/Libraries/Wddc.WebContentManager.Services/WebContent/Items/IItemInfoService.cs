@@ -1,14 +1,13 @@
 ﻿
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Wddc.Core.Domain.AppData.Items;
-using Wddc.Core.Domain.Webserver.WebOrdering;
+using Wddc.Api.Core.Models.Items;
 
 namespace Wddc.WebContentManager.Services.WebContent.Newsletter
 {
     public interface IItemInfoService
     {
-        Task<List<Items>> GetItems();
+        Task<List<ItemSummary>> GetItems();
         
     }
 }
