@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Server.IISIntegration;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using System;
 using System.Net.Http;
@@ -29,6 +30,13 @@ namespace Wddc.WebContentManager
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            // Apply SafeContractResolver globally so that JsonConvert calls in
+            // WddcApiService (deserialization) also resolve the Id / ID collision.
+            JsonConvert.DefaultSettings = () => new JsonSerializerSettings
+            {
+                ContractResolver = new SafeContractResolver()
+            };
+
             // For loading files with Windows-1252 encoding
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
@@ -50,7 +58,7 @@ namespace Wddc.WebContentManager
 
             // Required for Kendo Grids to populate
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_3_0)
-                .AddNewtonsoftJson(options => options.SerializerSettings.ContractResolver = new DefaultContractResolver());
+                .AddNewtonsoftJson(options => options.SerializerSettings.ContractResolver = new SafeContractResolver());
 
             // Setup configuration
             services.ConfigureRootConfiguration(Configuration);

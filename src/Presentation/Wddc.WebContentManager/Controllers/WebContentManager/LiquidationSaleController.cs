@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Wddc.PurchasingOrderApp.Services;
-using Wddc.Core.Domain.Webserver.WebOrdering;
+using Wddc.Api.Core.Domain.Entities.WebOrder;
 using Serilog;
 using Wddc.WebContentManager.Services.WebContent.Sales.LiquidationSale;
 using Wddc.WebContentManager.Models.WebContent.Sales.LiquidationSale;
@@ -58,22 +58,22 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             if (model.Expiry_DateString == "1969-12-31")
                 model.Expiry_Date = null;
 
-            var toUpdate = await _liquidationSaleService.GetWebLiquidationByIdAsync(model.ID);
-            Log.Logger.Information(User.Identity.Name.Substring(7).ToLower() + $" is updating Web Liquidation Sale ID: {@model.ID} from: " + "{@toUpdate}", toUpdate);
-
-            toUpdate.RET_Code = model.RET_Code;
-            toUpdate.Description = model.Description;
-            toUpdate.Reason = model.Reason;
-            toUpdate.Source = model.Source;
-            toUpdate.QOH = model.QOH;
-            toUpdate.Expiry_Date = model.Expiry_Date;
-            toUpdate.Regular_Cost = model.Regular_Cost;
-            toUpdate.Liquidation_Cost = model.Liquidation_Cost;
-            Log.Logger.Information(User.Identity.Name.Substring(7).ToLower() + $" is updating Web Liquidation Sale ID: {@model.ID} to: " + "{@model}", model);
-
             try
             {
-                await _liquidationSaleService.UpdateWebLiquidation(toUpdate, model.ID);
+                var toUpdate = await _liquidationSaleService.GetWebLiquidationByIdAsync(model.ID);
+                Log.Logger.Information(User.Identity.Name.Substring(7).ToLower() + $" is updating Web Liquidation Sale ID: {@model.ID} from: " + "{@toUpdate}", toUpdate);
+
+                toUpdate.RET_Code = model.RET_Code;
+                toUpdate.Description = model.Description;
+                toUpdate.Reason = model.Reason;
+                toUpdate.Source = model.Source;
+                toUpdate.QOH = model.QOH;
+                toUpdate.Expiry_Date = model.Expiry_Date;
+                toUpdate.Regular_Cost = model.Regular_Cost;
+                toUpdate.Liquidation_Cost = model.Liquidation_Cost;
+                Log.Logger.Information(User.Identity.Name.Substring(7).ToLower() + $" is updating Web Liquidation Sale ID: {@model.ID} to: " + "{@model}", model);
+
+                await _liquidationSaleService.UpdateWebLiquidation(model.ID, toUpdate);
                 Log.Logger.Information($"{User.Identity.Name.Substring(7).ToLower()} updated Web Liquidation Sale successfully");
                 _logger.Information($"Updated Web Liquidation Sale successfully. RET Code: {toUpdate.RET_Code}, REG Code: {toUpdate.REG_Code}", null, User, "WebOrdering");
                 return Json(model);
@@ -81,9 +81,9 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             catch (Exception ex)
             {
                 Log.Logger.Error($"Error updating Web Liquidation Sale by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
-                _logger.Error($"Error updating Web Liquidation Sale. RET Code: {toUpdate.RET_Code}, REG Code: {toUpdate.REG_Code} : {ex.Message.Substring(0, 200)}", ex, User, "WebOrdering");
+                _logger.Error($"Error updating Web Liquidation Sale ID: {model.ID} : {ex.Message.Substring(0, Math.Min(200, ex.Message.Length))}", ex, User, "WebOrdering");
                 Response.StatusCode = 500;
-                return Json(new { message = $"Error updating item. RET Code: {toUpdate.RET_Code}, REG Code: {toUpdate.REG_Code}" });
+                return Json(new { message = $"Error updating item. ID: {model.ID}" });
             }
         }
 

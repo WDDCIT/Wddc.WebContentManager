@@ -110,19 +110,19 @@
 
         var longDesc = document.forms["updateAdForm"]["longDescription"].value;
         if (longDesc.trim() == "") {
-            alert("Long Description must be filled out");
+            showNotification('error', 'Long Description must be filled out');
             return false;
         }
 
         var shortDesc = document.forms["updateAdForm"]["shortDescription"].value;
         if (shortDesc.trim() == "") {
-            alert("Short Description must be filled out");
+            showNotification('error', 'Short Description must be filled out');
             return false;
         }
 
         var contactName = document.forms["updateAdForm"]["contactName"].value;
         if (contactName.trim() == "") {
-            alert("Contact Name must be filled out");
+            showNotification('error', 'Contact Name must be filled out');
             return false;
         }
 

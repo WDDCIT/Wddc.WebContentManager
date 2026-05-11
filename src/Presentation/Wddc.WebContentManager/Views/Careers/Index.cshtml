@@ -8,13 +8,13 @@
 
     <link href="https://kendo.cdn.telerik.com/2021.2.511/styles/kendo.default.min.css" rel="stylesheet" />
     <link href="https://kendo.cdn.telerik.com/2021.2.511/styles/kendo.bootstrap-v4.min.css" rel="stylesheet" type="text/css" />
-
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
 }
 
 @section Scripts {
 
-    <script src="http://ajax.aspnetcdn.com/ajax/jquery.validate/1.11.0/jquery.validate.min.js"></script>
-    <script src="http://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script>
+    <script src="https://ajax.aspnetcdn.com/ajax/jquery.validate/1.11.0/jquery.validate.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script>
 
     <script src="https://kendo.cdn.telerik.com/2021.2.511/js/kendo.all.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -26,35 +26,45 @@
 
         var clickedActiveAdId = 0, clickedExpiredAdId = 0;
         var startUpdateAd = false;
+        var isLogVisible = false;
+
+        function showNotification(type, message) {
+            Swal.fire({
+                icon: type,
+                title: type === 'success' ? 'Success!' : 'Error',
+                text: message,
+                confirmButtonColor: '#3182ce',
+                timer: 3000,
+                timerProgressBar: true,
+                showConfirmButton: true,
+                confirmButtonText: 'OK'
+            });
+        }
+
+        function toggleLog() {
+            isLogVisible = !isLogVisible;
+            var container = $('#logContainer');
+            var toggleText = $('#logToggleText');
+
+            if (isLogVisible) {
+                container.slideDown(300);
+                toggleText.text('Hide Activity Log');
+                prepareLogList();
+            } else {
+                container.slideUp(300);
+                toggleText.text('Show Activity Log');
+            }
+        }
 
         $(document).ready(function () {
 
-            prepareLogList();
-
             if('@ViewBag.response') {
                 if ('@ViewBag.response' == "Success") {
-                    document.getElementById("danger-alert").style.display = "none";
-                    document.getElementById("success-alert").style.display = "inline-block";
-                    var alertText = '<strong>Success! </strong>';
-                    alertText += '@ViewBag.Message';
-                    $("#success-alert").html(alertText);
-                    $("#success-alert").fadeTo(8000, 500).slideUp(500, function() {
-                        $("#success-alert").slideUp(500);
-                    });
+                    showNotification('success', '@ViewBag.Message');
                 }
                 else {
-                    document.getElementById("success-alert").style.display = "none";
-                    document.getElementById("danger-alert").style.display = "inline-block";
-                    var alertText = '<strong>Failure! </strong>';
-                    alertText += '@ViewBag.Message';
-                    $("#danger-alert").html(alertText);
-                    $("#danger-alert").fadeTo(8000, 500).slideUp(500, function() {
-                        $("#danger-alert").slideUp(500);
-                    });
+                    showNotification('error', '@ViewBag.Message');
                 }
-            } else {
-                document.getElementById("success-alert").style.display = "none";
-                document.getElementById("danger-alert").style.display = "none";
             }
 
             if (@Model.WebCareersActive.Count() > 0) {
@@ -333,19 +343,19 @@
 
             var newLongDesc = document.forms["addNewAdForm"]["newLongDescription"].value;
             if (newLongDesc.trim() == "") {
-                alert("Long Description must be filled out");
+                showNotification('error', 'Long Description must be filled out');
                 return false;
             }
 
             var newShortDesc = document.forms["addNewAdForm"]["newShortDescription"].value;
             if (newShortDesc.trim() == "") {
-                alert("Short Description must be filled out");
+                showNotification('error', 'Short Description must be filled out');
                 return false;
             }
 
             var newContactName = document.forms["addNewAdForm"]["newContactName"].value;
             if (newContactName.trim() == "") {
-                alert("Contact Name must be filled out");
+                showNotification('error', 'Contact Name must be filled out');
                 return false;
             }
         }
@@ -376,23 +386,33 @@
 
             var deletedMember = document.getElementById("memberNbr").value;
 
-            var confirmDelete = confirm("Confirm deleting ad (Id: " + idToDelete + ")?");
-            if (confirmDelete == true) {
-                $.post('@Url.Action("DeleteCareer", "Careers")?Id=' + parseInt(idToDelete), (result) => {
-                      if (result.success) {
-                          alert("Wddc web career was deleted successfully! ");
-                          window.location.href = "@Url.Action("Index", "Careers")";
-                      } else {
-                          alert("Failure deleting Wddc web career");
-                          prepareLogList();
-                      }
-
-                }).fail((xhr, textStatus, errorThrown) => {
-                    alert("Failure deleting Wddc web career. " + `${textStatus} : ${errorThrown}`);
-                    prepareLogList();
-                });
-            }
-
+            Swal.fire({
+                title: 'Confirm Delete',
+                text: 'Delete this career ad (ID: ' + idToDelete + ')?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#e53e3e',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, delete it!',
+                cancelButtonText: 'Cancel'
+            }).then(function (result) {
+                if (result.isConfirmed) {
+                    $.post('@Url.Action("DeleteCareer", "Careers")?Id=' + parseInt(idToDelete), (result) => {
+                          if (result.success) {
+                              showNotification('success', 'Career ad was deleted successfully!');
+                              setTimeout(function() {
+                                  window.location.href = "@Url.Action("Index", "Careers")";
+                              }, 1500);
+                          } else {
+                              showNotification('error', 'Failed to delete career ad');
+                              prepareLogList();
+                          }
+                    }).fail((xhr, textStatus, errorThrown) => {
+                        showNotification('error', 'Failed to delete career ad: ' + errorThrown);
+                        prepareLogList();
+                    });
+                }
+            });
         });
 
         function prepareLogList() {
@@ -403,118 +423,132 @@
     </script>
 }
 
-<div class="wrapper wrapper-content animated fadeInRight">
+<div class="modern-wrapper">
+
+    <!-- Page Header -->
+    <div class="page-header-banner">
+        <h2>
+            <i class="fa fa-briefcase"></i>
+            WDDC Careers
+        </h2>
+        <p class="subtitle">
+            Manage career postings for WDDC member clinics
+        </p>
+    </div>
+
+    <!-- Main Content -->
     <div class="row">
-        <div class="col-12 col-lg-12 col-sm-12 col-xl-12 content-center">
-            <div class="alert alert-success" id="success-alert" style="display:none"></div>
-            <div class="alert alert-danger" id="danger-alert" style="display:none"></div>
+        <div class="col-lg-5">
+            <!-- Ad List Card -->
+            <div class="card shadow-sm">
+                <div class="card-header d-flex align-items-center justify-content-between">
+                    <span class="card-header-title"><i class="fa fa-list"></i> Career Ads</span>
+                    <div class="tab-toggle">
+                        <label class="radio-modern">
+                            <input type="radio" id="active" name="activeOrExpired" value="active">
+                            <span class="radio-label"><i class="fa fa-check-circle"></i> Active</span>
+                        </label>
+                        <label class="radio-modern">
+                            <input type="radio" id="expired" name="activeOrExpired" value="expired">
+                            <span class="radio-label"><i class="fa fa-clock"></i> Expired</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <ul id="active-ads" class="ad-list" style="display: none;">
+                        @foreach (var webCareer in Model.WebCareersActive)
+                        {
+                            @if (Model.WebCareersActive.First() == webCareer)
+                            {
+                                <li class="ad-list-item active" onclick="displayActiveListItem(this, '@webCareer.Ad_ID')">
+                                    <i class="fa fa-file-alt ad-icon"></i>
+                                    <span>@webCareer.Short_Description</span>
+                                </li>
+                            }
+                            else
+                            {
+                                <li class="ad-list-item" onclick="displayActiveListItem(this, '@webCareer.Ad_ID')">
+                                    <i class="fa fa-file-alt ad-icon"></i>
+                                    <span>@webCareer.Short_Description</span>
+                                </li>
+                            }
+                        }
+                    </ul>
+                    <ul id="expired-ads" class="ad-list" style="display: none;">
+                        @foreach (var webCareer in Model.WebCareersExpired)
+                        {
+                            @if (Model.WebCareersExpired.First() == webCareer)
+                            {
+                                <li class="ad-list-item active" onclick="displayExpiredListItem(this, '@webCareer.Ad_ID')">
+                                    <i class="fa fa-file-alt ad-icon"></i>
+                                    <span>@webCareer.Short_Description</span>
+                                </li>
+                            }
+                            else
+                            {
+                                <li class="ad-list-item" onclick="displayExpiredListItem(this, '@webCareer.Ad_ID')">
+                                    <i class="fa fa-file-alt ad-icon"></i>
+                                    <span>@webCareer.Short_Description</span>
+                                </li>
+                            }
+                        }
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-7">
+            <!-- Editor Card -->
+            <div class="card shadow-sm">
+                <div class="card-header d-flex align-items-center justify-content-between">
+                    <span class="card-header-title"><i class="fa fa-edit"></i> Career Details</span>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="ad-id-badge">Ad ID: <strong id="ad-id"></strong></span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="toolbar-row">
+                        <button type="button" id="new-ad-btn" class="btn btn-modern btn-primary btn-sm" data-toggle="modal" data-target="#addNewAdModal">
+                            <i class="fa fa-plus"></i> New
+                        </button>
+                        <button type="button" id="save-ad-btn" class="btn btn-modern btn-success btn-sm" disabled>
+                            <i class="fa fa-save"></i> Save
+                        </button>
+                        <button type="button" id="delete-ad-btn" class="btn btn-modern btn-danger btn-sm">
+                            <i class="fa fa-trash"></i> Delete
+                        </button>
+                    </div>
+                    <div id="details-section"></div>
+                </div>
+            </div>
         </div>
     </div>
-    <div class="row">
-        <div class="col-lg-12">
-            <div class="ibox">
-                <div class="ibox-content">
-                    <div class="row">
-                        <div class="col-lg-5">
-                            <div class="row">
-                                <div class="col-lg-12">
-                                    <div class="data-container">
-                                        <div class="row tools-row">
-                                            <div class="col-lg-6">
-                                                <form>
-                                                    <label class="radio-inline">
-                                                        <input type="radio" id="active" name="activeOrExpired" value="active">Show Active
-                                                    </label>
-                                                    <label class="radio-inline">
-                                                        <input type="radio" id="expired" name="activeOrExpired" value="expired">Show Expired
-                                                    </label>
-                                                </form>
-                                            </div>
-                                            <div class="col-lg-6">
-                                            </div>
-                                        </div>
-                                        <div class="panel panel-default">
-                                            <div>
-                                                <ul id="active-ads" class="list-group" style="display: none;">
-                                                    @foreach (var webCareer in Model.WebCareersActive)
-                                                    {
-                                                        @if (Model.WebCareersActive.First() == webCareer)
-                                                        {
-                                                            <li class="list-group-item active" onclick="displayActiveListItem(this, '@webCareer.Ad_ID')"> @webCareer.Short_Description</li>
-                                                        }
-                                                        else
-                                                        {
-                                                            <li class="list-group-item" onclick="displayActiveListItem(this, '@webCareer.Ad_ID')"> @webCareer.Short_Description</li>
-                                                        }
 
-                                                    }
-                                                </ul>
-                                                <ul id="expired-ads" class="list-group" style="display: none;">
-                                                    @foreach (var webCareer in Model.WebCareersExpired)
-                                                    {
-                                                        @if (Model.WebCareersExpired.First() == webCareer)
-                                                        {
-                                                            <li class="list-group-item active" onclick="displayExpiredListItem(this, '@webCareer.Ad_ID')"> @webCareer.Short_Description</li>
-                                                        }
-                                                        else
-                                                        {
-                                                            <li class="list-group-item" onclick="displayExpiredListItem(this, '@webCareer.Ad_ID')"> @webCareer.Short_Description</li>
-                                                        }
-                                                    }
-                                                </ul>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-lg-7" style="padding-left: 0px;">
-                            <div class="row">
-                                <div class="col-lg-12">
-                                    <div class="data-container">
-                                        <div class="row tools-row">
-                                            <div class="col-lg-6">
-                                                <button type="button" id="new-ad-btn" class="btn btn-primary" data-toggle="modal" data-target="#addNewAdModal"><span class="glyphicon glyphicon-file"></span><span class="icon-description">New</span></button>
-                                                <button type="button" id="save-ad-btn" class="btn btn-primary" disabled><span class="glyphicon glyphicon-floppy-disk"></span><span class="icon-description">Save</span></button>
-                                                <button type="button" id="delete-ad-btn" class="btn btn-primary"><span class="glyphicon glyphicon-trash"></span><span class="icon-description">Delete</span></button>
-                                            </div>
-                                            <div class="col-lg-6">
-                                                <h5 class="pull-right">Ad ID: &nbsp;<span id="ad-id"></span></h5>
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <div>
-                                                <div id="details-section">
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row" style="margin-top: 30px;">
-                        <div class="col-lg-2"></div>
-                        <div class="col-lg-8">
-                            <div id="log" class="content-center">
-                                <div class="bs-ObjectList-rows" id="log-list">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-lg-2"></div>
+    <!-- Activity Log Section -->
+    <div class="row mt-3">
+        <div class="col-12">
+            <div class="log-section">
+                <div class="log-header">
+                    <button type="button" class="btn-toggle-log" onclick="toggleLog()">
+                        <i class="fa fa-history"></i> <span id="logToggleText">Show Activity Log</span>
+                    </button>
+                </div>
+                <div id="logContainer" style="display: none; margin-top: 15px;">
+                    <div id="log" class="content-center">
+                        <div class="bs-ObjectList-rows" id="log-list"></div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
 </div>
 
 <div class="modal fade" id="addNewAdModal" tabindex="-1" role="dialog" aria-labelledby="addNewAdModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content">
+        <div class="modal-content modern-modal">
             <div class="modal-header">
-                <span class="modal-title">Add New WDDC Career</span>
+                <span class="modal-title"><i class="fa fa-plus-circle"></i> Add New WDDC Career</span>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
@@ -643,119 +677,298 @@
 
 <style>
 
-    .content-center {
-        margin: 0px auto 0px auto;
-        text-align: center;
-    }
-
-    .wrapper-content {
-        padding: 10px 10px 20px;
-    }
-
-    .ibox-title {
-        padding: 15px 0px 15px;
-        color: #1565C0;
-        border: none;
-    }
-
-    .ibox-content {
-        padding: 7px 15px 15px 15px;
-    }
-
-    .data-container {
-        padding: 0px 0px 15px 0px;
-    }
-
-    .list-group {
-        min-height: 750px;
-        max-height: 750px;
-    }
-
-    .list-group {
-        overflow-y: scroll;
-        overflow-x: hidden;
-    }
-
-    .list-group-item {
-        white-space: nowrap;
-    }
-
-    .tools-row {
-        padding: 0px 0px 20px 0px;
-    }
-
-    input[type="radio"] {
-        margin: 2px 0 0;
-    }
-
-    .k-button {
-        font-size: 1.5rem;
-    }
-
-    .k-combobox {
-        font-size: 1.2rem;
-    }
-
-    .k-dropdown, .k-dropdowntree {
-        font-size: 1.2rem;
-    }
-
-    .k-colorpicker {
-        font-size: 1.2rem;
-    }
-
-    .k-datepicker, .k-timepicker {
-        font-size: 1.3rem;
-    }
-
-    .k-calendar {
-        font-size: 1.3rem;
-    }
-
-    .data-container .btn {
-        font-size: 11px;
-        margin: 0px 2px;
-    }
-
-    .data-container h5 {
-        color: #484848;
-    }
-
-    .icon-description {
-        margin-left: 5px;
-    }
-
-    textarea {
-        border: none;
-    }
-
-    .k-calendar td.k-state-selected .k-link {
-        border-color: #005dc2;
-        background-color: #007bff;
-    }
-
-    .k-popup .k-group-header, .k-popup .k-header {
-        font-size: 1.3rem;
-    }
-
-    .breadcrumb {
+    #page-heading, .breadcrumb {
         display: none;
     }
 
-    .page-heading {
-        padding: 0px 10px 0px 10px;
+    /* ===== Page Layout ===== */
+    .modern-wrapper {
+        background: #f8f9fa;
+        min-height: 100vh;
+        padding: 15px 20px 30px;
     }
 
-    #page-heading {
-        font-size: 20px;
-        font-weight: bold;
-        color: #1565C0;
+    /* ===== Page Header Banner ===== */
+    .page-header-banner {
+        background: linear-gradient(135deg, #3182ce 0%, #2c5282 100%);
+        color: white;
+        padding: 12px 20px;
+        margin-bottom: 20px;
+        border-radius: 6px;
+        box-shadow: 0 2px 10px rgba(49, 130, 206, 0.3);
     }
 
-    label {
-        margin-bottom: 0px;
+        .page-header-banner h2 {
+            margin: 0 0 2px 0;
+            font-size: 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: white;
+        }
+
+            .page-header-banner h2 i {
+                font-size: 20px;
+                opacity: 0.9;
+            }
+
+        .page-header-banner .subtitle {
+            margin: 0;
+            font-size: 13px;
+            opacity: 0.85;
+            font-weight: 400;
+        }
+
+    /* ===== Cards ===== */
+    .card {
+        border: none;
+        border-radius: 8px;
+        overflow: hidden;
     }
 
+    .card-header {
+        background: linear-gradient(135deg, #f8f9fc 0%, #eef1f6 100%);
+        border-bottom: 1px solid #e3e6ef;
+        padding: 12px 20px;
+    }
+
+    .card-header-title {
+        font-weight: 600;
+        color: #2d3748;
+        font-size: 14px;
+    }
+
+        .card-header-title i {
+            color: #3182ce;
+            margin-right: 6px;
+        }
+
+    .card-body {
+        padding: 16px 20px;
+    }
+
+    /* ===== Tab Toggle (Active/Expired) ===== */
+    .tab-toggle {
+        display: flex;
+        gap: 12px;
+    }
+
+    .radio-modern {
+        cursor: pointer;
+        margin: 0;
+    }
+
+        .radio-modern input[type="radio"] {
+            display: none;
+        }
+
+    .radio-label {
+        font-size: 12px;
+        font-weight: 500;
+        color: #718096;
+        padding: 4px 10px;
+        border-radius: 4px;
+        transition: all 0.2s ease;
+    }
+
+        .radio-label i {
+            margin-right: 3px;
+        }
+
+    .radio-modern input[type="radio"]:checked + .radio-label {
+        color: #3182ce;
+        background: rgba(49, 130, 206, 0.1);
+        font-weight: 600;
+    }
+
+    /* ===== Ad List ===== */
+    .ad-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        min-height: 650px;
+        max-height: 650px;
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+
+    .ad-list-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 16px;
+        cursor: pointer;
+        border-bottom: 1px solid #f0f0f0;
+        font-size: 13px;
+        color: #4a5568;
+        transition: all 0.15s ease;
+    }
+
+        .ad-list-item:hover {
+            background: #f7fafc;
+        }
+
+        .ad-list-item.active {
+            background: linear-gradient(135deg, #ebf4ff 0%, #dbeafe 100%);
+            color: #2c5282;
+            font-weight: 600;
+            border-left: 3px solid #3182ce;
+        }
+
+    .ad-icon {
+        color: #a0aec0;
+        font-size: 12px;
+        flex-shrink: 0;
+    }
+
+    .ad-list-item.active .ad-icon {
+        color: #3182ce;
+    }
+
+    /* ===== Toolbar ===== */
+    .toolbar-row {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #e3e6ef;
+    }
+
+    .ad-id-badge {
+        font-size: 12px;
+        color: #718096;
+        background: #edf2f7;
+        padding: 4px 10px;
+        border-radius: 4px;
+    }
+
+        .ad-id-badge strong {
+            color: #2d3748;
+        }
+
+    /* ===== Modern Buttons ===== */
+    .btn-modern {
+        border-radius: 4px;
+        padding: 6px 16px;
+        font-weight: 600;
+        font-size: 12px;
+        transition: all 0.2s ease;
+        border: none;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+        .btn-modern:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+        }
+
+        .btn-modern:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            background-color: #a0aec0 !important;
+            border-color: #a0aec0 !important;
+        }
+
+    .btn-modern i {
+        margin-right: 4px;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #3182ce 0%, #2c5282 100%) !important;
+        border: none !important;
+        color: white !important;
+    }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #2c5282 0%, #1a365d 100%) !important;
+        }
+
+    .btn-success {
+        background: linear-gradient(135deg, #38a169 0%, #2f855a 100%) !important;
+        border: none !important;
+        color: white !important;
+    }
+
+        .btn-success:hover {
+            background: linear-gradient(135deg, #2f855a 0%, #276749 100%) !important;
+        }
+
+    .btn-danger {
+        background: #e53e3e !important;
+        border: none !important;
+        color: white !important;
+    }
+
+        .btn-danger:hover {
+            background: #c53030 !important;
+        }
+
+    /* ===== Activity Log Toggle ===== */
+    .log-section {
+        background: white;
+        border-radius: 8px;
+        padding: 12px 20px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+
+    .log-header {
+        text-align: center;
+    }
+
+    .btn-toggle-log {
+        background: none;
+        border: 1px solid #e2e8f0;
+        color: #4a5568;
+        padding: 8px 20px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+        .btn-toggle-log:hover {
+            background: #f7fafc;
+            border-color: #3182ce;
+            color: #3182ce;
+        }
+
+        .btn-toggle-log i {
+            margin-right: 6px;
+            color: #3182ce;
+        }
+
+    /* ===== Modal Styling ===== */
+    .modern-modal .modal-header {
+        background: linear-gradient(135deg, #f8f9fc 0%, #eef1f6 100%);
+        border-bottom: 2px solid #3182ce;
+        padding: 14px 20px;
+    }
+
+    .modal-title {
+        color: #2d3748;
+        font-size: 15px;
+        font-weight: 600;
+    }
+
+        .modal-title i {
+            color: #3182ce;
+            margin-right: 6px;
+        }
+
+    .modal-lg {
+        max-width: 65%;
+    }
+
+    .modern-modal .modal-footer {
+        background: #f8f9fc;
+        border-top: 1px solid #e3e6ef;
+        padding: 12px 20px;
+    }
+
+    /* ===== Form Styling ===== */
     .form-row {
         margin-top: 7px;
         vertical-align: central;
@@ -769,8 +982,9 @@
     }
 
     .control-label {
-        color: #556375;
-        font-size: 1.3rem;
+        color: #4a5568;
+        font-size: 13px;
+        font-weight: 600;
     }
 
     .control-label-center {
@@ -785,53 +999,82 @@
 
     .control-label-top-small {
         display: flex;
-        font-size: 1.2rem;
+        font-size: 12px;
+        font-weight: 600;
+        color: #4a5568;
     }
 
     .form-control {
+        font-size: 13px;
+        border-color: #d1d5db;
+        border-radius: 4px;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+        .form-control:focus {
+            border-color: #3182ce;
+            box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.15);
+        }
+
+    label {
+        margin-bottom: 0px;
+    }
+
+    .contactInfo-col {
+        border: 1px solid #e2e8f0;
+        margin: 0px 15px 0px 20px;
+        padding: 8px 15px;
+        border-radius: 6px;
+        background: #fafbfd;
+    }
+
+    .contactinfo-row {
+        margin-bottom: 4px;
+    }
+
+    textarea {
+        border: none;
+    }
+
+    /* ===== Kendo Overrides ===== */
+    .k-button {
+        font-size: 1.5rem;
+    }
+
+    .k-combobox,
+    .k-dropdown,
+    .k-dropdowntree,
+    .k-colorpicker {
+        font-size: 1.2rem;
+    }
+
+    .k-datepicker, .k-timepicker {
         font-size: 1.3rem;
-        border-color: #ddd;
+    }
+
+    .k-calendar {
+        font-size: 1.3rem;
     }
 
     .k-dateinput .k-dateinput-wrap, .k-datepicker .k-picker-wrap, .k-datetimepicker .k-picker-wrap, .k-timepicker .k-picker-wrap {
-        border-color: #ddd;
+        border-color: #d1d5db;
         color: black;
     }
 
     .k-editor {
-        border-color: #ddd;
+        border-color: #d1d5db;
     }
 
-    .contactinfo-row {
-        margin-bottom: 2px;
+    .k-calendar td.k-state-selected .k-link {
+        border-color: #005dc2;
+        background-color: #3182ce;
     }
 
-    .btn-light {
-        color: #212529;
-        background-color: #e3e6e8;
-        border-color: #dae0e5;
-        padding: 8px 12px;
+    .k-popup .k-group-header, .k-popup .k-header {
+        font-size: 1.3rem;
     }
 
-        .btn-light:hover {
-            color: #212529;
-            background-color: #e2e6ea;
-            border-color: #dae0e5
-        }
-
-        .btn-light.focus, .btn-light:focus {
-            color: #212529;
-            background-color: #e2e6ea;
-            border-color: #dae0e5;
-            box-shadow: 0 0 0 .2rem rgba(216,217,219,.5)
-        }
-
-    .btn-primary.disabled, .btn-primary.disabled:hover, .btn-primary.disabled:focus, .btn-primary.disabled:active, .btn-primary.disabled.active, .btn-primary[disabled], .btn-primary[disabled]:hover, .btn-primary[disabled]:focus, .btn-primary[disabled]:active, .btn-primary.active[disabled], fieldset[disabled] .btn-primary, fieldset[disabled] .btn-primary:hover, fieldset[disabled] .btn-primary:focus, fieldset[disabled] .btn-primary:active, fieldset[disabled] .btn-primary.active {
-        color: #fff;
-        background-color: #6c757d;
-        border-color: #6c757d;
-    }
-
+    /* ===== SweetAlert ===== */
     #swal2-title {
         font-size: 15px;
     }
@@ -840,24 +1083,26 @@
         padding: 1.25em;
     }
 
-    .modal-lg {
-        width: 65%;
+    /* ===== File Browse Button ===== */
+    .btn-light {
+        color: #2d3748;
+        background-color: #edf2f7;
+        border-color: #e2e8f0;
+        padding: 6px 12px;
+        font-size: 12px;
+        border-radius: 4px;
+        transition: all 0.2s ease;
     }
 
-    .modal-title {
-        color: #1565C0;
-        font-size: 14px;
-        font-weight: bold;
-    }
+        .btn-light:hover {
+            background-color: #e2e6ea;
+            border-color: #cbd5e0;
+        }
 
-    #active-ads li, #expired-ads li {
-        cursor: pointer;
-    }
-
-    .contactInfo-col {
-        border: 1px solid #ddd;
-        margin: 0px 15px 0px 20px;
-        padding: 5px 15px;
+    /* ===== Log Table ===== */
+    .content-center {
+        margin: 0px auto;
+        text-align: center;
     }
 
     .bs-ObjectList-row {
@@ -866,11 +1111,12 @@
 
     .bs-ObjectList-row--header {
         position: relative;
-        background-color: #E8E8E8;
+        background-color: #edf2f7;
     }
 
         .bs-ObjectList-row--header .bs-ObjectList-cell {
-            font-weight: bold;
+            font-weight: 600;
+            color: #2d3748;
         }
 
     .bs-ObjectList-row .bs-ObjectList-cell {
@@ -904,4 +1150,22 @@
         vertical-align: top;
         white-space: nowrap;
     }
+
+    /* ===== Scrollbar ===== */
+    .ad-list::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .ad-list::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
+
+    .ad-list::-webkit-scrollbar-thumb {
+        background: #cbd5e0;
+        border-radius: 3px;
+    }
+
+        .ad-list::-webkit-scrollbar-thumb:hover {
+            background: #a0aec0;
+        }
 </style>

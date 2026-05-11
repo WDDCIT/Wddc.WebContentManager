@@ -1,7 +1,7 @@
 ﻿
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Wddc.Core.Domain.Webserver.WebOrdering;
+using Wddc.Api.Core.Domain.Entities.WebOrder;
 
 namespace Wddc.WebContentManager.Services.WebContent.Sales.LiquidationSale
 {
@@ -11,12 +11,12 @@ namespace Wddc.WebContentManager.Services.WebContent.Sales.LiquidationSale
 
         public LiquidationSaleService(IWddcApiService apiService)
         {
-            this._apiService = apiService;
+            _apiService = apiService;
         }
 
         public async Task<List<Web_Liquidation_RET>> GetAllWebLiquidationAsync()
         {
-            return await _apiService.GetAsync<List<Web_Liquidation_RET>>($"/api/LiquidationSale/Web_Liquidation_RET");
+            return await _apiService.GetAsync<List<Web_Liquidation_RET>>("/api/LiquidationSale/Web_Liquidation_RET");
         }
 
         public async Task<Web_Liquidation_RET> GetWebLiquidationByIdAsync(int ID)
@@ -26,8 +26,7 @@ namespace Wddc.WebContentManager.Services.WebContent.Sales.LiquidationSale
 
         public async Task<Web_Liquidation_RET> CreateWebLiquidation(Web_Liquidation_RET Web_Liquidation_RET)
         {
-            Web_Liquidation_RET newWeb_Liquidation_RET = await _apiService.PostAsync<Web_Liquidation_RET>($"/api/LiquidationSale/Web_Liquidation_RET", Web_Liquidation_RET);
-            return newWeb_Liquidation_RET;
+            return await _apiService.PostAsync<Web_Liquidation_RET>("/api/LiquidationSale/Web_Liquidation_RET", Web_Liquidation_RET);
         }
 
         public async Task DeleteWebLiquidation(int ID)
@@ -35,15 +34,14 @@ namespace Wddc.WebContentManager.Services.WebContent.Sales.LiquidationSale
             await _apiService.PostAsync($"/api/LiquidationSale/Web_Liquidation_RET/Delete/{ID}");
         }
 
-        public async Task UpdateWebLiquidation(Web_Liquidation_RET Web_Liquidation_RET, int ID)
+        public async Task<Web_Liquidation_RET> UpdateWebLiquidation(int ID, Web_Liquidation_RET Web_Liquidation_RET)
         {
-            await _apiService.PostAsync($"/api/LiquidationSale/Web_Liquidation_RET/{ID}", Web_Liquidation_RET);
+            return await _apiService.PostAsync<Web_Liquidation_RET>($"/api/LiquidationSale/Web_Liquidation_RET/{ID}", Web_Liquidation_RET);
         }
 
         public async Task<GetItemInfo_Result> GetItemInfo(string ItemNumber)
         {
             return await _apiService.GetAsync<GetItemInfo_Result>($"/api/LiquidationSale/GetItemInfo/{ItemNumber}");
         }
-
     }
 }

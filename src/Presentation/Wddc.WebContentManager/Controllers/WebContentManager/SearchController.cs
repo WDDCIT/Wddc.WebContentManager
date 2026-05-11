@@ -7,7 +7,7 @@ using Wddc.PurchasingOrderApp.Services;
 using Kendo.Mvc.Extensions;
 using Kendo.Mvc.UI;
 using Wddc.WebContentManager.Services.WebContent.Search;
-using Wddc.Core.Domain.Webserver.TICatalog;
+using Wddc.Api.Core.Domain.Entities.TiCatalogWebsrvr;
 using Serilog;
 using Wddc.WebContentManager.Services.Logging;
 using Wddc.Api.Core.Domain.Entities.WebOrder;
@@ -39,21 +39,21 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
         public async Task<JsonResult> GetAllTblSearchAsync()
         {
             Log.Logger.Information("The system is getting all records from table dbo.tblSearch to populate the grid");
-            List<tblSearch> items = await _searchService.GetAllTblSearch();
+            List<TblSearch> items = await _searchService.GetAllTblSearch();
             return Json(items.OrderBy(_ => _.SearchDescr));
         }
 
         public async Task<JsonResult> GetTblSearchBySearchDescrAsync(string SearchDescr)
         {
             Log.Logger.Information("The system is getting Search record from table dbo.tblSearch of SearchDescr: " + SearchDescr);
-            tblSearch searchItem = null;
-            List<tblSearch> items = await _searchService.GetAllTblSearch();
+            TblSearch searchItem = null;
+            List<TblSearch> items = await _searchService.GetAllTblSearch();
             if (items.Where(_ => _.SearchDescr.Trim() == SearchDescr.Trim()).Count() > 0)
                 searchItem = await _searchService.GetTblSearchBySearchDescr(SearchDescr);
             return Json(searchItem);
         }
 
-        public async Task<ActionResult> UpdateTblSearchAsync([DataSourceRequest] DataSourceRequest request, tblSearch model)
+        public async Task<ActionResult> UpdateTblSearchAsync([DataSourceRequest] DataSourceRequest request, TblSearch model)
         {
             Log.Logger.Information(User.Identity.Name.Substring(7).ToLower() + $" is updating TblSearch of SearchDescr: {@model.SearchDescr}");
 
@@ -64,7 +64,7 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
 
             try
             {
-                await _searchService.UpdateTblSearch(toUpdate, model.SearchDescr);
+                await _searchService.UpdateTblSearch(model.SearchDescr, toUpdate);
                 Log.Logger.Information($"{User.Identity.Name.Substring(7).ToLower()} updated TblSearch successfully");
                 _logger.Information($"Updated TblSearch successfully. SearchDescr: {toUpdate.SearchDescr}, SearchDescrModified: {toUpdate.SearchDescrModified}", null, User, "WebOrdering");
                 return Json(model);
@@ -78,11 +78,11 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
         }
 
         [AcceptVerbs("Post")]
-        public async Task<ActionResult> CreateTblSearchAsync([DataSourceRequest] DataSourceRequest request, tblSearch model)
+        public async Task<ActionResult> CreateTblSearchAsync([DataSourceRequest] DataSourceRequest request, TblSearch model)
         {
             Log.Logger.Information(User.Identity.Name.Substring(7).ToLower() + " is adding a new TblSearch record");
 
-            tblSearch newtblSearch = new tblSearch();
+            TblSearch newtblSearch = new TblSearch();
             newtblSearch.SearchDescr = model.SearchDescr;
             newtblSearch.SearchDescrModified = model.SearchDescrModified;
             Log.Logger.Information(User.Identity.Name.Substring(7).ToLower() + " is adding a new TblSearch: {@newtblSearch}", newtblSearch);
@@ -103,7 +103,7 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
         }
 
         [AcceptVerbs("Post")]
-        public async Task<ActionResult> DeleteTblSearchAsync([DataSourceRequest] DataSourceRequest request, tblSearch model)
+        public async Task<ActionResult> DeleteTblSearchAsync([DataSourceRequest] DataSourceRequest request, TblSearch model)
         {
             Log.Logger.Information(User.Identity.Name.Substring(7).ToLower() + $" is deleting TblSearch of SearchDescr: {@model.SearchDescr}");
 
