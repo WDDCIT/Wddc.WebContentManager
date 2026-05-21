@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Wddc.PurchasingOrderApp.Services;
-using Wddc.Core.Domain.Webserver.WebOrdering;
+using Wddc.Api.Core.Domain.Entities.WebOrder;
 using Kendo.Mvc.Extensions;
 using Microsoft.AspNetCore.Http;
 using System.IO;

@@ -7,11 +7,6 @@ using System.Security.Principal;
 using System.Text;
 using System.Threading.Tasks;
 using Wddc.Api.Core.Domain.Entities.WebOrder;
-using Wddc.Core.Domain.EdiOrdering.Finance.Logging;
-using Wddc.Core.Domain.Purchasing.Logging;
-using Wddc.Core.Domain.Shipping.Logging;
-using Wddc.Web.Core;
-using Wddc.WebContentManager.Services.Logging;
 
 
 namespace Wddc.WebContentManager.Services.Logging
@@ -27,7 +22,6 @@ namespace Wddc.WebContentManager.Services.Logging
         //private readonly EdiObjectContext _dbContext;
         //private readonly IWebHelper _webHelper;
         private readonly IHttpContextAccessor _httpContextAccessor;
-        private readonly IWddcApiService _apiService;
         private readonly IWddcAppsApiService _appsApiService;
 
         #endregion
@@ -50,10 +44,9 @@ namespace Wddc.WebContentManager.Services.Logging
         //    this._webHelper = webHelper;
         //}
 
-        public DefaultLogger(IHttpContextAccessor httpContextAccessor, IWddcApiService apiService, IWddcAppsApiService appsApiService)
+        public DefaultLogger(IHttpContextAccessor httpContextAccessor, IWddcAppsApiService appsApiService)
         {
             _httpContextAccessor = httpContextAccessor;
-            _apiService = apiService;
             _appsApiService = appsApiService;
         }
 
@@ -183,76 +176,20 @@ namespace Wddc.WebContentManager.Services.Logging
         //    return sortedLogItems;
         //}
 
-        /// <summary>
-        /// Inserts a log item
-        /// </summary>
-        /// <param name="logLevel">Log level</param>
-        /// <param name="shortMessage">The short message</param>
-        /// <param name="fullMessage">The full message</param>
-        /// <param name="customer">The customer to associate log record with</param>
-        /// <returns>A log item</returns>
-        public async Task<Log> InsertShippingLog(LogLevel logLevel, string shortMessage, string fullMessage = "", IPrincipal user = null)
-        {
-            var log = new Log
-            {
-                LogLevelId = (int)logLevel,
-                ShortMessage = shortMessage,
-                FullMessage = fullMessage,
-                IpAddress = _httpContextAccessor.HttpContext.Connection.RemoteIpAddress.ToString(),
-                User = user?.Identity.Name.Substring(7).ToLower(),
-                PageUrl = _httpContextAccessor.HttpContext.Request.Path.ToString(),
-                ReferrerUrl = _httpContextAccessor.HttpContext.Request.Headers["Referer"].ToString(),
-                CreatedOnUtc = DateTime.UtcNow
-            };
-
-            return await _apiService.PostAsync<Log>($"/api/Shipping/Log/", log);
-        }
-
-        public async Task<FinanceLog> InsertFinanceLog(LogLevel logLevel, string shortMessage, string fullMessage = "", IPrincipal user = null)
-        {
-            var log = new FinanceLog
-            {
-                LogLevelId = (int)logLevel,
-                ShortMessage = shortMessage,
-                FullMessage = fullMessage,
-                IpAddress = _httpContextAccessor.HttpContext.Connection.RemoteIpAddress.ToString(),
-                User = user?.Identity.Name.Substring(7).ToLower(),
-                PageUrl = _httpContextAccessor.HttpContext.Request.Path.ToString(),
-                ReferrerUrl = _httpContextAccessor.HttpContext.Request.Headers["Referer"].ToString(),
-                CreatedOnUtc = DateTime.UtcNow
-            };
-
-            return await _apiService.PostAsync<FinanceLog>($"/api/Finance/Log/", log);
-        }
-
-        public async Task<PurchasingLog> InsertPurchasingLog(LogLevel logLevel, string shortMessage, string fullMessage = "", IPrincipal user = null)
-        {
-            var log = new PurchasingLog
-            {
-                LogLevelId = (int)logLevel,
-                ShortMessage = shortMessage,
-                FullMessage = fullMessage,
-                IpAddress = _httpContextAccessor.HttpContext.Connection.RemoteIpAddress.ToString(),
-                User = user?.Identity.Name.Substring(7).ToLower(),
-                PageUrl = _httpContextAccessor.HttpContext.Request.Path.ToString(),
-                ReferrerUrl = _httpContextAccessor.HttpContext.Request.Headers["Referer"].ToString(),
-                CreatedOnUtc = DateTime.UtcNow
-            };
-
-            return await _apiService.PostAsync<PurchasingLog>($"/api/Purchasing/Log/", log);
-        }
 
         public async Task<WebOrderingLog> InsertWebOrderingLog(LogLevel logLevel, string shortMessage, string fullMessage = "", IPrincipal user = null)
         {
+            // Capture HttpContext values synchronously before any await — context may be unavailable after continuation resumes
+            var httpContext = _httpContextAccessor.HttpContext;
             var log = new WebOrderingLog
             {
                 LogLevelId = (int)logLevel,
                 ShortMessage = shortMessage,
                 FullMessage = fullMessage,
-                IpAddress = _httpContextAccessor.HttpContext.Connection.RemoteIpAddress.ToString(),
-                User = user?.Identity.Name.Substring(7).ToLower(),
-                PageUrl = _httpContextAccessor.HttpContext.Request.Path.ToString(),
-                ReferrerUrl = _httpContextAccessor.HttpContext.Request.Headers["Referer"].ToString(),
+                IpAddress = httpContext?.Connection?.RemoteIpAddress?.ToString() ?? "",
+                User = user?.Identity?.Name?.Substring(7)?.ToLower(),
+                PageUrl = httpContext?.Request?.Path.ToString() ?? "",
+                ReferrerUrl = httpContext?.Request?.Headers["Referer"].ToString() ?? "",
                 CreatedOnUtc = DateTime.UtcNow
             };
 

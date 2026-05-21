@@ -1,5 +1,6 @@
 ﻿
 using System.Collections.Generic;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Wddc.Api.Core.Domain.Entities.WebOrder;
 
@@ -7,9 +8,9 @@ namespace Wddc.WebContentManager.Services.WebContent.Sales.LiquidationSale
 {
     public class LiquidationSaleService : ILiquidationSaleService
     {
-        private readonly IWddcApiService _apiService;
+        private readonly IWddcAppsApiService _apiService;
 
-        public LiquidationSaleService(IWddcApiService apiService)
+        public LiquidationSaleService(IWddcAppsApiService apiService)
         {
             _apiService = apiService;
         }
@@ -31,7 +32,7 @@ namespace Wddc.WebContentManager.Services.WebContent.Sales.LiquidationSale
 
         public async Task DeleteWebLiquidation(int ID)
         {
-            await _apiService.PostAsync($"/api/LiquidationSale/Web_Liquidation_RET/Delete/{ID}");
+            await _apiService.SendAsync(HttpMethod.Post, $"/api/LiquidationSale/Web_Liquidation_RET/Delete/{ID}");
         }
 
         public async Task<Web_Liquidation_RET> UpdateWebLiquidation(int ID, Web_Liquidation_RET Web_Liquidation_RET)

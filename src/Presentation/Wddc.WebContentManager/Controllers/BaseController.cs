@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Text.RegularExpressions;
-using Wddc.Core;
 
 namespace Wddc.WebContentManager.Controllers
 {

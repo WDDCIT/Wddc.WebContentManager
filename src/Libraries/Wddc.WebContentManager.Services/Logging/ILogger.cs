@@ -3,10 +3,10 @@ using System;
 using System.Collections.Generic;
 using System.Security.Principal;
 using System.Threading.Tasks;
+using Wddc.Api.Core.Domain.Entities.EdiOrdering.Finance;
+using Wddc.Api.Core.Domain.Entities.EdiOrdering.Routes;
+using Wddc.Api.Core.Domain.Entities.Orders.Purchasing;
 using Wddc.Api.Core.Domain.Entities.WebOrder;
-using Wddc.Core.Domain.EdiOrdering.Finance.Logging;
-using Wddc.Core.Domain.Purchasing.Logging;
-using Wddc.Core.Domain.Shipping.Logging;
 
 namespace Wddc.WebContentManager.Services.Logging
 {
@@ -67,9 +67,6 @@ namespace Wddc.WebContentManager.Services.Logging
         /// <param name="fullMessage">The full message</param>
         /// <param name="customer">The customer to associate log record with</param>
         /// <returns>A log item</returns>
-        Task<Log> InsertShippingLog(LogLevel logLevel, string shortMessage, string fullMessage = "", IPrincipal user = null);
-        Task<FinanceLog> InsertFinanceLog(LogLevel logLevel, string shortMessage, string fullMessage = "", IPrincipal user = null);
-        Task<PurchasingLog> InsertPurchasingLog(LogLevel logLevel, string shortMessage, string fullMessage = "", IPrincipal user = null);
         Task<WebOrderingLog> InsertWebOrderingLog(LogLevel logLevel, string shortMessage, string fullMessage = "", IPrincipal user = null);
     }
 }

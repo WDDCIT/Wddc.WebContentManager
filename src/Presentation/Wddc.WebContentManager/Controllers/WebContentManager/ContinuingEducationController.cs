@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Wddc.PurchasingOrderApp.Services;
 using Wddc.WebContentManager.Services.WebContent.ContinuingEducation;
 using Wddc.WebContentManager.Models.WebContent.ContinuingEducation;
-using Wddc.Core.Domain.Webserver.WebOrdering;
 using Serilog;
 using Microsoft.AspNetCore.Http;
 using System.IO;
@@ -15,6 +14,7 @@ using WebOrderingLog = Wddc.Api.Core.Domain.Entities.WebOrder.WebOrderingLog;
 using Wddc.WebContentManager.Models;
 using PagedList;
 using System.Web;
+using Wddc.Api.Core.Domain.Entities.WebOrder;
 
 namespace Wddc.WebContentManager.Controllers.WebContentManager
 {
@@ -209,9 +209,9 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             return Json(new { success = true });
         }
 
-        public async Task<ActionResult> LogAsync(int? pageNumber, int pageSize = 5, string referrerUrl = null)
+        public async Task<ActionResult> LogAsync(int? pageNumber, int pageSize = 100, string referrerUrl = null)
         {
-            IPagedList<WebOrderingLog> results = await _logger.GetAllWebOrderingLogsAsync(referrerUrl: referrerUrl, pageSize: 10, pageIndex: pageNumber ?? 1);
+            IPagedList<WebOrderingLog> results = await _logger.GetAllWebOrderingLogsAsync(referrerUrl: referrerUrl, pageSize: pageSize, pageIndex: pageNumber ?? 1);
 
             var ajaxResult = new AjaxResults()
             {

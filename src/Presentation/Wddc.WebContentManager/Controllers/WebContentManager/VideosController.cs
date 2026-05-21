@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Wddc.PurchasingOrderApp.Services;
-using Wddc.Core.Domain.Webserver.WebOrdering;
+
 using Kendo.Mvc.Extensions;
 using Wddc.WebContentManager.Services.WebContent.Videos;
 using Wddc.WebContentManager.Models.WebContent.Videos;
@@ -13,6 +13,7 @@ using Wddc.WebContentManager.Services.Logging;
 using WebOrderingLog = Wddc.Api.Core.Domain.Entities.WebOrder.WebOrderingLog;
 using Wddc.WebContentManager.Models;
 using PagedList;
+using Wddc.Api.Core.Domain.Entities.WebOrder;
 
 namespace Wddc.WebContentManager.Controllers.WebContentManager
 {

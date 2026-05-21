@@ -1,4 +1,4 @@
-﻿@using Wddc.Core.Domain.Webserver.WebOrdering;
+﻿@using Wddc.Api.Core.Domain.Entities.WebOrder;
 @model Web_CE_Ads
 
 <form id="updateAdForm" name="updateAdForm" method="post" action="@Url.Action("UpdateContinuingEducationAd", "ContinuingEducation")" enctype="multipart/form-data" onsubmit="return validateUpdateForm()">
@@ -136,13 +136,13 @@
 
         var eventDate = document.forms["updateAdForm"]["eventDate"].value;
         if (eventDate == null || eventDate.trim() == "") {
-            alert("Event Date must be filled out");
+            showNotification('error', 'Event Date must be filled out');
             return false;
         }
 
         var longDesc = document.forms["updateAdForm"]["longDesc"].value;
         if (longDesc.trim() == "") {
-            alert("Description must be filled out");
+            showNotification('error', 'Description must be filled out');
             return false;
         }
 
@@ -154,7 +154,7 @@
 
         var location = document.forms["updateAdForm"]["location"].value;
         if (location.trim() == "") {
-            alert("Location must be filled out");
+            showNotification('error', 'Location must be filled out');
             return false;
         }
 

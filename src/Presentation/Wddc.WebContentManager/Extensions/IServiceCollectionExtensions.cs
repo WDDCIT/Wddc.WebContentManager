@@ -1,9 +1,7 @@
-﻿using IdentityModel.Client;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using System;
-using System.Net.Http;
 using Wddc.PurchasingOrderApp.Services;
 using Wddc.WebContentManager.Core.Configuration;
 using Wddc.WebContentManager.Services;
@@ -18,10 +16,7 @@ using Wddc.WebContentManager.Services.WebContent.ContinuingEducation;
 using Wddc.WebContentManager.Services.WebContent.ClassifiedAds;
 using Wddc.WebContentManager.Services.WebContent.Careers;
 using Wddc.WebContentManager.Services.WebContent.Sales.LiquidationSale;
-using Wddc.WebContentManager.Services.WebContent.Sales.RetailClearanceSale;
-using Wddc.WebContentManager.Services.WebContent.Sales.EquipmentClearanceSale;
 using Wddc.WebContentManager.Services.WebContent.Videos;
-using Wddc.WebContentManager.Services.WebContent.Search;
 using Wddc.WebContentManager.Services.WebUser;
 using Wddc.WebContentManager.Services.WebContent.Affinity;
 using Wddc.WebContentManager.Services.WebContent.Newsletter;
@@ -56,7 +51,6 @@ namespace Wddc.WebContentManager.Extensions
             services.Configure<SecondaryApiConfiguration>(configuration.GetSection(ConfigurationConsts.SecondaryApiConfigurationKey));
 
             services.TryAddSingleton<IRootConfiguration, RootConfiguration>();
-            services.TryAddSingleton<IWddcApiService, WddcApiService>();
             services.TryAddSingleton<IWddcAppsApiService, WddcAppsApiService>();
             services.TryAddSingleton<ILogger, DefaultLogger>();
             services.TryAddSingleton<ICacheManager, MemoryCacheManager>();
@@ -64,10 +58,7 @@ namespace Wddc.WebContentManager.Extensions
             services.TryAddSingleton<IClassifiedAdsService, ClassifiedAdsService>();
             services.TryAddSingleton<ICareersService, CareersService>();
             services.TryAddSingleton<ILiquidationSaleService, LiquidationSaleService>();
-            services.TryAddSingleton<IRetailClearanceSaleService, RetailClearanceSaleService>();
-            services.TryAddSingleton<IEquipmentClearanceSaleService, EquipmentClearanceSaleService>();
             services.TryAddSingleton<IVideosService, VideosService>();
-            services.TryAddSingleton<ISearchService, SearchService>();
             services.TryAddSingleton<IWebUserLookupService, WebUserLookupService>();
             services.TryAddSingleton<IAffinityService, AffinityService>();
             services.TryAddSingleton<INewsletterService, NewsletterService>();
@@ -101,32 +92,6 @@ namespace Wddc.WebContentManager.Extensions
 
         public static IServiceCollection AddHttpClients(this IServiceCollection services, IRootConfiguration rootConfiguration)
         {
-            services.AddHttpClient("wddc_api", c =>
-            {
-                var client = new HttpClient();
-                var openIdConfiguration = rootConfiguration.OpenIdConfiguration;
-                var disco = client.GetDiscoveryDocumentAsync(openIdConfiguration.IdentityServerBaseUrl).Result;
-
-                if (disco.IsError)
-                    throw new Exception(disco.Error);
-
-                var tokenResponse = client.RequestPasswordTokenAsync(new PasswordTokenRequest
-                {
-                    Address = disco.TokenEndpoint,
-                    ClientId = openIdConfiguration.ClientId,
-                    ClientSecret = openIdConfiguration.ClientSecret,
-
-                    UserName = "admin",
-                    Password = "X15XRTe$zqGS",
-                    Scope = string.Join(" ", openIdConfiguration.Scopes)
-                }).Result;
-
-                c.DefaultRequestHeaders.Add("Authorization", "Bearer " + tokenResponse.AccessToken);
-
-                // Other settings
-                c.BaseAddress = new Uri(rootConfiguration.ResourceConfiguration.WddcApiBaseUrl);
-            });
-
             // Secondary apps API (API-key based)
             var secondaryApi = rootConfiguration.SecondaryApiConfiguration;
             if (secondaryApi != null)

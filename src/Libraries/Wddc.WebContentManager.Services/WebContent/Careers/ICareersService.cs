@@ -1,7 +1,8 @@
 ﻿
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Wddc.Core.Domain.Webserver.WebOrdering;
+using Wddc.Api.Core.Domain.Entities.WebOrder;
+
 
 namespace Wddc.WebContentManager.Services.WebContent.Careers
 {

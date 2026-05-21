@@ -1,15 +1,16 @@
 ﻿
 using System.Collections.Generic;
+using System.Net.Http;
 using System.Threading.Tasks;
-using Wddc.Core.Domain.Webserver.WebOrdering;
+using Wddc.Api.Core.Domain.Entities.WebOrder;
 
 namespace Wddc.WebContentManager.Services.WebContent.Newsletter
 {
     public class NewsletterService : INewsletterService
     {
-        private readonly IWddcApiService _apiService;
+        private readonly IWddcAppsApiService _apiService;
 
-        public NewsletterService(IWddcApiService apiService)
+        public NewsletterService(IWddcAppsApiService apiService)
         {
             this._apiService = apiService;
         }
@@ -36,12 +37,12 @@ namespace Wddc.WebContentManager.Services.WebContent.Newsletter
 
         public async Task UpdateWebFYINews(Web_News Web_News, int ID)
         {
-            await _apiService.PostAsync($"/api/FYINewsletter/WebFYINews/{ID}", Web_News);
+            await _apiService.SendAsync(HttpMethod.Post, $"/api/FYINewsletter/WebFYINews/{ID}", Web_News);
         }
 
         public async Task DeleteWebFYINews(int ID)
         {
-            await _apiService.PostAsync($"/api/FYINewsletter/WebFYINews/Delete/{ID}");
+            await _apiService.SendAsync(HttpMethod.Post, $"/api/FYINewsletter/WebFYINews/Delete/{ID}");
         }
 
         /*-----------------------------------------------------------------------------------*/
@@ -68,12 +69,12 @@ namespace Wddc.WebContentManager.Services.WebContent.Newsletter
 
         public async Task UpdateWebInsiderNews(Web_News Web_News, int ID)
         {
-            await _apiService.PostAsync($"/api/InsiderNewsletter/WebInsiderNews/{ID}", Web_News);
+            await _apiService.SendAsync(HttpMethod.Post, $"/api/InsiderNewsletter/WebInsiderNews/{ID}", Web_News);
         }
 
         public async Task DeleteWebInsiderNews(int ID)
         {
-            await _apiService.PostAsync($"/api/InsiderNewsletter/WebInsiderNews/Delete/{ID}");
+            await _apiService.SendAsync(HttpMethod.Post, $"/api/InsiderNewsletter/WebInsiderNews/Delete/{ID}");
         }
 
         /*-----------------------------------------------------------------------------------*/
@@ -95,12 +96,12 @@ namespace Wddc.WebContentManager.Services.WebContent.Newsletter
 
         public async Task UpdatePriceSheet(Web_News Web_News, int ID)
         {
-            await _apiService.PostAsync($"/api/PriceSheet/PriceSheet/{ID}", Web_News);
+            await _apiService.SendAsync(HttpMethod.Post, $"/api/PriceSheet/PriceSheet/{ID}", Web_News);
         }
 
         public async Task DeletePriceSheet(int ID)
         {
-            await _apiService.PostAsync($"/api/PriceSheet/PriceSheet/Delete/{ID}");
+            await _apiService.SendAsync(HttpMethod.Post, $"/api/PriceSheet/PriceSheet/Delete/{ID}");
         }
 
     }

@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
-using Wddc.Core.Domain.Webserver.WebOrdering;
+using Wddc.Api.Core.Domain.Entities.WebOrder;
+
 
 namespace Wddc.WebContentManager.Models.WebContent.ContinuingEducation
 {

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Security.Principal;
 using System.Text;
 using System.Threading.Tasks;
-using Wddc.Core.Domain.Shipping.Logging;
+
 
 namespace Wddc.WebContentManager.Services.Logging
 {
@@ -41,17 +41,12 @@ namespace Wddc.WebContentManager.Services.Logging
             {
                 string fullMessage = exception == null ? string.Empty : exception.ToString();
 
-                if (controller == "Shipping")
-                    logger.InsertShippingLog(level, message, fullMessage, user);
-                else
-                    if (controller == "Invoicing" || controller == "Returns")
-                        logger.InsertFinanceLog(level, message, fullMessage, user);
-                    else
-                        if (controller == "Purchasing")
-                            logger.InsertPurchasingLog(level, message, fullMessage, user);
-                        else
-                            if (controller == "WebOrdering")
-                                logger.InsertWebOrderingLog(level, message, fullMessage, user);
+                if (controller == "WebOrdering")
+                {
+                    _ = logger.InsertWebOrderingLog(level, message, fullMessage, user)
+                        .ContinueWith(t => Serilog.Log.Logger.Error(t.Exception, "InsertWebOrderingLog failed"),
+                            TaskContinuationOptions.OnlyOnFaulted);
+                }
             }
         }
     }

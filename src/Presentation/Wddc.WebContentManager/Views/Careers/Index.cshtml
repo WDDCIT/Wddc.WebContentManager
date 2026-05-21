@@ -5,7 +5,6 @@
 }
 
 @section Styles {
-
     <link href="https://kendo.cdn.telerik.com/2021.2.511/styles/kendo.default.min.css" rel="stylesheet" />
     <link href="https://kendo.cdn.telerik.com/2021.2.511/styles/kendo.bootstrap-v4.min.css" rel="stylesheet" type="text/css" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
@@ -37,7 +36,8 @@
                 timer: 3000,
                 timerProgressBar: true,
                 showConfirmButton: true,
-                confirmButtonText: 'OK'
+                confirmButtonText: 'OK',
+                customClass: { popup: 'swal-above-modal' }
             });
         }
 
@@ -65,12 +65,16 @@
                 else {
                     showNotification('error', '@ViewBag.Message');
                 }
+                // Clear query string so refresh doesn't repeat the alert
+                if (window.history.replaceState) {
+                    window.history.replaceState(null, '', window.location.pathname);
+                }
             }
 
             if (@Model.WebCareersActive.Count() > 0) {
                 document.getElementById("active").checked = true;
-                document.getElementById("active-ads").style.display = 'block';
-                document.getElementById("expired-ads").style.display = 'none';
+                document.getElementById("active-listings").style.display = 'block';
+                document.getElementById("expired-listings").style.display = 'none';
 
                 $.get('@Url.Action("GetFirstActiveAd", "Careers")', (data) => {
                      displayActiveAd(data.Ad_ID);
@@ -79,8 +83,8 @@
             else {
                 if (@Model.WebCareersExpired.Count() > 0) {
                     document.getElementById("expired").checked = true;
-                    document.getElementById("active-ads").style.display = 'none';
-                    document.getElementById("expired-ads").style.display = 'block';
+                    document.getElementById("active-listings").style.display = 'none';
+                    document.getElementById("expired-listings").style.display = 'block';
 
                     $.get('@Url.Action("GetFirstExpiredAd", "Careers")', (data) => {
                         displayExpiredAd(data.Ad_ID);
@@ -88,8 +92,8 @@
                 }
                 else {
                     document.getElementById("active").checked = true;
-                    document.getElementById("active-ads").style.display = 'block';
-                    document.getElementById("expired-ads").style.display = 'none';
+                    document.getElementById("active-listings").style.display = 'block';
+                    document.getElementById("expired-listings").style.display = 'none';
 
                     emptyTab();
                 }
@@ -204,8 +208,8 @@
         });
 
         function switchTabs() {
-            $("#active-ads").toggle();
-            $("#expired-ads").toggle();
+            $("#active-listings").toggle();
+            $("#expired-listings").toggle();
 
             var activeOrExpired = document.querySelector('input[name="activeOrExpired"]:checked').value;
 
@@ -358,6 +362,8 @@
                 showNotification('error', 'Contact Name must be filled out');
                 return false;
             }
+
+            return true;
         }
 
         function searchNewMember(ele) {
@@ -455,39 +461,39 @@
                     </div>
                 </div>
                 <div class="card-body p-0">
-                    <ul id="active-ads" class="ad-list" style="display: none;">
+                    <ul id="active-listings" class="listing-panel" style="display: none;">
                         @foreach (var webCareer in Model.WebCareersActive)
                         {
                             @if (Model.WebCareersActive.First() == webCareer)
                             {
-                                <li class="ad-list-item active" onclick="displayActiveListItem(this, '@webCareer.Ad_ID')">
-                                    <i class="fa fa-file-alt ad-icon"></i>
+                                <li class="listing-item active" onclick="displayActiveListItem(this, '@webCareer.Ad_ID')">
+                                    <i class="fa fa-file-alt listing-icon"></i>
                                     <span>@webCareer.Short_Description</span>
                                 </li>
                             }
                             else
                             {
-                                <li class="ad-list-item" onclick="displayActiveListItem(this, '@webCareer.Ad_ID')">
-                                    <i class="fa fa-file-alt ad-icon"></i>
+                                <li class="listing-item" onclick="displayActiveListItem(this, '@webCareer.Ad_ID')">
+                                    <i class="fa fa-file-alt listing-icon"></i>
                                     <span>@webCareer.Short_Description</span>
                                 </li>
                             }
                         }
                     </ul>
-                    <ul id="expired-ads" class="ad-list" style="display: none;">
+                    <ul id="expired-listings" class="listing-panel" style="display: none;">
                         @foreach (var webCareer in Model.WebCareersExpired)
                         {
                             @if (Model.WebCareersExpired.First() == webCareer)
                             {
-                                <li class="ad-list-item active" onclick="displayExpiredListItem(this, '@webCareer.Ad_ID')">
-                                    <i class="fa fa-file-alt ad-icon"></i>
+                                <li class="listing-item active" onclick="displayExpiredListItem(this, '@webCareer.Ad_ID')">
+                                    <i class="fa fa-file-alt listing-icon"></i>
                                     <span>@webCareer.Short_Description</span>
                                 </li>
                             }
                             else
                             {
-                                <li class="ad-list-item" onclick="displayExpiredListItem(this, '@webCareer.Ad_ID')">
-                                    <i class="fa fa-file-alt ad-icon"></i>
+                                <li class="listing-item" onclick="displayExpiredListItem(this, '@webCareer.Ad_ID')">
+                                    <i class="fa fa-file-alt listing-icon"></i>
                                     <span>@webCareer.Short_Description</span>
                                 </li>
                             }
@@ -591,7 +597,7 @@
                                             <div class="col-lg-10 contactInfo-col">
                                                 <div class="row contactinfo-row">
                                                     <div class="col-lg-2">
-                                                        <label class="control-label control-label-top-small" for="newMemberNbr">Member Number:</label>
+                                                        <label class="control-label control-label-top-small" for="newMemberNbr">Member #:</label>
                                                         <input type="text" class="form-control" id="newMemberNbr" name="newMemberNbr" maxlength="5" onchange="searchNewMember(this)">
                                                     </div>
                                                     <div class="col-lg-10">
@@ -679,6 +685,11 @@
 
     #page-heading, .breadcrumb {
         display: none;
+    }
+
+    /* SweetAlert2 above Bootstrap modal */
+    .swal2-container {
+        z-index: 10060 !important;
     }
 
     /* ===== Page Layout ===== */
@@ -783,7 +794,7 @@
     }
 
     /* ===== Ad List ===== */
-    .ad-list {
+    .listing-panel {
         list-style: none;
         padding: 0;
         margin: 0;
@@ -793,7 +804,7 @@
         overflow-x: hidden;
     }
 
-    .ad-list-item {
+    .listing-item {
         display: flex;
         align-items: center;
         gap: 10px;
@@ -801,28 +812,29 @@
         cursor: pointer;
         border-bottom: 1px solid #f0f0f0;
         font-size: 13px;
+        background: #fff;
         color: #4a5568;
         transition: all 0.15s ease;
     }
 
-        .ad-list-item:hover {
+        .listing-item:hover {
             background: #f7fafc;
         }
 
-        .ad-list-item.active {
+        .listing-item.active {
             background: linear-gradient(135deg, #ebf4ff 0%, #dbeafe 100%);
             color: #2c5282;
             font-weight: 600;
             border-left: 3px solid #3182ce;
         }
 
-    .ad-icon {
+    .listing-icon {
         color: #a0aec0;
         font-size: 12px;
         flex-shrink: 0;
     }
 
-    .ad-list-item.active .ad-icon {
+    .listing-item.active .listing-icon {
         color: #3182ce;
     }
 
@@ -907,38 +919,53 @@
 
     /* ===== Activity Log Toggle ===== */
     .log-section {
-        background: white;
-        border-radius: 8px;
-        padding: 12px 20px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        border-top: 2px solid #e7eaec;
+        padding-top: 20px;
+        padding-bottom: 20px;
+        margin-top: 30px;
     }
 
     .log-header {
         text-align: center;
+        margin-bottom: 15px;
     }
 
     .btn-toggle-log {
-        background: none;
-        border: 1px solid #e2e8f0;
-        color: #4a5568;
-        padding: 8px 20px;
-        border-radius: 6px;
-        font-size: 13px;
-        font-weight: 500;
+        padding: 6px 16px;
+        background: linear-gradient(135deg, #2c5282 0%, #3182ce 100%);
+        color: #ffffff;
+        border: none;
+        border-radius: 16px;
+        font-weight: 600;
+        font-size: 11px;
         cursor: pointer;
-        transition: all 0.2s ease;
+        box-shadow: 0 2px 4px rgba(49, 130, 206, 0.3);
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
     }
 
         .btn-toggle-log:hover {
-            background: #f7fafc;
-            border-color: #3182ce;
-            color: #3182ce;
+            background: linear-gradient(135deg, #2c5282 0%, #265080 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(49, 130, 206, 0.4);
         }
 
-        .btn-toggle-log i {
-            margin-right: 6px;
-            color: #3182ce;
+    #logContainer {
+        animation: slideDown 0.3s ease-out;
+        padding: 0 20px;
+    }
+
+    @@keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
         }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
 
     /* ===== Modal Styling ===== */
     .modern-modal .modal-header {
@@ -1105,18 +1132,33 @@
         text-align: center;
     }
 
+    /* ===== Activity Log Grid ===== */
+    .bs-ObjectList-rows {
+        display: table;
+        width: 100%;
+        border-radius: 6px;
+        border: 1px solid #e7eaec;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+    }
+
     .bs-ObjectList-row {
-        border-radius: 0.25rem;
+        border-radius: 0;
     }
 
     .bs-ObjectList-row--header {
         position: relative;
-        background-color: #edf2f7;
+        background: linear-gradient(to bottom, #f8f9fa 0%, #e9ecef 100%);
+        border-bottom: 1px solid #dee2e6;
     }
 
         .bs-ObjectList-row--header .bs-ObjectList-cell {
-            font-weight: 600;
-            color: #2d3748;
+            font-weight: 700;
+            color: #495057;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            padding: 10px 12px;
         }
 
     .bs-ObjectList-row .bs-ObjectList-cell {
@@ -1132,7 +1174,11 @@
         .bs-ObjectList-row .bs-ObjectList-cell:first-child {
             width: 60%;
             text-align: left;
-            white-space: pre-wrap;
+            white-space: normal;
+            word-wrap: break-word;
+            word-break: break-word;
+            line-height: 1.5;
+            padding-left: 14px;
         }
 
     .bs-ObjectList-child, .bs-ObjectList-parent, .bs-ObjectList-row {
@@ -1140,32 +1186,38 @@
         transition: background-color .15s ease 0s;
     }
 
+    .bs-ObjectList-row:not(.bs-ObjectList-row--header):hover {
+        background-color: rgba(49, 130, 206, 0.05);
+    }
+
     .bs-ObjectList-cell {
         display: table-cell;
         position: relative;
-        padding: 9px 10px;
-        color: #525f7f;
+        padding: 9px 12px;
+        color: #4a5568;
         font-weight: 400;
-        line-height: 22px;
+        font-size: 12px;
+        line-height: 20px;
         vertical-align: top;
         white-space: nowrap;
+        border-bottom: 1px solid #f0f0f0;
     }
 
     /* ===== Scrollbar ===== */
-    .ad-list::-webkit-scrollbar {
+    .listing-panel::-webkit-scrollbar {
         width: 6px;
     }
 
-    .ad-list::-webkit-scrollbar-track {
+    .listing-panel::-webkit-scrollbar-track {
         background: #f1f1f1;
     }
 
-    .ad-list::-webkit-scrollbar-thumb {
+    .listing-panel::-webkit-scrollbar-thumb {
         background: #cbd5e0;
         border-radius: 3px;
     }
 
-        .ad-list::-webkit-scrollbar-thumb:hover {
+        .listing-panel::-webkit-scrollbar-thumb:hover {
             background: #a0aec0;
         }
 </style>

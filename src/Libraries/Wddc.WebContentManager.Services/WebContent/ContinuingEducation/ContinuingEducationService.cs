@@ -1,22 +1,24 @@
 ﻿
 using System.Collections.Generic;
+using System.Net.Http;
 using System.Threading.Tasks;
-using Wddc.Core.Domain.Webserver.WebOrdering;
+using Wddc.Api.Core.Domain.Entities.WebOrder;
+
 
 namespace Wddc.WebContentManager.Services.WebContent.ContinuingEducation
 {
     public class ContinuingEducationService : IContinuingEducationService
     {
-        private readonly IWddcApiService _apiService;
+        private readonly IWddcAppsApiService _apiService;
 
-        public ContinuingEducationService(IWddcApiService apiService)
+        public ContinuingEducationService(IWddcAppsApiService apiService)
         {
             this._apiService = apiService;
         }
 
         public async Task<List<Web_CE_Ads>> GetAllWebCEAds()
         {
-            return await _apiService.GetAsync<List<Web_CE_Ads>>($"/api/ContinuingEducation/Web_CE_Ads");
+            return await _apiService.GetAsync<List<Web_CE_Ads>>("/api/ContinuingEducation/Web_CE_Ads");
         }
 
         public async Task<Web_CE_Ads> GetWebCEAdsById(int Ad_ID)
@@ -26,18 +28,17 @@ namespace Wddc.WebContentManager.Services.WebContent.ContinuingEducation
 
         public async Task<Web_CE_Ads> CreateWebCEAd(Web_CE_Ads Web_CE_Ad)
         {
-            Web_CE_Ads newWeb_CE_Ad = await _apiService.PostAsync<Web_CE_Ads>($"/api/ContinuingEducation/Web_CE_Ads", Web_CE_Ad);
-            return newWeb_CE_Ad;
+            return await _apiService.PostAsync<Web_CE_Ads>("/api/ContinuingEducation/Web_CE_Ads", Web_CE_Ad);
         }
 
         public async Task DeleteWebCEAd(int Ad_ID)
         {
-            await _apiService.PostAsync($"/api/ContinuingEducation/Web_CE_Ads/Delete/{Ad_ID}");
+            await _apiService.SendAsync(HttpMethod.Post, $"/api/ContinuingEducation/Web_CE_Ads/Delete/{Ad_ID}");
         }
 
         public async Task UpdateWebCEAd(Web_CE_Ads Web_CE_Ad, int Ad_ID)
         {
-            await _apiService.PostAsync($"/api/ContinuingEducation/Web_CE_Ads/{Ad_ID}", Web_CE_Ad);
+            await _apiService.SendAsync(HttpMethod.Post, $"/api/ContinuingEducation/Web_CE_Ads/{Ad_ID}", Web_CE_Ad);
         }
     }
 }

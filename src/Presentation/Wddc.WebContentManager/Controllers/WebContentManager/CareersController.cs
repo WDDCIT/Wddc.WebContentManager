@@ -5,7 +5,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Wddc.PurchasingOrderApp.Services;
 using Wddc.WebContentManager.Models.WebContent.Careers;
-using Wddc.Core.Domain.Webserver.WebOrdering;
 using Serilog;
 using Wddc.WebContentManager.Services.WebContent.Careers;
 using Microsoft.AspNetCore.Http;
@@ -15,6 +14,7 @@ using WebOrderingLog = Wddc.Api.Core.Domain.Entities.WebOrder.WebOrderingLog;
 using Wddc.WebContentManager.Models;
 using PagedList;
 using System.Web;
+using Wddc.Api.Core.Domain.Entities.WebOrder;
 
 namespace Wddc.WebContentManager.Controllers.WebContentManager
 {

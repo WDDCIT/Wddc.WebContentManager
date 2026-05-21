@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Wddc.PurchasingOrderApp.Services;
-using Wddc.Core.Domain.Webserver.WebOrdering;
 using Kendo.Mvc.Extensions;
 using Microsoft.AspNetCore.Http;
 using System.IO;
@@ -18,6 +17,7 @@ using Wddc.WebContentManager.Models.WebContent.AffinityPrograms;
 using Microsoft.AspNetCore.Hosting;
 using System.Drawing;
 using System.Drawing.Imaging;
+using Wddc.Api.Core.Domain.Entities.WebOrder;
 
 namespace Wddc.WebContentManager.Controllers.WebContentManager
 {

@@ -1,4 +1,4 @@
-﻿@using Wddc.Core.Domain.Webserver.WebOrdering;
+﻿@using Wddc.Api.Core.Domain.Entities.WebOrder;
 @model Web_Classified_Ads
 
 <form id="updateAdForm" name="updateAdForm" method="post" action="@Url.Action("UpdateClassifiedAd", "ClassifiedAds")" enctype="multipart/form-data" onsubmit="return validateUpdateForm()">
@@ -122,25 +122,25 @@
 
         var longDesc = document.forms["updateAdForm"]["longDescription"].value;
         if (longDesc.trim() == "") {
-            alert("Long Description must be filled out");
+            showNotification('error', 'Long Description must be filled out');
             return false;
         }
 
         var shortDesc = document.forms["updateAdForm"]["shortDescription"].value;
         if (shortDesc.trim() == "") {
-            alert("Short Description must be filled out");
+            showNotification('error', 'Short Description must be filled out');
             return false;
         }
 
         var location = document.forms["updateAdForm"]["location"].value;
         if (location.trim() == "") {
-            alert("Location must be filled out");
+            showNotification('error', 'Location must be filled out');
             return false;
         }
 
         var memberNbr = document.forms["updateAdForm"]["memberNbr"].value;
         if (memberNbr.trim() == "") {
-            alert("Member Number must be filled out");
+            showNotification('error', 'Member Number must be filled out');
             return false;
         }
 

@@ -164,9 +164,9 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             return Json(info);
         }
 
-        public async Task<ActionResult> LogAsync(int? pageNumber, int pageSize = 5, string referrerUrl = null)
+        public async Task<ActionResult> LogAsync(int? pageNumber, int pageSize = 100, string referrerUrl = null)
         {
-            IPagedList<WebOrderingLog> results = await _logger.GetAllWebOrderingLogsAsync(referrerUrl: referrerUrl, pageSize: 10, pageIndex: pageNumber ?? 1);
+            IPagedList<WebOrderingLog> results = await _logger.GetAllWebOrderingLogsAsync(referrerUrl: referrerUrl, pageSize: pageSize, pageIndex: pageNumber ?? 1);
 
             var ajaxResult = new AjaxResults()
             {
