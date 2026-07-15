@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
-using Sentry;
 using Serilog;
 using Serilog.Events;
 using System;
@@ -22,11 +21,6 @@ namespace Wddc.WebContentManager
                 .MinimumLevel.Override("Microsoft.EntityFrameworkCore.SqlServer", LogEventLevel.Warning)
                 .Enrich.FromLogContext()
                 .WriteTo.Console()
-                .WriteTo.Sentry(o =>
-                {
-                    o.Dsn = "https://bfeda7e727a94353be97a07357f2fa2e@sentry.io/1540220";
-                    o.MinimumEventLevel = LogEventLevel.Error;
-                })
                 .WriteTo.File($"\\logs\\{System.Reflection.Assembly.GetEntryAssembly().GetName().Name}_{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")}.log.txt",
                     rollingInterval: RollingInterval.Day,
                     rollOnFileSizeLimit: true)
