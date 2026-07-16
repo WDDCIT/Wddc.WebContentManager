@@ -1,0 +1,109 @@
+﻿@*
+    This page is the BODY of the 401 response the browser shows when the user cancels
+    the Windows sign-in prompt after logging out. At that moment the browser may have
+    no valid auth for this origin, and every same-origin asset (css/js/img) requires
+    Windows auth — so this page must be fully self-contained: inline styles only,
+    no stylesheets, scripts, or images.
+*@
+@{
+    ViewBag.Title = "Signed out";
+    Layout = null;
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Signed out - WDDC</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+            background-color: #f3f3f4;
+            color: #333;
+        }
+
+        .top-bar {
+            background-color: #2f4050;
+            color: #f5f5f5;
+            padding: 14px 24px;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .card {
+            max-width: 520px;
+            margin: 70px auto 0 auto;
+            background: #fff;
+            border: 1px solid #e7eaec;
+            border-radius: 4px;
+            padding: 40px 45px;
+            text-align: center;
+        }
+
+        .card h1 {
+            margin: 0 0 10px 0;
+            font-size: 26px;
+        }
+
+        .app-name {
+            color: #1565C0;
+            font-size: 20px;
+            font-weight: 600;
+            margin: 4px 0 25px 0;
+        }
+
+        .btn {
+            display: inline-block;
+            margin: 6px 6px;
+            padding: 10px 22px;
+            border-radius: 3px;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .btn-primary {
+            background-color: #1565C0;
+            color: #fff;
+            border: 1px solid #1565C0;
+        }
+
+            .btn-primary:hover {
+                background-color: #114e94;
+            }
+
+        .hint {
+            margin-top: 28px;
+            font-size: 13px;
+            color: #888;
+            line-height: 1.6;
+            text-align: left;
+        }
+
+        .footer {
+            margin-top: 50px;
+            text-align: center;
+            font-size: 12px;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="top-bar">WDDC</div>
+
+    <div class="card">
+        <h1>Signed out</h1>
+        <p>You have been signed out of</p>
+        <div class="app-name">WDDC Web Content Manager</div>
+
+        <a class="btn btn-primary" href="@Url.Action("Login", "Account", new { area = "" })">Log in</a>
+
+        <p class="hint">
+            Click <strong>Log in</strong>, then enter your username and password in the Windows sign-in box.
+            Pressing <strong>Cancel</strong> in the sign-in box brings you back to this page.
+        </p>
+    </div>
+
+    <div class="footer">Copyright &copy; @DateTime.Now.Year WDDC. All Rights Reserved.</div>
+</body>
+</html>

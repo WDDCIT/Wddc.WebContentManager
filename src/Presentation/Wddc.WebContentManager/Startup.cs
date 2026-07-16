@@ -1,4 +1,5 @@
 ﻿using IdentityModel.Client;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -113,6 +114,30 @@ namespace Wddc.WebContentManager
             app.UseSession();
             app.UseCors();
             app.UseAuthorization();
+
+            // Identity convergence after a sign-out/log-in switch: Windows auth is
+            // per-connection, so right after logging in as a different account, requests
+            // can still ride keep-alive connections authenticated as the PREVIOUS
+            // account. While the pin cookie set by AccountController.LoginChallenge is
+            // present, re-challenge any request arriving as a different account — the
+            // browser silently retries with the credentials typed at the login prompt,
+            // converting the connection. Account endpoints are exempt (they manage the
+            // login dance themselves).
+            app.Use(async (context, next) =>
+            {
+                var expected = context.Request.Cookies[Controllers.AccountController.ExpectedUserCookie];
+                if (expected != null
+                    && !context.Request.Path.StartsWithSegments("/Account")
+                    && context.User.Identity?.IsAuthenticated == true
+                    && Controllers.AccountController.Hash(context.User.Identity.Name) != expected)
+                {
+                    await context.ChallengeAsync(IISDefaults.AuthenticationScheme);
+                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                    return;
+                }
+                await next();
+            });
+
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllerRoute("default", "{controller=Home}/{action=Index}/{id?}");
