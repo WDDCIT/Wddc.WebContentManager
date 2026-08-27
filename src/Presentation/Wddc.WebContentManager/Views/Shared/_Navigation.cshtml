@@ -34,6 +34,9 @@
             <li id="liquidationSale-li" class="@Html.IsSelected(controller: "LiquidationSale")">
                 <a href="@Url.Action("Index", "LiquidationSale", new { area = ""})"><i class="fa fa-money"></i> <span class="nav-label">Liquidation (Returns)</span></a>
             </li>
+            <li id="clearanceSale-li" class="@Html.IsSelected(controller: "ClearanceSale")">
+                <a href="@Url.Action("Index", "ClearanceSale", new { area = ""})"><i class="fa fa-percent"></i> <span class="nav-label">Clearance Sale</span></a>
+            </li>
             <li id="item-info-li">
                 <a href="@Url.Action("Index", "ItemInfo", new { area = ""})"><i class="fa fa-info-circle"></i> <span class="nav-label">Item Information</span></a>
             </li>
