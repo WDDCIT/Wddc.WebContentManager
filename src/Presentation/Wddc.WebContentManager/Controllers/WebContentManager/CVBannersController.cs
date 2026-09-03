@@ -38,6 +38,39 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             _hostingEnvironment = hostingEnvironment;
         }
 
+        /// <summary>
+        /// Builds a banner file name that is safe to drop into an image URL.
+        /// Path.GetInvalidFileNameChars() only covers what Windows rejects on disk, so
+        /// characters like % and &amp; survive into the file name and then break the
+        /// "../img/banners/{Filename}" request (a stray % is a malformed percent-escape
+        /// and the server answers 400). The display name keeps them; the file name does not.
+        /// </summary>
+        private static string BuildSafeBannerFileName(string bannerName)
+        {
+            if (string.IsNullOrWhiteSpace(bannerName))
+                return string.Empty;
+
+            string safe = bannerName;
+
+            foreach (char c in Path.GetInvalidFileNameChars())
+                safe = safe.Replace(c.ToString(), "");
+
+            safe = safe.Replace("'", "");
+
+            // Legal on disk, hostile in a URL.
+            safe = safe.Replace("%", "pct")
+                       .Replace("&", "and")
+                       .Replace("#", "no")
+                       .Replace("+", " ")
+                       .Replace("?", "")
+                       .Replace("=", "");
+
+            while (safe.Contains("  "))
+                safe = safe.Replace("  ", " ");
+
+            return safe.Trim();
+        }
+
         public ActionResult Index()
         {
             string tempPath = Path.Combine(this._hostingEnvironment.WebRootPath, "img\\banners");
@@ -176,8 +209,9 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             if (bannerName.Contains('\''))
                 bannerName = bannerName.Replace("'", "");
 
-            string bannerFileName = bannerName.Trim();
-            string mobileBannerFileName = bannerName.Trim() + "-mobile";
+            // Display name keeps % and &; the file name must not.
+            string bannerFileName = BuildSafeBannerFileName(bannerName);
+            string mobileBannerFileName = bannerFileName + "-mobile";
 
             BannerDto banner = new BannerDto
             {
@@ -342,8 +376,9 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             if (bannerName.Contains('\''))
                 bannerName = bannerName.Replace("'", "");
 
-            string bannerFileName = bannerName.Trim();
-            string mobileBannerFileName = bannerName.Trim() + "-mobile";
+            // Display name keeps % and &; the file name must not.
+            string bannerFileName = BuildSafeBannerFileName(bannerName);
+            string mobileBannerFileName = bannerFileName + "-mobile";
 
             var bannerPath = settings.SingleOrDefault(s => s.Name == "banner.path")?.Value;
             var bannerPathThumbnails = settings.SingleOrDefault(s => s.Name == "banner.path.thumbnails")?.Value;
@@ -419,16 +454,20 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             }
             else
             {
-                // Rename existing banner if name changed
-                if (banner.Name.Trim() != bannerName.Trim() && !string.IsNullOrEmpty(banner.Filename))
+                // Rename the existing banner when the name changed, and also when the stored
+                // file name is still an unsafe one from before BuildSafeBannerFileName existed
+                // (re-saving the banner is then enough to repair a broken image URL).
+                string desiredFilename = !string.IsNullOrEmpty(banner.Filename)
+                    ? bannerFileName + Path.GetExtension(banner.Filename)
+                    : null;
+
+                if (!string.IsNullOrEmpty(banner.Filename) && banner.Filename.Trim() != desiredFilename)
                 {
                     string imagePathOld = Path.Combine(@bannerPath, banner.Filename);
                     string thumbnailImagePathOld = Path.Combine(@bannerPathThumbnails, banner.Filename);
 
-                    string imageExt = Path.GetExtension(banner.Filename);
-
-                    string imagePathRename = Path.Combine(@bannerPath, bannerName.Trim() + imageExt);
-                    string thumbnailImagePathRename = Path.Combine(@bannerPathThumbnails, bannerName.Trim() + imageExt);
+                    string imagePathRename = Path.Combine(@bannerPath, desiredFilename);
+                    string thumbnailImagePathRename = Path.Combine(@bannerPathThumbnails, desiredFilename);
 
                     try
                     {
@@ -436,12 +475,12 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                         FileInfo thumbnailImageFileOld = new FileInfo(thumbnailImagePathOld);
 
                         if (imageFileOld.Exists)
-                            imageFileOld.MoveTo(imagePathRename);
+                            imageFileOld.MoveTo(imagePathRename, true);
 
                         if (thumbnailImageFileOld.Exists)
-                            thumbnailImageFileOld.MoveTo(thumbnailImagePathRename);
+                            thumbnailImageFileOld.MoveTo(thumbnailImagePathRename, true);
 
-                        banner.Filename = bannerName.Trim() + imageExt;
+                        banner.Filename = desiredFilename;
                     }
                     catch (Exception ex)
                     {
@@ -525,16 +564,19 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             }
             else
             {
-                // Rename existing mobile banner if name changed
-                if (banner.Name.Trim() != bannerName.Trim() && !string.IsNullOrEmpty(banner.MobileFilename))
+                // Rename the existing mobile banner when the name changed, and also when the
+                // stored file name is still an unsafe one from before BuildSafeBannerFileName.
+                string desiredMobileFilename = !string.IsNullOrEmpty(banner.MobileFilename)
+                    ? mobileBannerFileName + Path.GetExtension(banner.MobileFilename)
+                    : null;
+
+                if (!string.IsNullOrEmpty(banner.MobileFilename) && banner.MobileFilename.Trim() != desiredMobileFilename)
                 {
                     string imagePathOld = Path.Combine(@bannerPathMobile, banner.MobileFilename);
                     string thumbnailImagePathOld = Path.Combine(@bannerPathMobileThumbnails, banner.MobileFilename);
 
-                    string imageExt = Path.GetExtension(banner.MobileFilename);
-
-                    string imagePathRename = Path.Combine(@bannerPathMobile, bannerName.Trim() + "-mobile" + imageExt);
-                    string thumbnailImagePathRename = Path.Combine(@bannerPathMobileThumbnails, bannerName.Trim() + "-mobile" + imageExt);
+                    string imagePathRename = Path.Combine(@bannerPathMobile, desiredMobileFilename);
+                    string thumbnailImagePathRename = Path.Combine(@bannerPathMobileThumbnails, desiredMobileFilename);
 
                     try
                     {
@@ -542,12 +584,12 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
                         FileInfo thumbnailImageFileOld = new FileInfo(thumbnailImagePathOld);
 
                         if (imageFileOld.Exists)
-                            imageFileOld.MoveTo(imagePathRename);
+                            imageFileOld.MoveTo(imagePathRename, true);
 
                         if (thumbnailImageFileOld.Exists)
-                            thumbnailImageFileOld.MoveTo(thumbnailImagePathRename);
+                            thumbnailImageFileOld.MoveTo(thumbnailImagePathRename, true);
 
-                        banner.MobileFilename = bannerName.Trim() + "-mobile" + imageExt;
+                        banner.MobileFilename = desiredMobileFilename;
                     }
                     catch (Exception ex)
                     {

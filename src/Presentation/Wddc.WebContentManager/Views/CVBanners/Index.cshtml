@@ -202,7 +202,7 @@
                 const mobileHtml = banner.MobileFilename
                     ? `<div class="update-card-preview">
                            <span class="update-card-label"><i class="fa fa-mobile-alt"></i> Mobile</span>
-                           <img class="banner-img-mobile" src="../img/banners/mobile/${banner.MobileFilename}" alt="${banner.Name} Mobile">
+                           <img class="banner-img-mobile" src="../img/banners/mobile/${encodeURIComponent(banner.MobileFilename)}" alt="${banner.Name} Mobile">
                        </div>`
                     : '';
                 const $row = $('<div>').addClass('banner-update-item');
@@ -215,7 +215,7 @@
                         <div class="update-card-previews">
                             <div class="update-card-preview">
                                 <span class="update-card-label"><i class="fa fa-desktop"></i> Desktop</span>
-                                <img class="banner-img" src="../img/banners/${banner.Filename}" alt="${banner.Name}">
+                                <img class="banner-img" src="../img/banners/${encodeURIComponent(banner.Filename)}" alt="${banner.Name}">
                             </div>
                             ${mobileHtml}
                         </div>
@@ -237,7 +237,7 @@
                 const mobileHtml = banner.MobileFilename
                     ? `<div class="delete-card-preview">
                            <span class="delete-card-label"><i class="fa fa-mobile-alt"></i> Mobile</span>
-                           <img class="banner-img-mobile" src="../img/banners/mobile/${banner.MobileFilename}" alt="${banner.Name} Mobile">
+                           <img class="banner-img-mobile" src="../img/banners/mobile/${encodeURIComponent(banner.MobileFilename)}" alt="${banner.Name} Mobile">
                        </div>`
                     : '';
                 const $row = $('<div>').addClass('banner-delete-item');
@@ -250,7 +250,7 @@
                         <div class="delete-card-previews">
                             <div class="delete-card-preview">
                                 <span class="delete-card-label"><i class="fa fa-desktop"></i> Desktop</span>
-                                <img class="banner-img" src="../img/banners/${banner.Filename}" alt="${banner.Name}">
+                                <img class="banner-img" src="../img/banners/${encodeURIComponent(banner.Filename)}" alt="${banner.Name}">
                             </div>
                             ${mobileHtml}
                         </div>
@@ -273,7 +273,7 @@
                     <div class="card">
                         <div class="card-body">
                             <h6 class="card-title">${banner.Name}</h6>
-                            <img class="card-img" src="../img/banners/${banner.Filename}" alt="${banner.Name}">
+                            <img class="card-img" src="../img/banners/${encodeURIComponent(banner.Filename)}" alt="${banner.Name}">
                             <div id="spinningWheelSelectBanner-${banner.Id}"></div>
                             <button type="button" class="btn btn-primary btn-modern btn-sm mt-2" 
                                 onclick="selectBannerToUpdate('${banner.Id}')">
@@ -311,10 +311,10 @@
                     $("#update-form #selectedCategoryId").data("kendoDropDownList").value()
                 );
                 $("#update-form #bannerName").data("kendoTextBox").value(result.Name);
-                $("#update-form #bannerImageDisplay").attr('src', `../img/banners/${result.Filename}`);
+                $("#update-form #bannerImageDisplay").attr('src', `../img/banners/${encodeURIComponent(result.Filename)}`);
                 
                 const mobileSrc = result.HasMobileVersion 
-                    ? `../img/banners/mobile/${result.MobileFilename}` 
+                    ? `../img/banners/mobile/${encodeURIComponent(result.MobileFilename)}` 
                     : "../img/no-mobile-banner.png";
                 $("#update-form #bannerImageMobileDisplay").attr('src', mobileSrc);
 
