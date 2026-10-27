@@ -218,14 +218,30 @@
             $.get('@Url.Action("GetMessageById", "GenericMessage")?Id=' + messageId, function (result) {
                 document.getElementById("update-form-textarea-container").innerHTML = "<textarea id='subject' name='subject' style='width: 100%;' required></textarea>";
                 $("#edit-form #subject").kendoTextArea({ maxLength: 128, value: result.Subject });
-                $("#edit-form #pdf-view-current-filename").html(result.FileName);
-                $("#edit-form #pdf-view-current").attr("href", "Message_Generic_Temp\\" + result.FileName);
+                setCurrentPdfLink("#edit-form", result.FileName);
                 $("#edit-form #expiryDate").data("kendoDatePicker").value(result.ExpiryDate);
                 $("#edit-form #site").getKendoRadioGroup().value(result.Location == 0 ? -1 : result.Location);
                 $("#edit-form #priority").data("kendoSwitch").check(result.Priority == 1);
                 document.getElementById("message-toUpdate-row").style.visibility = "visible";
                 $('html, body').animate({ scrollTop: $('#headingTwo').offset().top }, 900);
+            }).fail(function (xhr) {
+                showNotification('error', 'Could not open that message for editing (error ' + xhr.status + '). Please let IT know which message you picked.');
             });
+        }
+
+        // The panels are only revealed once the message loads, so a message with no attachment
+        // must still produce a usable link area rather than a dead "Message_Generic_Temp\null".
+        function setCurrentPdfLink(formSelector, fileName) {
+            var $name = $(formSelector + " #pdf-view-current-filename");
+            var $link = $(formSelector + " #pdf-view-current");
+
+            if (fileName) {
+                $name.html(fileName);
+                $link.attr("href", "Message_Generic_Temp\\" + fileName).attr("target", "_blank");
+            } else {
+                $name.html("No file attached");
+                $link.removeAttr("href").removeAttr("target");
+            }
         }
 
         function searchMessageToDelete() {
@@ -235,8 +251,7 @@
             $.get('@Url.Action("GetMessageById", "GenericMessage")?Id=' + messageId, function (result) {
                 document.getElementById("delete-form-textarea-container").innerHTML = "<textarea id='subject' name='subject' style='width: 100%;'></textarea>";
                 $("#delete-form #subject").kendoTextArea({ maxLength: 128, value: result.Subject, enable: false });
-                $("#delete-form #pdf-view-current-filename").html(result.FileName);
-                $("#delete-form #pdf-view-current").attr("href", "Message_Generic_Temp\\" + result.FileName);
+                setCurrentPdfLink("#delete-form", result.FileName);
                 $("#delete-form #expiryDate").data("kendoDatePicker").value(result.ExpiryDate);
                 $("#delete-form #expiryDate").data("kendoDatePicker").enable(false);
                 $("#delete-form #site").getKendoRadioGroup().value(result.Location == 0 ? -1 : result.Location);
@@ -245,6 +260,8 @@
                 $("#delete-form #priority").data("kendoSwitch").enable(false);
                 document.getElementById("message-toDelete-row").style.visibility = "visible";
                 $('html, body').animate({ scrollTop: $('#headingThree').offset().top }, 900);
+            }).fail(function (xhr) {
+                showNotification('error', 'Could not open that message (error ' + xhr.status + '). Please let IT know which message you picked.');
             });
         }
 

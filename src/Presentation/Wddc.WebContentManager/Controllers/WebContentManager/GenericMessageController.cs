@@ -37,7 +37,8 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
         {
             var messages = await _genericMessageService.GetGenericMessages();
 
-            return Json(messages.Where(_ => _.Status == 0).OrderBy(_ => _.CreateDate));
+            // Newest first: the search lists are long and the notices people need are the recent ones.
+            return Json(messages.Where(_ => _.Status == 0).OrderByDescending(_ => _.CreateDate));
         }
 
         public async Task<JsonResult> GetMessageByIdAsync(int Id)
@@ -47,17 +48,32 @@ namespace Wddc.WebContentManager.Controllers.WebContentManager
             string sourcePath = "\\\\WEBSRVR\\WDDCWebPages\\wddc_members\\CS\\Ads";
             string destinationPath = Path.Combine(this._hostingEnvironment.WebRootPath, "Message_Generic_Temp");
 
-
-            if (Directory.Exists(destinationPath))
-                Directory.Delete(destinationPath, true);
-
-            Directory.CreateDirectory(destinationPath);
-
-            FileInfo pdfFile = new FileInfo(sourcePath + "\\" + message.FileName.Trim());
-
-            if (pdfFile.Exists && pdfFile.Extension != ".db")
+            // Staging the PDF for the "View Current" link is best effort. Message_Generic.FileName
+            // is nullable, so a text-only notice used to throw here on .Trim(); a locked temp folder
+            // or an unreachable share would throw too. The edit and delete panels are only revealed
+            // inside this call's success callback, so anything thrown here left the user looking at a
+            // blank panel with nothing to edit and no error.
+            try
             {
-                pdfFile.CopyTo(Path.Combine(destinationPath, message.FileName.Trim()), true);
+                if (Directory.Exists(destinationPath))
+                    Directory.Delete(destinationPath, true);
+
+                Directory.CreateDirectory(destinationPath);
+
+                if (!string.IsNullOrWhiteSpace(message.FileName))
+                {
+                    FileInfo pdfFile = new FileInfo(Path.Combine(sourcePath, message.FileName.Trim()));
+
+                    if (pdfFile.Exists && pdfFile.Extension != ".db")
+                    {
+                        pdfFile.CopyTo(Path.Combine(destinationPath, message.FileName.Trim()), true);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Logger.Error($"Error staging generic message pdf for message {Id} by {User.Identity.Name.Substring(7).ToLower()}: {ex.Message}");
+                _logger.Error($"Error staging generic message pdf for message {Id}: {ex.Message}", ex, User, "WebOrdering");
             }
 
             return Json(message);
