@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
@@ -15,6 +15,8 @@
     <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="PagedList" Version="1.17.0" />
+    <!-- Clearance flyers (2026-10-27). Pinned: 6.2.x is MIT; 6.5.0 and later are AGPL-3.0 - do not upgrade. -->
+    <PackageReference Include="PDFsharp-MigraDoc" Version="6.2.4" />
     <PackageReference Include="PDFtoImage" Version="5.2.0" />
     <PackageReference Include="Serilog" Version="3.1.1" />
     <PackageReference Include="Wddc.Api.Core" Version="1.0.125" />

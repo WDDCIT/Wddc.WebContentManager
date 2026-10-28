@@ -16,6 +16,7 @@ using Wddc.WebContentManager.Services.WebContent.ContinuingEducation;
 using Wddc.WebContentManager.Services.WebContent.ClassifiedAds;
 using Wddc.WebContentManager.Services.WebContent.Careers;
 using Wddc.WebContentManager.Services.WebContent.Sales.LiquidationSale;
+using Wddc.WebContentManager.Services.WebContent.Sales.ClearanceFlyer;
 using Wddc.WebContentManager.Services.WebContent.Videos;
 using Wddc.WebContentManager.Services.WebUser;
 using Wddc.WebContentManager.Services.WebContent.Affinity;
@@ -58,6 +59,7 @@ namespace Wddc.WebContentManager.Extensions
             services.TryAddSingleton<IClassifiedAdsService, ClassifiedAdsService>();
             services.TryAddSingleton<ICareersService, CareersService>();
             services.TryAddSingleton<ILiquidationSaleService, LiquidationSaleService>();
+            services.TryAddSingleton<IClearanceFlyerService, ClearanceFlyerService>();
             services.TryAddSingleton<IVideosService, VideosService>();
             services.TryAddSingleton<IWebUserLookupService, WebUserLookupService>();
             services.TryAddSingleton<IAffinityService, AffinityService>();

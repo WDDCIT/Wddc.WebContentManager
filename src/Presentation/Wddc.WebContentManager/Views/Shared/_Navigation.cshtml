@@ -34,6 +34,11 @@
             <li id="liquidationSale-li" class="@Html.IsSelected(controller: "LiquidationSale")">
                 <a href="@Url.Action("Index", "LiquidationSale", new { area = ""})"><i class="fa fa-money"></i> <span class="nav-label">Liquidation (Returns)</span></a>
             </li>
+            @* Clearance Flyers: hidden until it is tested (the user, 2026-10-28) - the page works at /ClearanceFlyer.
+            <li id="clearanceFlyer-li" class="@Html.IsSelected(controller: "ClearanceFlyer")">
+                <a href="@Url.Action("Index", "ClearanceFlyer", new { area = ""})"><i class="fa fa-file-pdf-o"></i> <span class="nav-label">Clearance Flyers</span></a>
+            </li>
+            *@
             <li id="item-info-li">
                 <a href="@Url.Action("Index", "ItemInfo", new { area = ""})"><i class="fa fa-info-circle"></i> <span class="nav-label">Item Information</span></a>
             </li>

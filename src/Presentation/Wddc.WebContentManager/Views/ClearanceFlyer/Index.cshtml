@@ -1,0 +1,219 @@
+@{
+    ViewBag.Title = "Clearance Flyers";
+}
+
+@* Clearance Flyers (2026-10-27): the PDF flyer of each website clearance section. Bucky sets the look; the items come
+   from the live clearance list; Publish puts the PDF where the website's flyer banner opens it. *@
+
+@section Styles {
+    <style>
+        .cf-intro { color: #5b6f86; margin: 0 0 18px 0; max-width: 900px; }
+        .cf-cards { display: flex; flex-wrap: wrap; gap: 18px; margin-bottom: 22px; }
+        .cf-card { flex: 1 1 300px; max-width: 380px; background: #fff; border: 1px solid #dfe6ee; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(16, 38, 64, .06); }
+        .cf-card.on { border-color: #1f4e79; box-shadow: 0 0 0 2px rgba(31, 78, 121, .25); }
+        .cf-cover { height: 150px; display: flex; align-items: center; justify-content: center; background: #f4f7fa; overflow: hidden; }
+        .cf-cover img { max-height: 150px; max-width: 100%; }
+        .cf-band { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 22px; font-weight: 700; }
+        .cf-body { padding: 12px 14px; }
+        .cf-name { font-size: 17px; font-weight: 700; color: #1d2f42; }
+        .cf-meta { color: #5b6f86; font-size: 13px; margin-top: 2px; }
+        .cf-meta strong { color: #1d2f42; }
+        .cf-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+        .cf-actions .btn { border-radius: 4px; }
+        .cf-edit { background: #fff; border: 1px solid #dfe6ee; border-radius: 8px; padding: 18px 20px; max-width: 900px; }
+        .cf-edit h3 { margin: 0 0 14px 0; font-weight: 700; color: #1d2f42; }
+        .cf-edit label { font-weight: 600; color: #1d2f42; }
+        .cf-edit .help-block { margin-top: 2px; }
+        .cf-color { width: 70px; height: 34px; padding: 2px; }
+        .cf-cover-now { max-height: 120px; max-width: 220px; border: 1px solid #dfe6ee; border-radius: 4px; display: block; margin-bottom: 6px; }
+    </style>
+}
+
+<div class="wrapper wrapper-content">
+    <h2 style="margin-top: 0; font-weight: 700;"><i class="fa fa-file-pdf-o"></i> Clearance Flyers</h2>
+    <p class="cf-intro">
+        One PDF flyer per clearance section of the website. Set each flyer's look once - cover picture, title, month, colour and notes.
+        The items fill themselves in from the clearance list as it is now: each with its picture, item code, Reg Price and clearance price, grouped by product type.
+        <strong>Preview</strong> shows the flyer; <strong>Publish</strong> puts it on the website, where its banner on the Clearance Sale page opens it.
+        The flyer it replaces is kept in <em>CS/Promos/Flyer backups</em>.
+    </p>
+
+    <div class="cf-cards" id="cfCards"><div class="cf-meta">Loading...</div></div>
+
+    <div class="cf-edit" id="cfEdit" style="display: none">
+        <h3 id="cfEditTitle">Flyer</h3>
+        <form id="cfForm" enctype="multipart/form-data" onsubmit="return false;">
+            <input type="hidden" name="id" id="cfId" />
+            <div class="row">
+                <div class="col-sm-6 form-group">
+                    <label for="cfTitleInput">Title</label>
+                    <input type="text" class="form-control" name="title" id="cfTitleInput" maxlength="100" required />
+                </div>
+                <div class="col-sm-6 form-group">
+                    <label for="cfSubtitle">Month or subtitle</label>
+                    <input type="text" class="form-control" name="subtitle" id="cfSubtitle" maxlength="100" placeholder="e.g. November 2026" />
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="cfIntroInput">Line under the title (cover)</label>
+                <input type="text" class="form-control" name="intro" id="cfIntroInput" maxlength="400" />
+            </div>
+            <div class="form-group">
+                <label for="cfNote">Highlighted note (cover and the top of every page)</label>
+                <input type="text" class="form-control" name="note" id="cfNote" maxlength="400" placeholder="Optional - e.g. Fire Sale items are at or below cost and final sale." />
+            </div>
+            <div class="form-group">
+                <label for="cfFooter">Footer (bottom of every page)</label>
+                <input type="text" class="form-control" name="footer" id="cfFooter" maxlength="400" />
+                <span class="help-block">Separate the parts with | - e.g. Limited quantities available | No back orders to be held | All sales final</span>
+            </div>
+            <div class="row">
+                <div class="col-sm-3 form-group">
+                    <label for="cfColor">Colour</label>
+                    <input type="color" class="form-control cf-color" name="accentColor" id="cfColor" />
+                </div>
+                <div class="col-sm-9 form-group">
+                    <label for="cfCoverFile">Cover picture</label>
+                    <img id="cfCoverNow" class="cf-cover-now" alt="Cover picture" style="display: none" />
+                    <input type="file" name="cover" id="cfCoverFile" accept=".jpg,.jpeg,.png" />
+                    <span class="help-block">JPG or PNG, up to 8 MB. Without one, the cover is the title on a band in the flyer's colour.</span>
+                    <label style="font-weight: 400;" id="cfRemoveWrap"><input type="checkbox" name="removeCover" id="cfRemoveCover" value="true" /> Remove the cover picture</label>
+                </div>
+            </div>
+            <div class="cf-actions">
+                <button type="button" class="btn btn-primary" id="cfSave"><i class="fa fa-save"></i> Save</button>
+                <button type="button" class="btn btn-default" id="cfCancel">Close</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        (function ($) {
+            "use strict";
+
+            var urls = {
+                flyers: '@Url.Action("Flyers", "ClearanceFlyer")',
+                cover: '@Url.Action("Cover", "ClearanceFlyer")',
+                save: '@Url.Action("Save", "ClearanceFlyer")',
+                preview: '@Url.Action("Preview", "ClearanceFlyer")',
+                publish: '@Url.Action("Publish", "ClearanceFlyer")'
+            };
+            var flyers = [];
+
+            function esc(v) { return $("<div>").text(v === null || v === undefined ? "" : String(v)).html(); }
+
+            function when(v) {
+                if (!v) return "";
+                var d = new Date(v);
+                if (isNaN(d.getTime())) return esc(v);
+                var p = function (n) { return (n < 10 ? "0" : "") + n; };
+                return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate()) + " " + p(d.getHours()) + ":" + p(d.getMinutes());
+            }
+
+            function card(f) {
+                var cover = f.HasCover
+                    ? '<img src="' + urls.cover + "?id=" + f.ID + "&v=" + encodeURIComponent(f.UpdatedOn || "") + '" alt="Cover" />'
+                    : '<div class="cf-band" style="background:' + esc(f.AccentColor) + '">' + esc(f.Title) + "</div>";
+                return '<div class="cf-card" data-id="' + f.ID + '">' +
+                    '<div class="cf-cover">' + cover + "</div>" +
+                    '<div class="cf-body">' +
+                    '<div class="cf-name">' + esc(f.Title) + (f.Subtitle ? ' <span class="cf-meta">' + esc(f.Subtitle) + "</span>" : "") + "</div>" +
+                    '<div class="cf-meta">Website section: <strong>' + esc(f.Section || "-") + "</strong></div>" +
+                    '<div class="cf-meta"><strong>' + f.Items + "</strong> item" + (f.Items === 1 ? "" : "s") + " on it now</div>" +
+                    '<div class="cf-meta">' + (f.PublishedOn ? "Published " + when(f.PublishedOn) + " by " + esc(f.PublishedBy) + " (" + f.PublishedItems + " items)" : "Not published from here yet") + "</div>" +
+                    '<div class="cf-meta">File: CS/Promos/' + esc(f.FileName) + ".pdf</div>" +
+                    '<div class="cf-actions">' +
+                    '<button type="button" class="btn btn-default btn-sm cf-btn-edit"><i class="fa fa-pencil"></i> Edit</button>' +
+                    '<a class="btn btn-default btn-sm" target="_blank" rel="noopener" href="' + urls.preview + "?id=" + f.ID + '"><i class="fa fa-eye"></i> Preview</a>' +
+                    '<button type="button" class="btn btn-primary btn-sm cf-btn-publish"><i class="fa fa-upload"></i> Publish</button>' +
+                    "</div></div></div>";
+            }
+
+            function load() {
+                $.ajax({ url: urls.flyers, type: "GET", dataType: "json", cache: false })
+                    .done(function (response) {
+                        if (!response || !response.success) { $("#cfCards").html('<div class="cf-meta">' + esc((response && response.message) || "The flyers could not be loaded.") + "</div>"); return; }
+                        flyers = response.data || [];
+                        $("#cfCards").html($.map(flyers, card).join(""));
+                    })
+                    .fail(function () { $("#cfCards").html('<div class="cf-meta">The flyers could not be loaded.</div>'); });
+            }
+
+            function flyerOf(el) {
+                var id = Number($(el).closest(".cf-card").attr("data-id"));
+                return $.grep(flyers, function (f) { return f.ID === id; })[0];
+            }
+
+            function openEdit(f) {
+                $(".cf-card").removeClass("on");
+                $('.cf-card[data-id="' + f.ID + '"]').addClass("on");
+                $("#cfEditTitle").text("Edit: " + f.Title);
+                $("#cfId").val(f.ID);
+                $("#cfTitleInput").val(f.Title || "");
+                $("#cfSubtitle").val(f.Subtitle || "");
+                $("#cfIntroInput").val(f.Intro || "");
+                $("#cfNote").val(f.Note || "");
+                $("#cfFooter").val(f.Footer || "");
+                $("#cfColor").val(f.AccentColor || "#1F4E79");
+                $("#cfCoverFile").val("");
+                $("#cfRemoveCover").prop("checked", false);
+                if (f.HasCover) $("#cfCoverNow").attr("src", urls.cover + "?id=" + f.ID + "&v=" + encodeURIComponent(f.UpdatedOn || "")).show();
+                else $("#cfCoverNow").hide().removeAttr("src");
+                $("#cfRemoveWrap").toggle(!!f.HasCover);
+                $("#cfEdit").show();
+                $("html, body").animate({ scrollTop: $("#cfEdit").offset().top - 20 }, 400);
+            }
+
+            function save() {
+                if (!$.trim($("#cfTitleInput").val())) { Swal.fire({ icon: "warning", title: "Give the flyer a title." }); return; }
+                var data = new FormData($("#cfForm")[0]);
+                if (!$("#cfRemoveCover").is(":checked")) data.set("removeCover", "false");
+                var $btn = $("#cfSave").prop("disabled", true);
+                $.ajax({ url: urls.save, type: "POST", data: data, processData: false, contentType: false, dataType: "json" })
+                    .done(function (response) {
+                        if (!response || !response.success) { Swal.fire({ icon: "error", title: "Not saved", text: (response && response.message) || "The flyer could not be saved." }); return; }
+                        toastr.success("Saved. Preview it, then Publish when it looks right.");
+                        $("#cfEdit").hide();
+                        load();
+                    })
+                    .fail(function () { Swal.fire({ icon: "error", title: "Not saved", text: "The flyer could not be saved." }); })
+                    .always(function () { $btn.prop("disabled", false); });
+            }
+
+            function publish(f) {
+                Swal.fire({
+                    icon: "question",
+                    title: "Publish " + f.Title + "?",
+                    html: "The flyer is built from the clearance list as it is now (" + f.Items + " item" + (f.Items === 1 ? "" : "s") + ") and put on the website as " +
+                        "<strong>CS/Promos/" + esc(f.FileName) + ".pdf</strong> - the file its banner opens. The one it replaces is kept in Flyer backups.",
+                    showCancelButton: true,
+                    confirmButtonText: "Publish",
+                    confirmButtonColor: "#1f4e79"
+                }).then(function (choice) {
+                    if (!(choice.isConfirmed || choice.value)) return;
+                    Swal.fire({ title: "Building the flyer...", allowOutsideClick: false, showConfirmButton: false, onOpen: function () { Swal.showLoading(); }, didOpen: function () { Swal.showLoading(); } });
+                    $.ajax({ url: urls.publish + "?id=" + f.ID, type: "POST", dataType: "json" })
+                        .done(function (response) {
+                            if (!response || !response.success) { Swal.fire({ icon: "error", title: "Not published", text: (response && response.message) || "The flyer could not be put on the website." }); return; }
+                            var d = response.data || {};
+                            Swal.fire({ icon: "success", title: f.Title + " is on the website",
+                                html: d.Items + " items, " + d.Pages + " pages (" + Math.round((d.Size || 0) / 1024) + " KB)." + (d.Backup ? "<br>The old flyer is kept as <em>" + esc(d.Backup) + "</em>." : "") });
+                            load();
+                        })
+                        .fail(function () { Swal.fire({ icon: "error", title: "Not published", text: "The flyer could not be put on the website." }); });
+                });
+            }
+
+            $("#cfCards")
+                .on("click", ".cf-btn-edit", function () { var f = flyerOf(this); if (f) openEdit(f); })
+                .on("click", ".cf-btn-publish", function () { var f = flyerOf(this); if (f) publish(f); });
+            $("#cfSave").on("click", save);
+            $("#cfCancel").on("click", function () { $("#cfEdit").hide(); $(".cf-card").removeClass("on"); });
+
+            load();
+        })(jQuery);
+    </script>
+}
